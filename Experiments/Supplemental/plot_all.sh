@@ -1,0 +1,5 @@
+python block_layouts.py
+python plot_blocks_touched.py
+python plot_access_cost_row_major.py
+python plot_access_cost_tiled.py
+python plot_access_cost_numa.py
