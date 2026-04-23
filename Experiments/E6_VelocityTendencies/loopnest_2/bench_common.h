@@ -35,8 +35,8 @@
 #include <omp.h>
 #endif
 
-static constexpr int NLEVS[] = {90, 96, 128, 256};
-static constexpr int N_NLEVS = 4;
+static constexpr int NLEVS[] = {256};
+static constexpr int N_NLEVS = 1;
 static constexpr int WARMUP         = 5;
 static constexpr int NRUNS          = 100;
 static constexpr int BLOCK_SIZES[] = {8, 16, 32, 48, 64, 96, 128};
