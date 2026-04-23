@@ -49,6 +49,8 @@ Experiments/E4_GAS/bin/
 Experiments/E5_USXX/bin/
 Experiments/E4_GAS/*.zip
 Experiments/E5_USXX/*.zip
+# Binary data payloads (QE/ICON index maps, etc.) fetched via download_data.sh
+*.bin
 # ICON R02B05 data is user-provided (see Experiments/E6_*/README.md)
 Experiments/E6_VelocityTendencies/data_r02b05/
 
