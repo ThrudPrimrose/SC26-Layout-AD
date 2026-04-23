@@ -1,23 +1,22 @@
 #!/usr/bin/env bash
-# Regenerate every figure (illustrative + runtime) the paper needs.
+# Regenerate every figure the paper needs.
 #
 # Illustrative groups -- pure-matplotlib scripts under Figures/<group>/:
 #   AccessCost, Pebble_Game, LayoutTransformations, Replay
 #   These save with relative paths like plt.savefig('name.pdf'), so we
 #   `cd` into Figures/GeneratedFigures/<group>/ before running.
 #
-# Runtime group -- the paper's per-experiment plots (Fig. 4, 8-11):
-#   runs each Experiments/<exp>/plot_paper.py twice:
-#     1. from inside PaperSnapshot/<exp>/ (if populated) -> the paper-
-#        canonical figures land flat in Figures/GeneratedFigures/Runtime/
-#     2. from inside Experiments/<exp>/ (always) -> the fresh local
-#        reproduction lands flat in Figures/GeneratedFigures/Runtime/new/
-#   Because plot_paper.py reads CSVs via cwd-relative paths like
-#   results/{daint,beverin}/*.csv, pointing cwd at PaperSnapshot/<exp>/
-#   is all it takes to plot from the frozen paper data instead of the
-#   live local results. An empty PaperSnapshot/<exp>/results/ tree (only
-#   .gitkeep) causes that experiment's paper step to be skipped; the
-#   new-reproduction step still runs.
+# Runtime figures -- split across two dedicated sibling scripts:
+#   PaperSnapshot  -> Figures/plot_paper_snapshot.sh
+#                     (plots the frozen paper-canonical CSVs committed
+#                      under PaperSnapshot/<exp>/results/; outputs land
+#                      in Figures/GeneratedFigures/Runtime/)
+#   Results        -> Figures/plot_results.sh
+#                     (plots the reviewer's locally-produced CSVs in
+#                      Experiments/<exp>/results/ after sbatch;
+#                      outputs land next to the CSVs under the same
+#                      Experiments/<exp>/results/ directory)
+#   Runtime        -> invokes both of the above in sequence (default).
 #
 # Peaks group -- refreshes the canonical STREAM-peak JSON consumed by
 #   every plot_paper.py for bandwidth normalization (no figures
@@ -27,8 +26,10 @@
 #
 # Run with no args to regenerate all groups, or pass a subset:
 #     bash plot_all.sh AccessCost Runtime
-#     bash plot_all.sh Peaks        # just refresh stream_peak.json
-#     bash plot_all.sh Runtime      # just runtime figures
+#     bash plot_all.sh Peaks             # just refresh stream_peak.json
+#     bash plot_all.sh PaperSnapshot     # just the frozen paper figures
+#     bash plot_all.sh Results           # just your reviewer-generated figures
+#     bash plot_all.sh Runtime           # both PaperSnapshot + Results
 
 set -euo pipefail
 
@@ -47,9 +48,6 @@ declare -gA GROUPS=(
     [LayoutTransformations]="tiled_addition.py pack_unpack.py layout_stages.py"
     [Replay]="replay.py"
 )
-
-# Experiments that produce runtime figures (Peaks is E0, handled separately).
-RUNTIME_EXPS=(E1_MatrixAdd E2_Conjugation E3_Transpose E4_GAS E5_USXX)
 
 DEFAULT_ORDER=(AccessCost Pebble_Game LayoutTransformations Replay Peaks Runtime)
 
@@ -71,61 +69,17 @@ for group in "${targets[@]}"; do
         fi
         ;;
 
+      PaperSnapshot)
+        bash "${FIG_DIR}/plot_paper_snapshot.sh"
+        ;;
+
+      Results)
+        bash "${FIG_DIR}/plot_results.sh"
+        ;;
+
       Runtime)
-        out_paper="${OUT_ROOT}/Runtime"
-        out_new="${OUT_ROOT}/Runtime/new"
-        mkdir -p "${out_paper}" "${out_new}"
-        echo "[Runtime] paper -> ${out_paper}"
-        echo "[Runtime] new   -> ${out_new}"
-        marker="$(mktemp /tmp/plot_all_marker.XXXXXX)"
-        snap_root="${REPO_ROOT}/PaperSnapshot"
-        for exp in "${RUNTIME_EXPS[@]}"; do
-            exp_dir="${EXP_ROOT}/${exp}"
-            snap_dir="${snap_root}/${exp}"
-            script="${exp_dir}/plot_paper.py"
-            if [[ ! -f "${script}" ]]; then
-                echo "  [skip] ${exp}: no plot_paper.py" >&2
-                continue
-            fi
-
-            # ---- Paper-canonical step (if snapshot has any CSVs). ----
-            if [[ -d "${snap_dir}/results" ]] \
-               && [[ -n "$(find "${snap_dir}/results" -type f -name '*.csv' -print -quit)" ]]; then
-                echo "  [paper] ${exp}"
-                touch "${marker}"
-                if ( cd "${snap_dir}" && python "${script}" ); then
-                    moved=0
-                    while IFS= read -r -d '' f; do
-                        mv "${f}" "${out_paper}/"
-                        moved=$((moved+1))
-                    done < <(find "${snap_dir}" -maxdepth 1 \
-                                 \( -name '*.pdf' -o -name '*.png' \) \
-                                 -newer "${marker}" -print0)
-                    echo "    -> ${moved} figure(s) into ${out_paper}/"
-                else
-                    echo "  [warn] ${exp} paper-snapshot plot failed" >&2
-                fi
-            else
-                echo "  [skip] ${exp} paper snapshot empty (populate PaperSnapshot/${exp}/results/)"
-            fi
-
-            # ---- Fresh local-reproduction step (always, if CSVs exist). ----
-            echo "  [new]   ${exp}"
-            touch "${marker}"
-            if ( cd "${exp_dir}" && python "${script}" ); then
-                moved=0
-                while IFS= read -r -d '' f; do
-                    mv "${f}" "${out_new}/"
-                    moved=$((moved+1))
-                done < <(find "${exp_dir}" -maxdepth 1 \
-                             \( -name '*.pdf' -o -name '*.png' \) \
-                             -newer "${marker}" -print0)
-                echo "    -> ${moved} figure(s) into ${out_new}/"
-            else
-                echo "  [warn] ${exp} local reproduction plot failed" >&2
-            fi
-        done
-        rm -f "${marker}"
+        bash "${FIG_DIR}/plot_paper_snapshot.sh"
+        bash "${FIG_DIR}/plot_results.sh"
         ;;
 
       *)
@@ -153,4 +107,4 @@ for group in "${targets[@]}"; do
 done
 
 echo
-echo "done. outputs under ${OUT_ROOT}/"
+echo "done."

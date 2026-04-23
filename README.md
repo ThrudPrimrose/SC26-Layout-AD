@@ -27,19 +27,25 @@ and the analytic cost-metric tables.
    - `plot_util.py` — repo-wide plotting policy (no outlier trimming,
      Scott-bandwidth KDE, 200 evaluation points)
 
-4. **[`Figures/`](Figures/)** — single regeneration driver for **every**
-   figure in the paper. `bash Figures/plot_all.sh` rebuilds the
-   illustrative proof figures (2–3, supplemental) AND the runtime
-   figures (4, 8–11) from both the frozen paper snapshot and any fresh
-   local reproduction, all in one command. Outputs land under
-   [`Figures/GeneratedFigures/`](Figures/GeneratedFigures/). See
-   [Regenerate all figures](#regenerate-all-figures) below for the
-   subset flags (`Runtime`, `Peaks`, etc.).
+4. **[`Figures/`](Figures/)** — regeneration drivers for every figure.
+   Three scripts:
+   - [`Figures/plot_paper_snapshot.sh`](Figures/plot_paper_snapshot.sh) —
+     rebuilds the **paper-canonical** runtime figures (4, 8–11) from
+     the frozen CSVs under [`PaperSnapshot/`](PaperSnapshot/); outputs
+     land in [`Figures/GeneratedFigures/Runtime/`](Figures/GeneratedFigures/Runtime/).
+   - [`Figures/plot_results.sh`](Figures/plot_results.sh) — rebuilds
+     the runtime figures from **your** locally-produced CSVs in
+     `Experiments/<exp>/results/` (after an `sbatch` run). The figures
+     land **next to the CSVs that drove them**, i.e. inside each
+     `Experiments/<exp>/results/` folder.
+   - [`Figures/plot_all.sh`](Figures/plot_all.sh) — umbrella driver:
+     illustrative groups (`AccessCost`, `Pebble_Game`, …) + `Peaks`
+     (JSON refresh) + delegates to both of the above for runtime
+     figures. See [Regenerate all figures](#regenerate-all-figures).
 
 5. **[`PaperSnapshot/`](PaperSnapshot/)** — frozen, paper-canonical CSVs
    that produced the submitted figures. Mirrors `Experiments/<exp>/results/`
-   layout so every `plot_paper.py` reads from either root unchanged;
-   `plot_all.sh` plots both sides side-by-side.
+   layout so the same `plot_paper.py` reads from either root unchanged.
 
 ## Quick start (10-minute first experiment)
 
@@ -66,28 +72,43 @@ that the run scripts emit.
 
 ## Regenerate all figures
 
+Three entry points — pick the one that matches what you need:
+
 ```bash
-bash Figures/plot_all.sh                  # everything — all groups
-bash Figures/plot_all.sh Runtime          # only Fig. 4, 8–11 (paper + new)
-bash Figures/plot_all.sh Peaks            # refresh common/stream_peak.json
-bash Figures/plot_all.sh AccessCost       # one illustrative group
-bash Figures/plot_all.sh Peaks Runtime    # any combination
+# Paper-canonical runtime figures only (reads PaperSnapshot/).
+bash Figures/plot_paper_snapshot.sh
+
+# YOUR runtime figures only (reads Experiments/<exp>/results/;
+# run sbatch first).
+bash Figures/plot_results.sh
+
+# Umbrella — illustrative groups + Peaks + both of the above.
+bash Figures/plot_all.sh
 ```
 
-The `Runtime` group runs every `Experiments/<exp>/plot_paper.py` twice
-in one invocation:
+Output locations are kept deliberately separate so the two sets never
+overwrite each other:
 
-- from `PaperSnapshot/<exp>/` (frozen, paper-canonical CSVs) →
-  `Figures/GeneratedFigures/Runtime/`
-- from `Experiments/<exp>/` (fresh local reproduction after an `sbatch`
-  run) → `Figures/GeneratedFigures/Runtime/new/`
+| Script | Reads from | Writes to |
+|---|---|---|
+| `plot_paper_snapshot.sh` | `PaperSnapshot/<exp>/results/*.csv` | `Figures/GeneratedFigures/Runtime/<stem>.{pdf,png}` |
+| `plot_results.sh` | `Experiments/<exp>/results/*.csv` | **`Experiments/<exp>/results/<stem>.{pdf,png}`** (next to the CSVs) |
 
-Both runs land flat in their respective folders — no filename overlap
-because the destinations differ — so reviewers can `diff` / image-diff
-the two folders to check their rerun matches the paper. Missing CSVs
-(e.g. an experiment not yet re-run locally, or an empty snapshot slot)
-produce a `[warn]` line and are skipped for that step, never aborting
-the rest of the sweep.
+`plot_all.sh` also accepts group names for subsets:
+
+```bash
+bash Figures/plot_all.sh PaperSnapshot   # only plot_paper_snapshot.sh
+bash Figures/plot_all.sh Results         # only plot_results.sh
+bash Figures/plot_all.sh Runtime         # both of the above (no illustrative)
+bash Figures/plot_all.sh Peaks           # refresh common/stream_peak.json
+bash Figures/plot_all.sh AccessCost      # one illustrative group
+bash Figures/plot_all.sh Peaks Results   # any combination
+```
+
+Missing CSVs (an experiment you haven't re-run, or an empty
+`PaperSnapshot/<exp>/results/`) produce a one-line `[skip]` notice and
+the script moves on — a single missing experiment never aborts the
+sweep.
 
 Illustrative-group outputs (`AccessCost`, `Pebble_Game`,
 `LayoutTransformations`, `Replay`) land under
@@ -98,23 +119,61 @@ Prerequisites: `matplotlib`, `numpy`, `pandas`, `scipy`. On a cluster,
 `source Experiments/common/activate.sh` first; elsewhere, a plain `pip
 install matplotlib numpy pandas scipy` is enough.
 
+### Reviewer workflow — producing your own runtime figures
+
+Three steps to generate a set of reviewer-owned runtime figures and
+compare them against the paper's:
+
+```bash
+# 1. One-time per machine (venv + DaCe + plotting deps).
+bash Experiments/common/setup.sh
+
+# 2. Run whichever experiments you want to reproduce. CSVs land in
+#    Experiments/<exp>/results/{daint,beverin}/.
+cd Experiments/E1_MatrixAdd && sbatch run_daint.sh   # or run_beverin.sh
+cd ../E2_Conjugation      && sbatch run_daint.sh
+# ... etc.
+
+# 3. Plot what you just produced. PDFs/PNGs land next to your CSVs,
+#    inside each Experiments/<exp>/results/ directory.
+bash Figures/plot_results.sh
+```
+
+To compare against the submitted paper, regenerate the frozen set too:
+
+```bash
+bash Figures/plot_paper_snapshot.sh
+# paper PDFs under Figures/GeneratedFigures/Runtime/
+# your PDFs under Experiments/<exp>/results/
+```
+
+An experiment you didn't re-run in step 2 is simply skipped by
+`plot_results.sh`; the paper side is unaffected. You can also invoke a
+single experiment's plotter directly:
+
+```bash
+cd Experiments/E1_MatrixAdd && python plot_paper.py
+# writes addition_paper_cpu_gpu.{pdf,png} into the cwd.
+```
+
 ## Repo structure
 
 ```
 SC26-Layout-AD/
 ├── README.md                 (this file)
 ├── Latex/                    (AD/AE appendix sources + built PDF)
-├── Figures/                  (figure regeneration driver + illustrative scripts)
-│   ├── plot_all.sh           (ONE entry point: illustrative + runtime + peaks)
-│   ├── AccessCost/           (block / NUMA access-cost plots)
-│   ├── Pebble_Game/          (pebble-game illustrations)
-│   ├── LayoutTransformations/(stage-by-stage layout transform figures)
-│   ├── Replay/               (stride replay figure)
-│   └── GeneratedFigures/     (all .pdf / .png outputs, one folder per group)
-│       ├── Runtime/          (Fig. 4, 8–11 from PaperSnapshot CSVs)
-│       └── Runtime/new/      (Fig. 4, 8–11 from Experiments/*/results/)
-├── PaperSnapshot/            (frozen paper-canonical CSVs; mirrors results/ layout)
-└── Experiments/
+├── Figures/                  (figure regeneration drivers + illustrative scripts)
+│   ├── plot_paper_snapshot.sh  (paper-canonical runtime figures; reads PaperSnapshot/)
+│   ├── plot_results.sh         (reviewer's runtime figures; reads Experiments/*/results/)
+│   ├── plot_all.sh             (umbrella: illustrative + Peaks + both of the above)
+│   ├── AccessCost/             (block / NUMA access-cost plots)
+│   ├── Pebble_Game/            (pebble-game illustrations)
+│   ├── LayoutTransformations/  (stage-by-stage layout transform figures)
+│   ├── Replay/                 (stride replay figure)
+│   └── GeneratedFigures/       (illustrative groups + paper-canonical runtime)
+│       └── Runtime/            (Fig. 4, 8–11 from PaperSnapshot)
+├── PaperSnapshot/            (frozen paper-canonical CSVs; mirrors Experiments/<exp>/results/ layout)
+└── Experiments/              (post-sbatch CSVs + reviewer runtime figures land in <exp>/results/)
     ├── README.md             (experiment entry point + runtime table)
     ├── common/               (shared env + shared headers + plot util)
     ├── E0_NUMA/              (NUMA-aware STREAM peak baseline; CPU + GPU)

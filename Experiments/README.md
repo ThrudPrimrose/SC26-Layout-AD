@@ -26,28 +26,31 @@ The proof-illustration figures (Figures 2–3 in the main text) live in
 [`../Figures/`](../Figures/) — pure matplotlib scripts, no benchmark,
 and no submission to SLURM. Regenerate with `bash ../Figures/plot_all.sh`.
 
-`plot_all.sh` is also the single entry point for the paper's **runtime
-figures** (Figures 4, 8–11). Each experiment's `plot_paper.py` is run
-twice:
+The paper's **runtime figures** (Figures 4, 8–11) have two dedicated
+drivers in the top-level [`../Figures/`](../Figures/) folder:
 
-1. Against the **paper-canonical** CSVs archived under
-   [`../PaperSnapshot/<exp>/results/`](../PaperSnapshot/) — outputs land
-   flat in
-   [`../Figures/GeneratedFigures/Runtime/`](../Figures/GeneratedFigures/Runtime/).
-2. Against the **fresh local reproduction** in this repo's
-   `Experiments/<exp>/results/` — outputs land flat in
-   [`../Figures/GeneratedFigures/Runtime/new/`](../Figures/GeneratedFigures/Runtime/).
+| Driver | Reads from | Writes to |
+|---|---|---|
+| [`../Figures/plot_paper_snapshot.sh`](../Figures/plot_paper_snapshot.sh) | [`../PaperSnapshot/<exp>/results/`](../PaperSnapshot/) (frozen paper-canonical CSVs) | `../Figures/GeneratedFigures/Runtime/<stem>.{pdf,png}` |
+| [`../Figures/plot_results.sh`](../Figures/plot_results.sh) | `<exp>/results/` (your local CSVs after `sbatch`) | **`<exp>/results/<stem>.{pdf,png}` — next to the CSVs** |
 
-Reviewers comparing the two folders side-by-side can see at a glance
-whether their reproduction matches the submitted paper. An empty
-`PaperSnapshot/<exp>/results/` causes only the new-reproduction step to
-run for that experiment, so the script never fails on a fresh clone.
+Neither script overwrites the other: the paper snapshot lands in
+`Figures/GeneratedFigures/Runtime/` while reviewer-generated figures
+live inside each experiment's `results/` folder alongside the CSVs
+they were plotted from. An experiment you haven't re-run is simply
+skipped by `plot_results.sh`; an empty `PaperSnapshot/<exp>/results/`
+is skipped by `plot_paper_snapshot.sh`. Either way the sweep never
+aborts on a single missing dataset.
 
-To regenerate a subset, pass group names:
+`plot_all.sh` is the umbrella that runs illustrative groups + `Peaks`
+(stream-peak JSON refresh) + both runtime drivers in sequence:
 
 ```bash
-bash ../Figures/plot_all.sh Peaks     # refresh common/stream_peak.json
-bash ../Figures/plot_all.sh Runtime   # re-plot Figures 4, 8–11 only
+bash ../Figures/plot_paper_snapshot.sh    # paper-canonical runtime figures
+bash ../Figures/plot_results.sh           # your runtime figures (need sbatch first)
+bash ../Figures/plot_all.sh               # everything above + illustrative
+bash ../Figures/plot_all.sh Peaks         # just refresh common/stream_peak.json
+bash ../Figures/plot_all.sh Runtime       # paper + results, no illustrative
 ```
 
 ## How to run any experiment
