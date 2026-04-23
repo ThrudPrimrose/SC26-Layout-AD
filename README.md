@@ -28,9 +28,11 @@ and the analytic cost-metric tables.
      Scott-bandwidth KDE, 200 evaluation points)
 
 4. **[`Figures/`](Figures/)** — regeneration drivers for every figure.
-   Three scripts:
+   Three scripts cover the per-experiment plots in E1–E5 **and** every
+   E6 loopnest (`Experiments/E6_VelocityTendencies/loopnest_{1..6}/`),
+   plus all the illustrative figures:
    - [`Figures/plot_paper_snapshot.sh`](Figures/plot_paper_snapshot.sh) —
-     rebuilds the **paper-canonical** runtime figures (4, 8–11) from
+     rebuilds the **paper-canonical** runtime figures (4, 8–13) from
      the frozen CSVs under [`PaperSnapshot/`](PaperSnapshot/); outputs
      land in [`Figures/GeneratedFigures/Runtime/`](Figures/GeneratedFigures/Runtime/).
    - [`Figures/plot_results.sh`](Figures/plot_results.sh) — rebuilds
@@ -42,6 +44,14 @@ and the analytic cost-metric tables.
      illustrative groups (`AccessCost`, `Pebble_Game`, …) + `Peaks`
      (JSON refresh) + delegates to both of the above for runtime
      figures. See [Regenerate all figures](#regenerate-all-figures).
+
+   All three drivers export `MATPLOTLIBRC=Figures/matplotlibrc`, which
+   pins every figure to **DejaVu Sans** so runs never clutter the log
+   with STIX/Computer-Modern font-not-found warnings on stock
+   environments. Any experiment (E1–E5 or an E6 loopnest) whose CSVs
+   aren't present — either in `PaperSnapshot/` or in
+   `Experiments/<exp>/results/` — is simply skipped with a one-line
+   `[skip]` notice; the sweep never aborts on a missing dataset.
 
 5. **[`PaperSnapshot/`](PaperSnapshot/)** — frozen, paper-canonical CSVs
    that produced the submitted figures. Mirrors `Experiments/<exp>/results/`
@@ -93,6 +103,17 @@ overwrite each other:
 |---|---|---|
 | `plot_paper_snapshot.sh` | `PaperSnapshot/<exp>/results/*.csv` | `Figures/GeneratedFigures/Runtime/<stem>.{pdf,png}` |
 | `plot_results.sh` | `Experiments/<exp>/results/*.csv` | **`Experiments/<exp>/results/<stem>.{pdf,png}`** (next to the CSVs) |
+
+Both scripts iterate over the same experiment list:
+
+```
+E1_MatrixAdd, E2_Conjugation, E3_Transpose, E4_GAS, E5_USXX,
+E6_VelocityTendencies/loopnest_{1..6}
+```
+
+An experiment with no matching `plot_paper.py` (or one whose CSV folder
+is empty in the relevant root) is skipped with a one-line `[skip]`
+notice so the sweep keeps going.
 
 `plot_all.sh` also accepts group names for subsets:
 

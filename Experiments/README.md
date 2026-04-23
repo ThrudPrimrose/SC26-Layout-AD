@@ -26,8 +26,9 @@ The proof-illustration figures (Figures 2–3 in the main text) live in
 [`../Figures/`](../Figures/) — pure matplotlib scripts, no benchmark,
 and no submission to SLURM. Regenerate with `bash ../Figures/plot_all.sh`.
 
-The paper's **runtime figures** (Figures 4, 8–11) have two dedicated
-drivers in the top-level [`../Figures/`](../Figures/) folder:
+The paper's **runtime figures** (Figures 4, 8–13) have two dedicated
+drivers in the top-level [`../Figures/`](../Figures/) folder. Both
+iterate over E1–E5 and `E6_VelocityTendencies/loopnest_{1..6}`:
 
 | Driver | Reads from | Writes to |
 |---|---|---|
@@ -41,6 +42,10 @@ they were plotted from. An experiment you haven't re-run is simply
 skipped by `plot_results.sh`; an empty `PaperSnapshot/<exp>/results/`
 is skipped by `plot_paper_snapshot.sh`. Either way the sweep never
 aborts on a single missing dataset.
+
+Both drivers export `MATPLOTLIBRC=../Figures/matplotlibrc`, pinning
+every figure to **DejaVu Sans** — no STIX / Computer-Modern fallback
+warnings on stock environments.
 
 `plot_all.sh` is the umbrella that runs illustrative groups + `Peaks`
 (stream-peak JSON refresh) + both runtime drivers in sequence:

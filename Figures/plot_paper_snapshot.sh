@@ -25,7 +25,25 @@ SNAP_ROOT="${REPO_ROOT}/PaperSnapshot"
 EXP_ROOT="${REPO_ROOT}/Experiments"
 OUT_DIR="${FIG_DIR}/GeneratedFigures/Runtime"
 
-RUNTIME_EXPS=(E1_MatrixAdd E2_Conjugation E3_Transpose E4_GAS E5_USXX)
+# Pin every figure to DejaVu Sans; avoids STIX / Computer Modern fallbacks
+# that flood the log with font-not-found warnings on stock environments.
+export MATPLOTLIBRC="${FIG_DIR}/matplotlibrc"
+
+# Paths are relative to Experiments/ and PaperSnapshot/ so deeper
+# experiments (e.g. E6 loopnest_N) slot in without special-casing.
+RUNTIME_EXPS=(
+  E1_MatrixAdd
+  E2_Conjugation
+  E3_Transpose
+  E4_GAS
+  E5_USXX
+  E6_VelocityTendencies/loopnest_1
+  E6_VelocityTendencies/loopnest_2
+  E6_VelocityTendencies/loopnest_3
+  E6_VelocityTendencies/loopnest_4
+  E6_VelocityTendencies/loopnest_5
+  E6_VelocityTendencies/loopnest_6
+)
 
 mkdir -p "${OUT_DIR}"
 echo "[plot_paper_snapshot] writing to ${OUT_DIR}"
@@ -34,7 +52,7 @@ for exp in "${RUNTIME_EXPS[@]}"; do
     snap_dir="${SNAP_ROOT}/${exp}"
     script="${EXP_ROOT}/${exp}/plot_paper.py"
     if [[ ! -f "${script}" ]]; then
-        echo "  [skip] ${exp}: no plot_paper.py at Experiments/${exp}/" >&2
+        echo "  [skip] ${exp}: no plot_paper.py at Experiments/${exp}/"
         continue
     fi
     if [[ ! -d "${snap_dir}/results" ]] \
