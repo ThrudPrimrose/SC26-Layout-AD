@@ -33,6 +33,11 @@ blocking B ∈ {8,16,32,64,128}.
 bash ../../common/setup.sh        # once per machine
 sbatch run_daint.sh
 sbatch run_beverin.sh
+
+# Post-process — roofline correlation + paper figure
+python tabularize_metrics.py --target cpu_scalar --runtime results/beverin/vn_ie_boundary_cpu.csv
+python gen_mu_table.py --csv results/beverin/metrics_cpu_nl90.csv
+python plot_paper.py
 ```
 
 ## Files
@@ -48,6 +53,12 @@ sbatch run_beverin.sh
   single horizontal-1D reference covering both `ubc`/`wgt` — they share
   the same je-indexed NUMA pattern).
 - `icon_data_loader.h` is shared with loopnest_1.
+- `gen_mu_table.py` — emits LaTeX table + bar plots of µ per layout
+  from the `metrics_*_nl90.csv` output of `cost_metrics`.
+- `tabularize_metrics.py` — rank-correlates the analytic metrics
+  against measured runtime CSVs.
+- `plot_paper.py` — 2×2 violin bandwidth figure with STREAM-peak
+  annotations (`KERNEL = "vn_ie_boundary"` at the top of the file).
 
 ## Outputs
 

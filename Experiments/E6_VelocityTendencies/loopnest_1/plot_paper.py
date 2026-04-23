@@ -1,11 +1,16 @@
 #!/usr/bin/env python3
 """
-plot_violins_only.py
-Only the 2x2 violin bandwidth plots. Annotates median as % of STREAM peak
-directly below each violin in matching colour.
+plot_paper.py — 2×2 violin bandwidth plot for one E6 loopnest
 
-Orange = Horizontal-first (V1), best config/schedule for V1
-Blue   = Best-performing vertical-first layout (V2/V3/V4/V5), best config/schedule
+Rows: platforms (AMD beverin, NVIDIA daint)
+Cols: device (CPU, GPU)
+
+Median of each violin is annotated as % of the platform's STREAM peak.
+Only the `KERNEL` constant below changes across loopnest_1..6; the
+rest of the file is identical so plots stay visually consistent.
+
+Orange = Horizontal-first (V1)            — best config / schedule
+Blue   = Best-performing vertical-first   — best over V2..V5
 """
 import matplotlib
 matplotlib.use("Agg")
@@ -14,11 +19,16 @@ from matplotlib.patches import Patch
 from matplotlib.ticker import MaxNLocator
 import pandas as pd, numpy as np, argparse
 
-# ---- CONFIG ----
-GPU_AMD_CSV = "results/beverin/z_v_grad_w_gpu.csv"
-GPU_NV_CSV  = "results/beverin/z_v_grad_w_gpu.csv"
-CPU_AMD_CSV = "results/beverin/z_v_grad_w_cpu.csv"
-CPU_NV_CSV  = "results/beverin/z_v_grad_w_cpu.csv"
+# ══════════════════════════════════════════════════════════════════════
+#  Per-loopnest configuration (the ONLY line each loopnest overrides)
+# ══════════════════════════════════════════════════════════════════════
+KERNEL = "z_v_grad_w"   # loopnest_1: indirect stencil
+
+# ---- CSV paths derived from KERNEL + cluster -----------------------
+GPU_AMD_CSV = f"results/beverin/{KERNEL}_gpu.csv"
+CPU_AMD_CSV = f"results/beverin/{KERNEL}_cpu.csv"
+GPU_NV_CSV  = f"results/daint/{KERNEL}_gpu.csv"
+CPU_NV_CSV  = f"results/daint/{KERNEL}_cpu.csv"
 
 STREAM_PEAK = {
     "MI300A Zen CPU": 1228*1e-3,  "Grace CPU": 1700.62*1e-3,
@@ -33,7 +43,7 @@ N_c  = 81920    # cells (indirect target for w)
 N_v  = 81920    # vertices (indirect target for z_w_v)
 NLEV = 96
 DISTS    = ["uniform", "normal_var1", "exact"]
-OUT_STEM = f"violins_nlev{NLEV}"
+OUT_STEM = f"violins_{KERNEL}_nlev{NLEV}"
 
 BYTES = (
     2 * N_e * 4 +           # cell_idx    [N_e × 2]        int read

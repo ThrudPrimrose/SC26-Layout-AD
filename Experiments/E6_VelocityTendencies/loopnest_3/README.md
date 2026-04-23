@@ -31,6 +31,11 @@ range and added 1D-vertical / 1D-horizontal accesses) and to loopnest_1
 bash ../../common/setup.sh        # once per machine
 sbatch run_daint.sh
 sbatch run_beverin.sh
+
+# Post-process — roofline correlation + paper figure
+python tabularize_metrics.py --target cpu_scalar --runtime results/beverin/z_v_grad_w_full_cpu.csv
+python gen_mu_table.py --csv results/beverin/metrics_cpu_nl90.csv
+python plot_paper.py
 ```
 
 ## Files
@@ -42,6 +47,12 @@ sbatch run_beverin.sh
 - `cost_metrics.cpp` — analytic μ / Δ / Δ_NUMA / Δ_max sweep with
   7 references per step.
 - `icon_data_loader.h` is shared with loopnest_1.
+- `gen_mu_table.py` — emits LaTeX table + bar plots of µ per layout
+  from the `metrics_*_nl90.csv` output of `cost_metrics`.
+- `tabularize_metrics.py` — rank-correlates the analytic metrics
+  against measured runtime CSVs.
+- `plot_paper.py` — 2×2 violin bandwidth figure with STREAM-peak
+  annotations (`KERNEL = "z_v_grad_w_full"` at the top of the file).
 
 ## Outputs
 
