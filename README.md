@@ -7,12 +7,10 @@ and the analytic cost-metric tables.
 
 ## Where to start
 
-1. **[`latex/`](latex/)** — the **canonical** Artifact Description /
-   Artifact Evaluation appendix (`sc26_ad_ae_template.tex`, 337 lines).
-   Build with `make -C latex` to get `sc26_ad_ae_template.pdf`. Read
-   this first for contribution / experiment / time-budget context.
-   (The sibling [`AD/`](AD/) folder is the upstream SC26 template and
-   an older 211-line copy — legacy only, do not edit.)
+1. **[`Latex/`](Latex/)** — the Artifact Description / Artifact
+   Evaluation appendix (`sc26_ad_ae_template.tex`). Build with
+   `make -C Latex` to get `sc26_ad_ae_template.pdf`. Read this first
+   for contribution / experiment / time-budget context.
 
 2. **[`Experiments/README.md`](Experiments/README.md)** — the entry
    point for running any experiment. Has the cross-reference table
@@ -28,6 +26,12 @@ and the analytic cost-metric tables.
    - `prng.h` — deterministic Xor64 PRNG (canonical seed `SC26_SEED=42`)
    - `plot_util.py` — repo-wide plotting policy (no outlier trimming,
      Scott-bandwidth KDE, 200 evaluation points)
+
+4. **[`Figures/`](Figures/)** — illustrative figure generators for the
+   proof section (Figures 2–3 and supplemental). Pure matplotlib
+   scripts, no benchmarks. All outputs land in
+   [`Figures/GeneratedFigures/`](Figures/GeneratedFigures/). Run
+   `bash Figures/plot_all.sh` to regenerate everything.
 
 ## Quick start (10-minute first experiment)
 
@@ -57,8 +61,14 @@ that the run scripts emit.
 ```
 SC26-Layout-AD/
 ├── README.md                 (this file)
-├── latex/                    ** canonical AD/AE appendix sources + built PDF **
-├── AD/                       (legacy upstream SC26 template; do not edit)
+├── Latex/                    (AD/AE appendix sources + built PDF)
+├── Figures/                  (illustrative figure generators; pure matplotlib)
+│   ├── plot_all.sh
+│   ├── AccessCost/           (block / NUMA access-cost plots)
+│   ├── Pebble_Game/          (pebble-game illustrations)
+│   ├── LayoutTransformations/(stage-by-stage layout transform figures)
+│   ├── Replay/               (stride replay figure)
+│   └── GeneratedFigures/     (all .pdf / .png outputs, one folder per group)
 └── Experiments/
     ├── README.md             (experiment entry point + runtime table)
     ├── common/               (shared env + shared headers + plot util)
@@ -73,7 +83,7 @@ SC26-Layout-AD/
     │   ├── loopnest_{1..6}/
     │   ├── conflict_resolution/
     │   └── full_velocity_tendencies/
-    └── Supplemental/         (illustrative figures for the proof, Fig. 2–3)
+    └── NumaStream/           (supplemental NUMA bandwidth sweep; E0_NUMA supersedes)
 ```
 
 ## Hardware targets
@@ -98,7 +108,7 @@ generalize to any cluster with comparable cache-line sizes
   identical across every figure.
 
 See the Statistical Methodology block in
-`latex/sc26_ad_ae_template.tex` for the full description.
+`Latex/sc26_ad_ae_template.tex` for the full description.
 
 ## Reviewer hint — `# TODO: VERSION`
 
