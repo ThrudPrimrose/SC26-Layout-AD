@@ -47,10 +47,25 @@ Experiments/E6_VelocityTendencies/*/results/
 # ---- Downloaded / generated data -------------------------------------------
 Experiments/E4_GAS/bin/
 Experiments/E5_USXX/bin/
-Experiments/E4_GAS/*.zip
-Experiments/E5_USXX/*.zip
 # Binary data payloads (QE/ICON index maps, etc.) fetched via download_data.sh
 *.bin
+# Any archive payload -- never commit, always fetch via download_data.sh
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.tar.bz2
+*.tbz2
+*.tar.xz
+*.txz
+*.tar.zst
+*.tzst
+*.7z
+*.rar
+*.gz
+*.bz2
+*.xz
+*.zst
 # ICON R02B05 data is user-provided (see Experiments/E6_*/README.md)
 Experiments/E6_VelocityTendencies/data_r02b05/
 
