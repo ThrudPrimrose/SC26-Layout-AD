@@ -44,7 +44,7 @@ static constexpr int Nd = N_DIM;
 #define NWARMUP  5
 #define NREP     100
 
-/* CUDA_CHECK is provided by ../common/gpu_compat.cuh. */
+/* GPU_CHECK is provided by ../common/gpu_compat.cuh. */
 
 
 /* ================================================================
@@ -476,8 +476,8 @@ static Result run_bench(const KernelConfig& cfg,
     /* if the requested size exceeds the default cap. Only then do we    */
     /* genuinely skip.                                                    */
     if (cfg.smem_bytes > 0 && cfg.kernel_fn) {
-        cudaDeviceProp prop;
-        CUDA_CHECK(cudaGetDeviceProperties(&prop, 0));
+        gpuDeviceProp prop;
+        GPU_CHECK(gpuGetDeviceProperties(&prop, 0));
         const size_t hw_limit = gpu_max_dynamic_smem_per_block(prop);
         if (cfg.smem_bytes > hw_limit) {
             printf("  %-62s  SKIP (smem %zu > %zu hw limit)\n",
@@ -493,13 +493,13 @@ static Result run_bench(const KernelConfig& cfg,
 
     /* warmup */
     for (int w = 0; w < NWARMUP; w++) {
-        CUDA_CHECK(cudaMemset(dC, 0, total * sizeof(double)));
+        GPU_CHECK(gpuMemset(dC, 0, total * sizeof(double)));
         cfg.launch(dA, dB, dC);
     }
-    CUDA_CHECK(cudaDeviceSynchronize());
+    GPU_CHECK(gpuDeviceSynchronize());
 
     /* correctness */
-    CUDA_CHECK(cudaMemcpy(hC, dC, total * sizeof(double), cudaMemcpyDeviceToHost));
+    GPU_CHECK(gpuMemcpy(hC, dC, total * sizeof(double), gpuMemcpyDeviceToHost));
     double cs = 0.0;
     for (size_t k = 0; k < total; k++) cs += hC[k];
     bool ok = (std::fabs(cs - expected_cs) <= 1e-3 * std::fabs(expected_cs));
@@ -508,26 +508,26 @@ static Result run_bench(const KernelConfig& cfg,
                 cfg.name.c_str(), cs, expected_cs);
 
     /* timed runs -- record every iteration */
-    cudaEvent_t t0, t1;
-    CUDA_CHECK(cudaEventCreate(&t0));
-    CUDA_CHECK(cudaEventCreate(&t1));
+    gpuEvent_t t0, t1;
+    GPU_CHECK(gpuEventCreate(&t0));
+    GPU_CHECK(gpuEventCreate(&t1));
 
     float times[NREP];
     for (int r = 0; r < NREP; r++) {
-        CUDA_CHECK(cudaMemset(dC, 0, total * sizeof(double)));
-        CUDA_CHECK(cudaDeviceSynchronize());
-        CUDA_CHECK(cudaEventRecord(t0));
+        GPU_CHECK(gpuMemset(dC, 0, total * sizeof(double)));
+        GPU_CHECK(gpuDeviceSynchronize());
+        GPU_CHECK(gpuEventRecord(t0));
         cfg.launch(dA, dB, dC);
-        CUDA_CHECK(cudaEventRecord(t1));
-        CUDA_CHECK(cudaEventSynchronize(t1));
-        CUDA_CHECK(cudaEventElapsedTime(&times[r], t0, t1));
+        GPU_CHECK(gpuEventRecord(t1));
+        GPU_CHECK(gpuEventSynchronize(t1));
+        GPU_CHECK(gpuEventElapsedTime(&times[r], t0, t1));
 
         double bw_r = data_bytes / ((double)times[r] * 1e-3) / 1e9;
         g_iter_records.push_back({cfg.name, cfg.tile_rows, cfg.tile_cols,
                                   r, times[r], bw_r, cs, ok});
     }
-    CUDA_CHECK(cudaEventDestroy(t0));
-    CUDA_CHECK(cudaEventDestroy(t1));
+    GPU_CHECK(gpuEventDestroy(t0));
+    GPU_CHECK(gpuEventDestroy(t1));
 
     std::sort(times, times + NREP);
     double med = times[NREP / 2];
@@ -545,8 +545,8 @@ int main(int argc, char** argv)
 {
     const char* csv_path = (argc > 1) ? argv[1] : nullptr;
 
-    cudaDeviceProp prop;
-    CUDA_CHECK(cudaGetDeviceProperties(&prop, 0));
+    gpuDeviceProp prop;
+    GPU_CHECK(gpuGetDeviceProperties(&prop, 0));
     printf("Layout-conflict benchmark (GPU: %s)\n", prop.name);
     printf("  M=%d  N=%d  reps=%d\n", Md, Nd, NREP);
     printf("  A: row-major   B: col-major   C: row-major\n");
@@ -557,10 +557,10 @@ int main(int argc, char** argv)
     const size_t bytes = total * sizeof(double);
 
     double *dA, *dB_cm, *dB_rm, *dC;
-    CUDA_CHECK(cudaMalloc(&dA,    bytes));
-    CUDA_CHECK(cudaMalloc(&dB_cm, bytes));
-    CUDA_CHECK(cudaMalloc(&dB_rm, bytes));
-    CUDA_CHECK(cudaMalloc(&dC,    bytes));
+    GPU_CHECK(gpuMalloc(&dA,    bytes));
+    GPU_CHECK(gpuMalloc(&dB_cm, bytes));
+    GPU_CHECK(gpuMalloc(&dB_rm, bytes));
+    GPU_CHECK(gpuMalloc(&dC,    bytes));
 
     double* hC = (double*)malloc(bytes);
     if (!hC) { fprintf(stderr, "host malloc failed\n"); return 1; }
@@ -569,30 +569,30 @@ int main(int argc, char** argv)
     {
         int nblk = ((int)total + 255) / 256;
         init_kernel<<<nblk, 256>>>(dA, dB_cm, dB_rm);
-        CUDA_CHECK(cudaDeviceSynchronize());
+        GPU_CHECK(gpuDeviceSynchronize());
     }
 
     /* reference checksum for col-major B */
-    CUDA_CHECK(cudaMemset(dC, 0, bytes));
+    GPU_CHECK(gpuMemset(dC, 0, bytes));
     {
         dim3 blk(32, 8);
         dim3 grd((Nd + 31) / 32, (Md + 7) / 8);
         kernel_direct<32, 8, 1, 1><<<grd, blk>>>(dA, dB_cm, dC);
-        CUDA_CHECK(cudaDeviceSynchronize());
+        GPU_CHECK(gpuDeviceSynchronize());
     }
-    CUDA_CHECK(cudaMemcpy(hC, dC, bytes, cudaMemcpyDeviceToHost));
+    GPU_CHECK(gpuMemcpy(hC, dC, bytes, gpuMemcpyDeviceToHost));
     double ref_cs = 0.0;
     for (size_t k = 0; k < total; k++) ref_cs += hC[k];
 
     /* reference checksum for row-major B (control) */
-    CUDA_CHECK(cudaMemset(dC, 0, bytes));
+    GPU_CHECK(gpuMemset(dC, 0, bytes));
     {
         dim3 blk(32, 8);
         dim3 grd((Nd + 31) / 32, (Md + 7) / 8);
         kernel_control<32, 8, 1, 1><<<grd, blk>>>(dA, dB_rm, dC);
-        CUDA_CHECK(cudaDeviceSynchronize());
+        GPU_CHECK(gpuDeviceSynchronize());
     }
-    CUDA_CHECK(cudaMemcpy(hC, dC, bytes, cudaMemcpyDeviceToHost));
+    GPU_CHECK(gpuMemcpy(hC, dC, bytes, gpuMemcpyDeviceToHost));
     double ref_cs_rm = 0.0;
     for (size_t k = 0; k < total; k++) ref_cs_rm += hC[k];
 
@@ -655,10 +655,10 @@ int main(int argc, char** argv)
         }
     }
 
-    CUDA_CHECK(cudaFree(dA));
-    CUDA_CHECK(cudaFree(dB_cm));
-    CUDA_CHECK(cudaFree(dB_rm));
-    CUDA_CHECK(cudaFree(dC));
+    GPU_CHECK(gpuFree(dA));
+    GPU_CHECK(gpuFree(dB_cm));
+    GPU_CHECK(gpuFree(dB_rm));
+    GPU_CHECK(gpuFree(dC));
     free(hC);
     return 0;
 }

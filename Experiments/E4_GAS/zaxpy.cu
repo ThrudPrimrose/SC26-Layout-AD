@@ -30,13 +30,26 @@
 #include <fstream>
 #include <stdexcept>
 #include <numeric>
-#include <cuComplex.h>
+#if defined(__HIPCC__) || defined(__HIP__) || defined(__HIP_PLATFORM_AMD__)
+#  include <hip/hip_complex.h>
+using cuDoubleComplex = hipDoubleComplex;
+using cuFloatComplex  = hipFloatComplex;
+#define cuCadd                hipCadd
+#define cuCsub                hipCsub
+#define cuCmul                hipCmul
+#define cuCdiv                hipCdiv
+#define cuCabs                hipCabs
+#define make_cuDoubleComplex  make_hipDoubleComplex
+#define make_cuFloatComplex   make_hipFloatComplex
+#else
+#  include <cuComplex.h>
+#endif
 #include <array>
 #include <cmath>
 
 #include "../common/prng.h"
 
-/* CUDA_CHECK is provided by ../common/gpu_compat.cuh. */
+/* GPU_CHECK is provided by ../common/gpu_compat.cuh. */
 
 /* ================================================================ */
 /*  Cache-flush helper -- canonical 8192^2 Jacobi (shared).          */
@@ -176,15 +189,15 @@ void profile_config(
     h_or = (double*)malloc(ny*sizeof(double)); h_oi = (double*)malloc(ny*sizeof(double));
     h_rr = (double*)malloc(ny*sizeof(double)); h_ri = (double*)malloc(ny*sizeof(double));
 
-    CUDA_CHECK(cudaMalloc(&d_ya,  ny*sizeof(cuDoubleComplex)));
-    CUDA_CHECK(cudaMalloc(&d_xa,  nx*sizeof(cuDoubleComplex)));
-    CUDA_CHECK(cudaMalloc(&d_yr,  ny*sizeof(double)));
-    CUDA_CHECK(cudaMalloc(&d_yi,  ny*sizeof(double)));
-    CUDA_CHECK(cudaMalloc(&d_xr,  nx*sizeof(double)));
-    CUDA_CHECK(cudaMalloc(&d_xi,  nx*sizeof(double)));
-    CUDA_CHECK(cudaMalloc(&d_ym,  nx*sizeof(int)));
-    CUDA_CHECK(cudaMalloc(&d_yms, nx*sizeof(int)));
-    CUDA_CHECK(cudaMalloc(&d_xm,  nx*sizeof(int)));
+    GPU_CHECK(gpuMalloc(&d_ya,  ny*sizeof(cuDoubleComplex)));
+    GPU_CHECK(gpuMalloc(&d_xa,  nx*sizeof(cuDoubleComplex)));
+    GPU_CHECK(gpuMalloc(&d_yr,  ny*sizeof(double)));
+    GPU_CHECK(gpuMalloc(&d_yi,  ny*sizeof(double)));
+    GPU_CHECK(gpuMalloc(&d_xr,  nx*sizeof(double)));
+    GPU_CHECK(gpuMalloc(&d_xi,  nx*sizeof(double)));
+    GPU_CHECK(gpuMalloc(&d_ym,  nx*sizeof(int)));
+    GPU_CHECK(gpuMalloc(&d_yms, nx*sizeof(int)));
+    GPU_CHECK(gpuMalloc(&d_xm,  nx*sizeof(int)));
 
     Xor64Rng rng((uint64_t)seed);
     for (int i = 0; i < ny; i++) {
@@ -203,89 +216,89 @@ void profile_config(
         h_rr[yi] += h_xr[i]; h_ri[yi] += h_xi[i];
     }
 
-    CUDA_CHECK(cudaMemcpy(d_ym,  h_ymap,   nx*sizeof(int), cudaMemcpyHostToDevice));
-    CUDA_CHECK(cudaMemcpy(d_yms, h_ymap_s, nx*sizeof(int), cudaMemcpyHostToDevice));
-    CUDA_CHECK(cudaMemcpy(d_xm,  h_xmap,   nx*sizeof(int), cudaMemcpyHostToDevice));
+    GPU_CHECK(gpuMemcpy(d_ym,  h_ymap,   nx*sizeof(int), gpuMemcpyHostToDevice));
+    GPU_CHECK(gpuMemcpy(d_yms, h_ymap_s, nx*sizeof(int), gpuMemcpyHostToDevice));
+    GPU_CHECK(gpuMemcpy(d_xm,  h_xmap,   nx*sizeof(int), gpuMemcpyHostToDevice));
 
-    cudaEvent_t e0, e1;
-    CUDA_CHECK(cudaEventCreate(&e0)); CUDA_CHECK(cudaEventCreate(&e1));
+    gpuEvent_t e0, e1;
+    GPU_CHECK(gpuEventCreate(&e0)); GPU_CHECK(gpuEventCreate(&e1));
     float ms;
 
     auto run = [&](const char *vname, auto launch, auto verify_fn) {
         if (!verify_fn()) { fprintf(stderr,"FAIL %s %s tpb=%d cf=%d\n",vname,ename,tpb,coarsen); return; }
-        for (int w=0;w<warmup;w++){launch();CUDA_CHECK(cudaDeviceSynchronize());}
+        for (int w=0;w<warmup;w++){launch();GPU_CHECK(gpuDeviceSynchronize());}
         for (int r=0;r<iters;r++){
             flush_jacobi_gpu();
-            CUDA_CHECK(cudaEventRecord(e0));
+            GPU_CHECK(gpuEventRecord(e0));
             launch();
-            CUDA_CHECK(cudaEventRecord(e1));
-            CUDA_CHECK(cudaEventSynchronize(e1));
-            CUDA_CHECK(cudaEventElapsedTime(&ms,e0,e1));
+            GPU_CHECK(gpuEventRecord(e1));
+            GPU_CHECK(gpuEventSynchronize(e1));
+            GPU_CHECK(gpuEventElapsedTime(&ms,e0,e1));
             fprintf(csv,"%s,%s,%d,%d,%d,%d,%d,%.6f\n",vname,ename,ny,nx,tpb,coarsen,r,(double)ms);
         }
     };
 
     // AoS scatter
     {auto kfn=aos_scat_tbl[coarsen];
-     CUDA_CHECK(cudaMemcpy(d_xa,h_xa,nx*sizeof(cuDoubleComplex),cudaMemcpyHostToDevice));
+     GPU_CHECK(gpuMemcpy(d_xa,h_xa,nx*sizeof(cuDoubleComplex),gpuMemcpyHostToDevice));
      auto L=[&]{kfn<<<nblk,tpb>>>(nx,d_ym,d_xa,d_ya);};
      auto V=[&]()->bool{
-        CUDA_CHECK(cudaMemcpy(d_ya,h_ya,ny*sizeof(cuDoubleComplex),cudaMemcpyHostToDevice));
-        L();CUDA_CHECK(cudaDeviceSynchronize());
-        CUDA_CHECK(cudaMemcpy(h_oa,d_ya,ny*sizeof(cuDoubleComplex),cudaMemcpyDeviceToHost));
+        GPU_CHECK(gpuMemcpy(d_ya,h_ya,ny*sizeof(cuDoubleComplex),gpuMemcpyHostToDevice));
+        L();GPU_CHECK(gpuDeviceSynchronize());
+        GPU_CHECK(gpuMemcpy(h_oa,d_ya,ny*sizeof(cuDoubleComplex),gpuMemcpyDeviceToHost));
         return verify_aos(ny,h_oa,h_ra);};
-     CUDA_CHECK(cudaMemcpy(d_ya,h_ya,ny*sizeof(cuDoubleComplex),cudaMemcpyHostToDevice));
+     GPU_CHECK(gpuMemcpy(d_ya,h_ya,ny*sizeof(cuDoubleComplex),gpuMemcpyHostToDevice));
      run("aos_scatter",L,V);}
 
     // AoS sorted
     {auto kfn=aos_sort_tbl[coarsen];
-     CUDA_CHECK(cudaMemcpy(d_xa,h_xa,nx*sizeof(cuDoubleComplex),cudaMemcpyHostToDevice));
+     GPU_CHECK(gpuMemcpy(d_xa,h_xa,nx*sizeof(cuDoubleComplex),gpuMemcpyHostToDevice));
      auto L=[&]{kfn<<<nblk,tpb>>>(nx,d_yms,d_xm,d_xa,d_ya);};
      auto V=[&]()->bool{
-        CUDA_CHECK(cudaMemcpy(d_ya,h_ya,ny*sizeof(cuDoubleComplex),cudaMemcpyHostToDevice));
-        L();CUDA_CHECK(cudaDeviceSynchronize());
-        CUDA_CHECK(cudaMemcpy(h_oa,d_ya,ny*sizeof(cuDoubleComplex),cudaMemcpyDeviceToHost));
+        GPU_CHECK(gpuMemcpy(d_ya,h_ya,ny*sizeof(cuDoubleComplex),gpuMemcpyHostToDevice));
+        L();GPU_CHECK(gpuDeviceSynchronize());
+        GPU_CHECK(gpuMemcpy(h_oa,d_ya,ny*sizeof(cuDoubleComplex),gpuMemcpyDeviceToHost));
         return verify_aos(ny,h_oa,h_ra);};
-     CUDA_CHECK(cudaMemcpy(d_ya,h_ya,ny*sizeof(cuDoubleComplex),cudaMemcpyHostToDevice));
+     GPU_CHECK(gpuMemcpy(d_ya,h_ya,ny*sizeof(cuDoubleComplex),gpuMemcpyHostToDevice));
      run("aos_sorted",L,V);}
 
     // SoA scatter
     {auto kfn=soa_scat_tbl[coarsen];
-     CUDA_CHECK(cudaMemcpy(d_xr,h_xr,nx*sizeof(double),cudaMemcpyHostToDevice));
-     CUDA_CHECK(cudaMemcpy(d_xi,h_xi,nx*sizeof(double),cudaMemcpyHostToDevice));
+     GPU_CHECK(gpuMemcpy(d_xr,h_xr,nx*sizeof(double),gpuMemcpyHostToDevice));
+     GPU_CHECK(gpuMemcpy(d_xi,h_xi,nx*sizeof(double),gpuMemcpyHostToDevice));
      auto L=[&]{kfn<<<nblk,tpb>>>(nx,d_ym,d_xr,d_xi,d_yr,d_yi);};
      auto V=[&]()->bool{
-        CUDA_CHECK(cudaMemcpy(d_yr,h_yr,ny*sizeof(double),cudaMemcpyHostToDevice));
-        CUDA_CHECK(cudaMemcpy(d_yi,h_yi,ny*sizeof(double),cudaMemcpyHostToDevice));
-        L();CUDA_CHECK(cudaDeviceSynchronize());
-        CUDA_CHECK(cudaMemcpy(h_or,d_yr,ny*sizeof(double),cudaMemcpyDeviceToHost));
-        CUDA_CHECK(cudaMemcpy(h_oi,d_yi,ny*sizeof(double),cudaMemcpyDeviceToHost));
+        GPU_CHECK(gpuMemcpy(d_yr,h_yr,ny*sizeof(double),gpuMemcpyHostToDevice));
+        GPU_CHECK(gpuMemcpy(d_yi,h_yi,ny*sizeof(double),gpuMemcpyHostToDevice));
+        L();GPU_CHECK(gpuDeviceSynchronize());
+        GPU_CHECK(gpuMemcpy(h_or,d_yr,ny*sizeof(double),gpuMemcpyDeviceToHost));
+        GPU_CHECK(gpuMemcpy(h_oi,d_yi,ny*sizeof(double),gpuMemcpyDeviceToHost));
         return verify_soa(ny,h_or,h_oi,h_rr,h_ri);};
-     CUDA_CHECK(cudaMemcpy(d_yr,h_yr,ny*sizeof(double),cudaMemcpyHostToDevice));
-     CUDA_CHECK(cudaMemcpy(d_yi,h_yi,ny*sizeof(double),cudaMemcpyHostToDevice));
+     GPU_CHECK(gpuMemcpy(d_yr,h_yr,ny*sizeof(double),gpuMemcpyHostToDevice));
+     GPU_CHECK(gpuMemcpy(d_yi,h_yi,ny*sizeof(double),gpuMemcpyHostToDevice));
      run("soa_scatter",L,V);}
 
     // SoA sorted
     {auto kfn=soa_sort_tbl[coarsen];
-     CUDA_CHECK(cudaMemcpy(d_xr,h_xr,nx*sizeof(double),cudaMemcpyHostToDevice));
-     CUDA_CHECK(cudaMemcpy(d_xi,h_xi,nx*sizeof(double),cudaMemcpyHostToDevice));
+     GPU_CHECK(gpuMemcpy(d_xr,h_xr,nx*sizeof(double),gpuMemcpyHostToDevice));
+     GPU_CHECK(gpuMemcpy(d_xi,h_xi,nx*sizeof(double),gpuMemcpyHostToDevice));
      auto L=[&]{kfn<<<nblk,tpb>>>(nx,d_yms,d_xm,d_xr,d_xi,d_yr,d_yi);};
      auto V=[&]()->bool{
-        CUDA_CHECK(cudaMemcpy(d_yr,h_yr,ny*sizeof(double),cudaMemcpyHostToDevice));
-        CUDA_CHECK(cudaMemcpy(d_yi,h_yi,ny*sizeof(double),cudaMemcpyHostToDevice));
-        L();CUDA_CHECK(cudaDeviceSynchronize());
-        CUDA_CHECK(cudaMemcpy(h_or,d_yr,ny*sizeof(double),cudaMemcpyDeviceToHost));
-        CUDA_CHECK(cudaMemcpy(h_oi,d_yi,ny*sizeof(double),cudaMemcpyDeviceToHost));
+        GPU_CHECK(gpuMemcpy(d_yr,h_yr,ny*sizeof(double),gpuMemcpyHostToDevice));
+        GPU_CHECK(gpuMemcpy(d_yi,h_yi,ny*sizeof(double),gpuMemcpyHostToDevice));
+        L();GPU_CHECK(gpuDeviceSynchronize());
+        GPU_CHECK(gpuMemcpy(h_or,d_yr,ny*sizeof(double),gpuMemcpyDeviceToHost));
+        GPU_CHECK(gpuMemcpy(h_oi,d_yi,ny*sizeof(double),gpuMemcpyDeviceToHost));
         return verify_soa(ny,h_or,h_oi,h_rr,h_ri);};
-     CUDA_CHECK(cudaMemcpy(d_yr,h_yr,ny*sizeof(double),cudaMemcpyHostToDevice));
-     CUDA_CHECK(cudaMemcpy(d_yi,h_yi,ny*sizeof(double),cudaMemcpyHostToDevice));
+     GPU_CHECK(gpuMemcpy(d_yr,h_yr,ny*sizeof(double),gpuMemcpyHostToDevice));
+     GPU_CHECK(gpuMemcpy(d_yi,h_yi,ny*sizeof(double),gpuMemcpyHostToDevice));
      run("soa_sorted",L,V);}
 
-    CUDA_CHECK(cudaEventDestroy(e0)); CUDA_CHECK(cudaEventDestroy(e1));
-    CUDA_CHECK(cudaFree(d_ya)); CUDA_CHECK(cudaFree(d_xa));
-    CUDA_CHECK(cudaFree(d_yr)); CUDA_CHECK(cudaFree(d_yi));
-    CUDA_CHECK(cudaFree(d_xr)); CUDA_CHECK(cudaFree(d_xi));
-    CUDA_CHECK(cudaFree(d_ym)); CUDA_CHECK(cudaFree(d_yms)); CUDA_CHECK(cudaFree(d_xm));
+    GPU_CHECK(gpuEventDestroy(e0)); GPU_CHECK(gpuEventDestroy(e1));
+    GPU_CHECK(gpuFree(d_ya)); GPU_CHECK(gpuFree(d_xa));
+    GPU_CHECK(gpuFree(d_yr)); GPU_CHECK(gpuFree(d_yi));
+    GPU_CHECK(gpuFree(d_xr)); GPU_CHECK(gpuFree(d_xi));
+    GPU_CHECK(gpuFree(d_ym)); GPU_CHECK(gpuFree(d_yms)); GPU_CHECK(gpuFree(d_xm));
     free(h_ya);free(h_xa);free(h_oa);free(h_ra);
     free(h_yr);free(h_yi);free(h_xr);free(h_xi);
     free(h_or);free(h_oi);free(h_rr);free(h_ri);

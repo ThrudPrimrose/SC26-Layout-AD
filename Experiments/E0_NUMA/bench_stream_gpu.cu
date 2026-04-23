@@ -207,12 +207,12 @@ static void run_bench(const KernelConfig &cfg, float *dA, float *dB,
     const int init_blk = 256;
     const int init_grd = 65536;
     init_kernel<<<init_grd, init_blk>>>(dA, dB);
-    CUDA_CHECK(gpuDeviceSynchronize());
+    GPU_CHECK(gpuDeviceSynchronize());
 
     /* Correctness: run once, read back, reduce. */
     cfg.launch(dA, dB, 1.0001f);
-    CUDA_CHECK(gpuDeviceSynchronize());
-    CUDA_CHECK(gpuMemcpy(hA_scratch, dA, total * sizeof(float), gpuMemcpyDeviceToHost));
+    GPU_CHECK(gpuDeviceSynchronize());
+    GPU_CHECK(gpuMemcpy(hA_scratch, dA, total * sizeof(float), gpuMemcpyDeviceToHost));
     double cs = 0.0;
     for (size_t k = 0; k < total; k++) cs += (double)hA_scratch[k];
     bool ok = std::fabs(cs - ref_cs_after_one) <= 1e-3 * std::fabs(ref_cs_after_one);
@@ -229,11 +229,11 @@ static void run_bench(const KernelConfig &cfg, float *dA, float *dB,
         if (use_flush) flush_jacobi_gpu();
         cfg.launch(dA, dB, 1.0001f);
     }
-    CUDA_CHECK(gpuDeviceSynchronize());
+    GPU_CHECK(gpuDeviceSynchronize());
 
     gpuEvent_t t0, t1;
-    CUDA_CHECK(gpuEventCreate(&t0));
-    CUDA_CHECK(gpuEventCreate(&t1));
+    GPU_CHECK(gpuEventCreate(&t0));
+    GPU_CHECK(gpuEventCreate(&t1));
 
     float times[NREP];
     for (int r = 0; r < NREP; r++) {
@@ -241,18 +241,18 @@ static void run_bench(const KernelConfig &cfg, float *dA, float *dB,
          * so t0 fires only after all flush kernels finish -- no flush time
          * leaks into the measured interval. */
         if (use_flush) flush_jacobi_gpu();
-        CUDA_CHECK(gpuEventRecord(t0));
+        GPU_CHECK(gpuEventRecord(t0));
         cfg.launch(dA, dB, 1.0001f);
-        CUDA_CHECK(gpuEventRecord(t1));
-        CUDA_CHECK(gpuEventSynchronize(t1));
-        CUDA_CHECK(gpuEventElapsedTime(&times[r], t0, t1));
+        GPU_CHECK(gpuEventRecord(t1));
+        GPU_CHECK(gpuEventSynchronize(t1));
+        GPU_CHECK(gpuEventElapsedTime(&times[r], t0, t1));
 
         double bw = data_bytes / ((double)times[r] * 1e-3) / 1e9;
         g_records.push_back({cfg.name, cfg.BX, cfg.BY, cfg.TX, cfg.TY,
                              r, times[r], bw, cs, ok, use_flush});
     }
-    CUDA_CHECK(gpuEventDestroy(t0));
-    CUDA_CHECK(gpuEventDestroy(t1));
+    GPU_CHECK(gpuEventDestroy(t0));
+    GPU_CHECK(gpuEventDestroy(t1));
 
     double sum_ms = 0.0, sum_bw = 0.0;
     for (int r = 0; r < NREP; r++) {
@@ -275,7 +275,7 @@ int main(int argc, char **argv) {
     const char *csv_path = argv[1];
 
     gpuDeviceProp prop;
-    CUDA_CHECK(gpuGetDeviceProperties(&prop, 0));
+    GPU_CHECK(gpuGetDeviceProperties(&prop, 0));
     printf("NUMA STREAM peak GPU (E0) on %s\n", prop.name);
     printf("  N1d=%d  (%.2f GiB/buf)  reps=%d  warmup=%d  backend=%s\n\n",
            Nd, ((double)Nd * Nd * sizeof(float)) / (double)(1UL << 30),
@@ -285,8 +285,8 @@ int main(int argc, char **argv) {
     const size_t bytes = total * sizeof(float);
 
     float *dA = nullptr, *dB = nullptr;
-    CUDA_CHECK(gpuMalloc(&dA, bytes));
-    CUDA_CHECK(gpuMalloc(&dB, bytes));
+    GPU_CHECK(gpuMalloc(&dA, bytes));
+    GPU_CHECK(gpuMalloc(&dB, bytes));
     float *hA = (float *)malloc(bytes);
     if (!hA) { fprintf(stderr, "host malloc failed\n"); return 1; }
 
@@ -317,8 +317,8 @@ int main(int argc, char **argv) {
     fclose(fp);
     printf("\nWrote %zu records to %s\n", g_records.size(), csv_path);
 
-    CUDA_CHECK(gpuFree(dA));
-    CUDA_CHECK(gpuFree(dB));
+    GPU_CHECK(gpuFree(dA));
+    GPU_CHECK(gpuFree(dB));
     free(hA);
     return 0;
 }

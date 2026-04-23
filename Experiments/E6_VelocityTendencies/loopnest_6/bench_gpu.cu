@@ -19,7 +19,7 @@
 #include "../loopnest_1/icon_data_loader.h"
 #include "../../common/jacobi_flush_gpu.cuh"
 
-/* CUDA_CHECK, WARMUP, NRUNS are provided by the shared headers above. */
+/* GPU_CHECK, WARMUP, NRUNS are provided by the shared headers above. */
 
 #define KARGS_DEV \
   double *__restrict__ lvout, const double *__restrict__ lvm, \
@@ -194,7 +194,7 @@ static bool verify_close(const double *got, const double *ref, size_t n,
 }
 
 static void run_configs_unblocked(FILE *fcsv, int V, BenchData &bd, const char *dist,
-    double *d_lvout, const double *d_lvm, cudaEvent_t ev0, cudaEvent_t ev1,
+    double *d_lvout, const double *d_lvm, gpuEvent_t ev0, gpuEvent_t ev1,
     double *h_ref, double *h_gpu_out) {
   int N_e = bd.N_e, nlev = bd.nlev;
   int jk0 = jk_lo_for(nlev), jk1 = jk_hi_for(nlev);
@@ -209,8 +209,8 @@ static void run_configs_unblocked(FILE *fcsv, int V, BenchData &bd, const char *
       continue;
     }
     launch_unblocked(V, bxi, ARGS);
-    CUDA_CHECK(cudaDeviceSynchronize());
-    CUDA_CHECK(cudaMemcpy(h_gpu_out, d_lvout, (size_t)nlev * 8, cudaMemcpyDeviceToHost));
+    GPU_CHECK(gpuDeviceSynchronize());
+    GPU_CHECK(gpuMemcpy(h_gpu_out, d_lvout, (size_t)nlev * 8, gpuMemcpyDeviceToHost));
     double mr = 0.0;
     if (!verify_close(h_gpu_out, h_ref, (size_t)nlev, 1e-8, 1e-12, &mr)) {
       printf("FAIL V=%d cfg=%s max_rel=%.3e\n", V, GCFG[bxi].tag, mr);
@@ -218,20 +218,20 @@ static void run_configs_unblocked(FILE *fcsv, int V, BenchData &bd, const char *
     }
     if (bxi == 0) printf("OK   V=%d dist=%s max_rel=%.3e\n", V, dist, mr);
     for (int r = 0; r < WARMUP; r++) launch_unblocked(V, bxi, ARGS);
-    CUDA_CHECK(cudaDeviceSynchronize());
+    GPU_CHECK(gpuDeviceSynchronize());
     for (int r = 0; r < NRUNS; r++) {
-      flush_jacobi_gpu(); CUDA_CHECK(cudaEventRecord(ev0));
+      flush_jacobi_gpu(); GPU_CHECK(gpuEventRecord(ev0));
       launch_unblocked(V, bxi, ARGS);
-      CUDA_CHECK(cudaEventRecord(ev1));
-      CUDA_CHECK(cudaEventSynchronize(ev1));
-      float ms; CUDA_CHECK(cudaEventElapsedTime(&ms, ev0, ev1));
+      GPU_CHECK(gpuEventRecord(ev1));
+      GPU_CHECK(gpuEventSynchronize(ev1));
+      float ms; GPU_CHECK(gpuEventElapsedTime(&ms, ev0, ev1));
       fprintf(fcsv, "gpu,%d,%d,%d,%s,V%d_%s,run%d,%d,%.6f\n",
               V, nlev, N_e, dist, V, GCFG[bxi].tag, r, r, (double)ms);
     }
   }
 }
 static void run_configs_blocked(FILE *fcsv, int bi, BenchData &bd, const char *dist,
-    double *d_lvout, const double *d_lvm, cudaEvent_t ev0, cudaEvent_t ev1,
+    double *d_lvout, const double *d_lvm, gpuEvent_t ev0, gpuEvent_t ev1,
     double *h_ref, double *h_gpu_out) {
   int N_e = bd.N_e, nlev = bd.nlev;
   int jk0 = jk_lo_for(nlev), jk1 = jk_hi_for(nlev);
@@ -247,8 +247,8 @@ static void run_configs_blocked(FILE *fcsv, int bi, BenchData &bd, const char *d
       continue;
     }
     launch_blocked(bi, bxi, ARGS);
-    CUDA_CHECK(cudaDeviceSynchronize());
-    CUDA_CHECK(cudaMemcpy(h_gpu_out, d_lvout, (size_t)nlev * 8, cudaMemcpyDeviceToHost));
+    GPU_CHECK(gpuDeviceSynchronize());
+    GPU_CHECK(gpuMemcpy(h_gpu_out, d_lvout, (size_t)nlev * 8, gpuMemcpyDeviceToHost));
     double mr = 0.0;
     if (!verify_close(h_gpu_out, h_ref, (size_t)nlev, 1e-8, 1e-12, &mr)) {
       printf("FAIL B=%d cfg=%s max_rel=%.3e\n", B, GCFG[bxi].tag, mr);
@@ -256,20 +256,20 @@ static void run_configs_blocked(FILE *fcsv, int bi, BenchData &bd, const char *d
     }
     if (bxi == 0) printf("OK   B=%d dist=%s max_rel=%.3e\n", B, dist, mr);
     for (int r = 0; r < WARMUP; r++) launch_blocked(bi, bxi, ARGS);
-    CUDA_CHECK(cudaDeviceSynchronize());
+    GPU_CHECK(gpuDeviceSynchronize());
     for (int r = 0; r < NRUNS; r++) {
-      flush_jacobi_gpu(); CUDA_CHECK(cudaEventRecord(ev0));
+      flush_jacobi_gpu(); GPU_CHECK(gpuEventRecord(ev0));
       launch_blocked(bi, bxi, ARGS);
-      CUDA_CHECK(cudaEventRecord(ev1));
-      CUDA_CHECK(cudaEventSynchronize(ev1));
-      float ms; CUDA_CHECK(cudaEventElapsedTime(&ms, ev0, ev1));
+      GPU_CHECK(gpuEventRecord(ev1));
+      GPU_CHECK(gpuEventSynchronize(ev1));
+      float ms; GPU_CHECK(gpuEventElapsedTime(&ms, ev0, ev1));
       fprintf(fcsv, "gpu,0,%d,%d,%s,B%d_%s,run%d,%d,%.6f\n",
               nlev, N_e, dist, B, GCFG[bxi].tag, r, r, (double)ms);
     }
   }
 }
 static void run_configs_tiled(FILE *fcsv, int txi, int tyi, BenchData &bd, const char *dist,
-    double *d_lvout, const double *d_lvm, cudaEvent_t ev0, cudaEvent_t ev1,
+    double *d_lvout, const double *d_lvm, gpuEvent_t ev0, gpuEvent_t ev1,
     double *h_ref, double *h_gpu_out) {
   int N_e = bd.N_e, nlev = bd.nlev;
   int jk0 = jk_lo_for(nlev), jk1 = jk_hi_for(nlev);
@@ -285,8 +285,8 @@ static void run_configs_tiled(FILE *fcsv, int txi, int tyi, BenchData &bd, const
       continue;
     }
     launch_tiled(txi, tyi, bxi, ARGS);
-    CUDA_CHECK(cudaDeviceSynchronize());
-    CUDA_CHECK(cudaMemcpy(h_gpu_out, d_lvout, (size_t)nlev * 8, cudaMemcpyDeviceToHost));
+    GPU_CHECK(gpuDeviceSynchronize());
+    GPU_CHECK(gpuMemcpy(h_gpu_out, d_lvout, (size_t)nlev * 8, gpuMemcpyDeviceToHost));
     double mr = 0.0;
     if (!verify_close(h_gpu_out, h_ref, (size_t)nlev, 1e-8, 1e-12, &mr)) {
       printf("FAIL TX=%d TY=%d cfg=%s max_rel=%.3e\n", TX, TY, GCFG[bxi].tag, mr);
@@ -294,13 +294,13 @@ static void run_configs_tiled(FILE *fcsv, int txi, int tyi, BenchData &bd, const
     }
     if (bxi == 0) printf("OK   TX=%d TY=%d dist=%s max_rel=%.3e\n", TX, TY, dist, mr);
     for (int r = 0; r < WARMUP; r++) launch_tiled(txi, tyi, bxi, ARGS);
-    CUDA_CHECK(cudaDeviceSynchronize());
+    GPU_CHECK(gpuDeviceSynchronize());
     for (int r = 0; r < NRUNS; r++) {
-      flush_jacobi_gpu(); CUDA_CHECK(cudaEventRecord(ev0));
+      flush_jacobi_gpu(); GPU_CHECK(gpuEventRecord(ev0));
       launch_tiled(txi, tyi, bxi, ARGS);
-      CUDA_CHECK(cudaEventRecord(ev1));
-      CUDA_CHECK(cudaEventSynchronize(ev1));
-      float ms; CUDA_CHECK(cudaEventElapsedTime(&ms, ev0, ev1));
+      GPU_CHECK(gpuEventRecord(ev1));
+      GPU_CHECK(gpuEventSynchronize(ev1));
+      float ms; GPU_CHECK(gpuEventElapsedTime(&ms, ev0, ev1));
       fprintf(fcsv, "gpu,0,%d,%d,%s,T%dx%d_%s,run%d,%d,%.6f\n",
               nlev, N_e, dist, TX, TY, GCFG[bxi].tag, r, r, (double)ms);
     }
@@ -323,10 +323,10 @@ int main(int argc, char *argv[]) {
   for (int ni = 0; ni < N_NLEVS; ni++) if (NLEVS[ni] > max_nlev) max_nlev = NLEVS[ni];
   size_t sz_max = (size_t)N_e * max_nlev;
   double *d_lvm, *d_lvout;
-  CUDA_CHECK(cudaMalloc(&d_lvm, sz_max*8));
-  CUDA_CHECK(cudaMalloc(&d_lvout, (size_t)max_nlev*8));
+  GPU_CHECK(gpuMalloc(&d_lvm, sz_max*8));
+  GPU_CHECK(gpuMalloc(&d_lvout, (size_t)max_nlev*8));
   std::vector<double> h_ref(max_nlev), h_gpu_out(max_nlev);
-  cudaEvent_t ev0, ev1; CUDA_CHECK(cudaEventCreate(&ev0)); CUDA_CHECK(cudaEventCreate(&ev1));
+  gpuEvent_t ev0, ev1; GPU_CHECK(gpuEventCreate(&ev0)); GPU_CHECK(gpuEventCreate(&ev1));
 
   const char *dists[3] = {"uniform", "normal_var1", "exact"};
   int ndists = have_exact ? 3 : 2;
@@ -339,7 +339,7 @@ int main(int argc, char *argv[]) {
       for (int V = 1; V <= 4; V++) {
         BenchData bd; bd.alloc(N_e, nlev); bd.fill(nlev);
         bd.set_variant(V);
-        CUDA_CHECK(cudaMemcpy(d_lvm, bd.h_lvm, sz*8, cudaMemcpyHostToDevice));
+        GPU_CHECK(gpuMemcpy(d_lvm, bd.h_lvm, sz*8, gpuMemcpyHostToDevice));
         run_configs_unblocked(fcsv, V, bd, dists[di], d_lvout, d_lvm, ev0, ev1,
                               h_ref.data(), h_gpu_out.data());
         fflush(fcsv); bd.free_all();
@@ -352,7 +352,7 @@ int main(int argc, char *argv[]) {
         if (N_e % B != 0) { printf("SKIP GPU B=%d\n", B); continue; }
         BenchData bd; bd.alloc(N_e, nlev); bd.fill(nlev);
         bd.set_variant_blocked(B);
-        CUDA_CHECK(cudaMemcpy(d_lvm, bd.h_lvm, sz*8, cudaMemcpyHostToDevice));
+        GPU_CHECK(gpuMemcpy(d_lvm, bd.h_lvm, sz*8, gpuMemcpyHostToDevice));
         run_configs_blocked(fcsv, bi, bd, dists[di], d_lvout, d_lvm, ev0, ev1,
                             h_ref.data(), h_gpu_out.data());
         fflush(fcsv); bd.free_all();
@@ -368,7 +368,7 @@ int main(int argc, char *argv[]) {
           if (nlev % TY != 0) continue;
           BenchData bd; bd.alloc(N_e, nlev); bd.fill(nlev);
           bd.set_variant_tiled(TX, TY);
-          CUDA_CHECK(cudaMemcpy(d_lvm, bd.h_lvm, sz*8, cudaMemcpyHostToDevice));
+          GPU_CHECK(gpuMemcpy(d_lvm, bd.h_lvm, sz*8, gpuMemcpyHostToDevice));
           run_configs_tiled(fcsv, txi, tyi, bd, dists[di], d_lvout, d_lvm, ev0, ev1,
                             h_ref.data(), h_gpu_out.data());
           fflush(fcsv); bd.free_all();
@@ -377,8 +377,8 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  CUDA_CHECK(cudaFree(d_lvm)); CUDA_CHECK(cudaFree(d_lvout));
-  CUDA_CHECK(cudaEventDestroy(ev0)); CUDA_CHECK(cudaEventDestroy(ev1));
+  GPU_CHECK(gpuFree(d_lvm)); GPU_CHECK(gpuFree(d_lvout));
+  GPU_CHECK(gpuEventDestroy(ev0)); GPU_CHECK(gpuEventDestroy(ev1));
   if (have_exact) ied.free_all();
   fclose(fcsv);
   return 0;

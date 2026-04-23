@@ -1,6 +1,7 @@
 #include "usxx_kernels.h"
 #include <cstdio>
 #include <cmath>
+#include "../common/gpu_compat.cuh"
 
 #define SOA_MUL_RE(ar, ai, br, bi) ((ar)*(br) - (ai)*(bi))
 #define SOA_MUL_IM(ar, ai, br, bi) ((ar)*(bi) + (ai)*(br))

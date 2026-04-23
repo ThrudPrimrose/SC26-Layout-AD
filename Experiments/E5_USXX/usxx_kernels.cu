@@ -2,6 +2,7 @@
 #include <cstdio>
 #include <cmath>
 #include <cstring>
+#include "../common/gpu_compat.cuh"
 
 // ============================================================
 // CPU baseline

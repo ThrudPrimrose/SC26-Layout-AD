@@ -10,17 +10,8 @@
 #include <vector>
 #include <functional>
 #include <iostream>
+#include "../common/gpu_compat.cuh"
 
-#define CUDA_CHECK(call)                                       \
-    do {                                                       \
-        cudaError_t _e = (call);                               \
-        if (_e != cudaSuccess) {                               \
-            std::cerr << "CUDA error " << __FILE__ << ":"      \
-                      << __LINE__ << " -> "                    \
-                      << cudaGetErrorString(_e) << std::endl;  \
-            std::exit(EXIT_FAILURE);                           \
-        }                                                      \
-    } while (0)
 
 // Array dimensions
 static constexpr int RHOC_SIZE   = 120000;
@@ -139,8 +130,8 @@ struct DeviceArrays {
 };
 
 #define CUDA_AC(d_ptr, h_ptr, count, type) \
-    CUDA_CHECK(cudaMalloc(&da.d_ptr, (count) * sizeof(type))); \
-    CUDA_CHECK(cudaMemcpy(da.d_ptr, h_ptr, (count) * sizeof(type), cudaMemcpyHostToDevice));
+    GPU_CHECK(gpuMalloc(&da.d_ptr, (count) * sizeof(type))); \
+    GPU_CHECK(gpuMemcpy(da.d_ptr, h_ptr, (count) * sizeof(type), gpuMemcpyHostToDevice));
 
 static DeviceArrays allocate_device_arrays() {
     DeviceArrays da;
@@ -164,23 +155,23 @@ static DeviceArrays allocate_device_arrays() {
     CUDA_AC(d_dfftt__nl, dfftt__nl, NL_SIZE, int);
     CUDA_AC(d_dfftt__nl_sorted, dfftt__nl_sorted, NL_SIZE, int);
     CUDA_AC(d_dfftt__nl_ix, dfftt__nl_ix, NL_SIZE, int);
-    CUDA_CHECK(cudaMalloc(&da.d_eigqts, nat * sizeof(Complex_DP)));
+    GPU_CHECK(gpuMalloc(&da.d_eigqts, nat * sizeof(Complex_DP)));
     return da;
 }
 
 static void free_device_arrays(DeviceArrays& da) {
-    CUDA_CHECK(cudaFree(da.d_rhoc)); CUDA_CHECK(cudaFree(da.d_becphi_c)); CUDA_CHECK(cudaFree(da.d_becpsi_c));
-    CUDA_CHECK(cudaFree(da.d_qgm)); CUDA_CHECK(cudaFree(da.d_eigts1)); CUDA_CHECK(cudaFree(da.d_eigts2)); CUDA_CHECK(cudaFree(da.d_eigts3));
-    CUDA_CHECK(cudaFree(da.d_qgm_T)); CUDA_CHECK(cudaFree(da.d_eigts1_T)); CUDA_CHECK(cudaFree(da.d_eigts2_T)); CUDA_CHECK(cudaFree(da.d_eigts3_T));
-    CUDA_CHECK(cudaFree(da.d_xkq)); CUDA_CHECK(cudaFree(da.d_xk)); CUDA_CHECK(cudaFree(da.d_tau));
-    CUDA_CHECK(cudaFree(da.d_ityp)); CUDA_CHECK(cudaFree(da.d_ofsbeta)); CUDA_CHECK(cudaFree(da.d_ijtoh));
-    CUDA_CHECK(cudaFree(da.d_mill)); CUDA_CHECK(cudaFree(da.d_dfftt__nl));
-    CUDA_CHECK(cudaFree(da.d_dfftt__nl_sorted)); CUDA_CHECK(cudaFree(da.d_dfftt__nl_ix));
-    CUDA_CHECK(cudaFree(da.d_eigqts));
+    GPU_CHECK(gpuFree(da.d_rhoc)); GPU_CHECK(gpuFree(da.d_becphi_c)); GPU_CHECK(gpuFree(da.d_becpsi_c));
+    GPU_CHECK(gpuFree(da.d_qgm)); GPU_CHECK(gpuFree(da.d_eigts1)); GPU_CHECK(gpuFree(da.d_eigts2)); GPU_CHECK(gpuFree(da.d_eigts3));
+    GPU_CHECK(gpuFree(da.d_qgm_T)); GPU_CHECK(gpuFree(da.d_eigts1_T)); GPU_CHECK(gpuFree(da.d_eigts2_T)); GPU_CHECK(gpuFree(da.d_eigts3_T));
+    GPU_CHECK(gpuFree(da.d_xkq)); GPU_CHECK(gpuFree(da.d_xk)); GPU_CHECK(gpuFree(da.d_tau));
+    GPU_CHECK(gpuFree(da.d_ityp)); GPU_CHECK(gpuFree(da.d_ofsbeta)); GPU_CHECK(gpuFree(da.d_ijtoh));
+    GPU_CHECK(gpuFree(da.d_mill)); GPU_CHECK(gpuFree(da.d_dfftt__nl));
+    GPU_CHECK(gpuFree(da.d_dfftt__nl_sorted)); GPU_CHECK(gpuFree(da.d_dfftt__nl_ix));
+    GPU_CHECK(gpuFree(da.d_eigqts));
 }
 
 static void reset_rhoc_device(DeviceArrays& da) {
-    CUDA_CHECK(cudaMemcpy(da.d_rhoc, rhoc, RHOC_SIZE * sizeof(Complex_DP), cudaMemcpyHostToDevice));
+    GPU_CHECK(gpuMemcpy(da.d_rhoc, rhoc, RHOC_SIZE * sizeof(Complex_DP), gpuMemcpyHostToDevice));
 }
 
 // ============================================================
@@ -202,18 +193,18 @@ struct DeviceArraysSoA {
 static void alloc_soa_pair(double*& d_re, double*& d_im, const Complex_DP* h_aos, int n) {
     double* h_re = new double[n]; double* h_im = new double[n];
     aos_to_soa(h_aos, h_re, h_im, n);
-    CUDA_CHECK(cudaMalloc(&d_re, n * sizeof(double))); CUDA_CHECK(cudaMalloc(&d_im, n * sizeof(double)));
-    CUDA_CHECK(cudaMemcpy(d_re, h_re, n * sizeof(double), cudaMemcpyHostToDevice));
-    CUDA_CHECK(cudaMemcpy(d_im, h_im, n * sizeof(double), cudaMemcpyHostToDevice));
+    GPU_CHECK(gpuMalloc(&d_re, n * sizeof(double))); GPU_CHECK(gpuMalloc(&d_im, n * sizeof(double)));
+    GPU_CHECK(gpuMemcpy(d_re, h_re, n * sizeof(double), gpuMemcpyHostToDevice));
+    GPU_CHECK(gpuMemcpy(d_im, h_im, n * sizeof(double), gpuMemcpyHostToDevice));
     delete[] h_re; delete[] h_im;
 }
 
 #define SOA_INT_AC(d_ptr, h_ptr, count) \
-    CUDA_CHECK(cudaMalloc(&ds.d_ptr, (count) * sizeof(int))); \
-    CUDA_CHECK(cudaMemcpy(ds.d_ptr, h_ptr, (count) * sizeof(int), cudaMemcpyHostToDevice));
+    GPU_CHECK(gpuMalloc(&ds.d_ptr, (count) * sizeof(int))); \
+    GPU_CHECK(gpuMemcpy(ds.d_ptr, h_ptr, (count) * sizeof(int), gpuMemcpyHostToDevice));
 #define SOA_DP_AC(d_ptr, h_ptr, count) \
-    CUDA_CHECK(cudaMalloc(&ds.d_ptr, (count) * sizeof(DP))); \
-    CUDA_CHECK(cudaMemcpy(ds.d_ptr, h_ptr, (count) * sizeof(DP), cudaMemcpyHostToDevice));
+    GPU_CHECK(gpuMalloc(&ds.d_ptr, (count) * sizeof(DP))); \
+    GPU_CHECK(gpuMemcpy(ds.d_ptr, h_ptr, (count) * sizeof(DP), gpuMemcpyHostToDevice));
 
 static DeviceArraysSoA allocate_device_arrays_soa() {
     DeviceArraysSoA ds;
@@ -236,35 +227,35 @@ static DeviceArraysSoA allocate_device_arrays_soa() {
     SOA_INT_AC(d_dfftt__nl, dfftt__nl, NL_SIZE);
     SOA_INT_AC(d_dfftt__nl_sorted, dfftt__nl_sorted, NL_SIZE);
     SOA_INT_AC(d_dfftt__nl_ix, dfftt__nl_ix, NL_SIZE);
-    CUDA_CHECK(cudaMalloc(&ds.d_eigqts_re, nat * sizeof(double)));
-    CUDA_CHECK(cudaMalloc(&ds.d_eigqts_im, nat * sizeof(double)));
+    GPU_CHECK(gpuMalloc(&ds.d_eigqts_re, nat * sizeof(double)));
+    GPU_CHECK(gpuMalloc(&ds.d_eigqts_im, nat * sizeof(double)));
     return ds;
 }
 
 static void free_device_arrays_soa(DeviceArraysSoA& ds) {
-    CUDA_CHECK(cudaFree(ds.d_rhoc_re)); CUDA_CHECK(cudaFree(ds.d_rhoc_im));
-    CUDA_CHECK(cudaFree(ds.d_becphi_re)); CUDA_CHECK(cudaFree(ds.d_becphi_im));
-    CUDA_CHECK(cudaFree(ds.d_becpsi_re)); CUDA_CHECK(cudaFree(ds.d_becpsi_im));
-    CUDA_CHECK(cudaFree(ds.d_qgm_re)); CUDA_CHECK(cudaFree(ds.d_qgm_im));
-    CUDA_CHECK(cudaFree(ds.d_eigts1_re)); CUDA_CHECK(cudaFree(ds.d_eigts1_im));
-    CUDA_CHECK(cudaFree(ds.d_eigts2_re)); CUDA_CHECK(cudaFree(ds.d_eigts2_im));
-    CUDA_CHECK(cudaFree(ds.d_eigts3_re)); CUDA_CHECK(cudaFree(ds.d_eigts3_im));
-    CUDA_CHECK(cudaFree(ds.d_qgm_T_re)); CUDA_CHECK(cudaFree(ds.d_qgm_T_im));
-    CUDA_CHECK(cudaFree(ds.d_eigts1_T_re)); CUDA_CHECK(cudaFree(ds.d_eigts1_T_im));
-    CUDA_CHECK(cudaFree(ds.d_eigts2_T_re)); CUDA_CHECK(cudaFree(ds.d_eigts2_T_im));
-    CUDA_CHECK(cudaFree(ds.d_eigts3_T_re)); CUDA_CHECK(cudaFree(ds.d_eigts3_T_im));
-    CUDA_CHECK(cudaFree(ds.d_xkq)); CUDA_CHECK(cudaFree(ds.d_xk)); CUDA_CHECK(cudaFree(ds.d_tau));
-    CUDA_CHECK(cudaFree(ds.d_ityp)); CUDA_CHECK(cudaFree(ds.d_ofsbeta)); CUDA_CHECK(cudaFree(ds.d_ijtoh));
-    CUDA_CHECK(cudaFree(ds.d_mill)); CUDA_CHECK(cudaFree(ds.d_dfftt__nl));
-    CUDA_CHECK(cudaFree(ds.d_dfftt__nl_sorted)); CUDA_CHECK(cudaFree(ds.d_dfftt__nl_ix));
-    CUDA_CHECK(cudaFree(ds.d_eigqts_re)); CUDA_CHECK(cudaFree(ds.d_eigqts_im));
+    GPU_CHECK(gpuFree(ds.d_rhoc_re)); GPU_CHECK(gpuFree(ds.d_rhoc_im));
+    GPU_CHECK(gpuFree(ds.d_becphi_re)); GPU_CHECK(gpuFree(ds.d_becphi_im));
+    GPU_CHECK(gpuFree(ds.d_becpsi_re)); GPU_CHECK(gpuFree(ds.d_becpsi_im));
+    GPU_CHECK(gpuFree(ds.d_qgm_re)); GPU_CHECK(gpuFree(ds.d_qgm_im));
+    GPU_CHECK(gpuFree(ds.d_eigts1_re)); GPU_CHECK(gpuFree(ds.d_eigts1_im));
+    GPU_CHECK(gpuFree(ds.d_eigts2_re)); GPU_CHECK(gpuFree(ds.d_eigts2_im));
+    GPU_CHECK(gpuFree(ds.d_eigts3_re)); GPU_CHECK(gpuFree(ds.d_eigts3_im));
+    GPU_CHECK(gpuFree(ds.d_qgm_T_re)); GPU_CHECK(gpuFree(ds.d_qgm_T_im));
+    GPU_CHECK(gpuFree(ds.d_eigts1_T_re)); GPU_CHECK(gpuFree(ds.d_eigts1_T_im));
+    GPU_CHECK(gpuFree(ds.d_eigts2_T_re)); GPU_CHECK(gpuFree(ds.d_eigts2_T_im));
+    GPU_CHECK(gpuFree(ds.d_eigts3_T_re)); GPU_CHECK(gpuFree(ds.d_eigts3_T_im));
+    GPU_CHECK(gpuFree(ds.d_xkq)); GPU_CHECK(gpuFree(ds.d_xk)); GPU_CHECK(gpuFree(ds.d_tau));
+    GPU_CHECK(gpuFree(ds.d_ityp)); GPU_CHECK(gpuFree(ds.d_ofsbeta)); GPU_CHECK(gpuFree(ds.d_ijtoh));
+    GPU_CHECK(gpuFree(ds.d_mill)); GPU_CHECK(gpuFree(ds.d_dfftt__nl));
+    GPU_CHECK(gpuFree(ds.d_dfftt__nl_sorted)); GPU_CHECK(gpuFree(ds.d_dfftt__nl_ix));
+    GPU_CHECK(gpuFree(ds.d_eigqts_re)); GPU_CHECK(gpuFree(ds.d_eigqts_im));
 }
 
 static void reset_rhoc_soa(DeviceArraysSoA& ds) {
     double* h_re = new double[RHOC_SIZE]; double* h_im = new double[RHOC_SIZE];
     aos_to_soa(rhoc, h_re, h_im, RHOC_SIZE);
-    CUDA_CHECK(cudaMemcpy(ds.d_rhoc_re, h_re, RHOC_SIZE * sizeof(double), cudaMemcpyHostToDevice));
-    CUDA_CHECK(cudaMemcpy(ds.d_rhoc_im, h_im, RHOC_SIZE * sizeof(double), cudaMemcpyHostToDevice));
+    GPU_CHECK(gpuMemcpy(ds.d_rhoc_re, h_re, RHOC_SIZE * sizeof(double), gpuMemcpyHostToDevice));
+    GPU_CHECK(gpuMemcpy(ds.d_rhoc_im, h_im, RHOC_SIZE * sizeof(double), gpuMemcpyHostToDevice));
     delete[] h_re; delete[] h_im;
 }
 
@@ -272,7 +263,7 @@ static void reset_rhoc_soa(DeviceArraysSoA& ds) {
 // Correctness
 // ============================================================
 static bool check_aos(DeviceArrays& da) {
-    CUDA_CHECK(cudaMemcpy(rhoc_out_sim, da.d_rhoc, RHOC_SIZE * sizeof(Complex_DP), cudaMemcpyDeviceToHost));
+    GPU_CHECK(gpuMemcpy(rhoc_out_sim, da.d_rhoc, RHOC_SIZE * sizeof(Complex_DP), gpuMemcpyDeviceToHost));
     for (int i = 0; i < RHOC_SIZE; i++)
         if (cabs_val(csub(rhoc_out_sim[i], rhoc_out[i])) >= 1e-8) return false;
     return true;
@@ -280,8 +271,8 @@ static bool check_aos(DeviceArrays& da) {
 
 static bool check_soa(DeviceArraysSoA& ds) {
     double* h_re = new double[RHOC_SIZE]; double* h_im = new double[RHOC_SIZE];
-    CUDA_CHECK(cudaMemcpy(h_re, ds.d_rhoc_re, RHOC_SIZE * sizeof(double), cudaMemcpyDeviceToHost));
-    CUDA_CHECK(cudaMemcpy(h_im, ds.d_rhoc_im, RHOC_SIZE * sizeof(double), cudaMemcpyDeviceToHost));
+    GPU_CHECK(gpuMemcpy(h_re, ds.d_rhoc_re, RHOC_SIZE * sizeof(double), gpuMemcpyDeviceToHost));
+    GPU_CHECK(gpuMemcpy(h_im, ds.d_rhoc_im, RHOC_SIZE * sizeof(double), gpuMemcpyDeviceToHost));
     bool ok = true;
     for (int i = 0; i < RHOC_SIZE && ok; i++) {
         double dr = h_re[i] - creal_val(rhoc_out[i]);
@@ -299,25 +290,25 @@ static std::vector<float> profile_kernel(
     std::function<void()> reset_fn,
     std::function<void()> kernel_fn)
 {
-    cudaEvent_t start_ev[TOTAL_ITERS], stop_ev[TOTAL_ITERS];
+    gpuEvent_t start_ev[TOTAL_ITERS], stop_ev[TOTAL_ITERS];
     float ms[TOTAL_ITERS];
     for (int i = 0; i < TOTAL_ITERS; i++) {
-        CUDA_CHECK(cudaEventCreate(&start_ev[i])); CUDA_CHECK(cudaEventCreate(&stop_ev[i]));
+        GPU_CHECK(gpuEventCreate(&start_ev[i])); GPU_CHECK(gpuEventCreate(&stop_ev[i]));
     }
     reset_fn();
     for (int i = 0; i < TOTAL_ITERS; i++) {
-        CUDA_CHECK(cudaEventRecord(start_ev[i], 0));
+        GPU_CHECK(gpuEventRecord(start_ev[i], 0));
         kernel_fn();
-        CUDA_CHECK(cudaEventRecord(stop_ev[i], 0));
-        CUDA_CHECK(cudaEventSynchronize(stop_ev[i]));
+        GPU_CHECK(gpuEventRecord(stop_ev[i], 0));
+        GPU_CHECK(gpuEventSynchronize(stop_ev[i]));
     }
     std::vector<float> times;
     for (int i = NUM_WARMUP; i < TOTAL_ITERS; i++) {
-        CUDA_CHECK(cudaEventElapsedTime(&ms[i], start_ev[i], stop_ev[i]));
+        GPU_CHECK(gpuEventElapsedTime(&ms[i], start_ev[i], stop_ev[i]));
         times.push_back(ms[i]);
     }
     for (int i = 0; i < TOTAL_ITERS; i++) {
-        CUDA_CHECK(cudaEventDestroy(start_ev[i])); CUDA_CHECK(cudaEventDestroy(stop_ev[i]));
+        GPU_CHECK(gpuEventDestroy(start_ev[i])); GPU_CHECK(gpuEventDestroy(stop_ev[i]));
     }
     return times;
 }
