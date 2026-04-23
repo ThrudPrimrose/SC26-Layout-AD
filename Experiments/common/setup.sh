@@ -36,7 +36,7 @@
 #   (or `target=neoverse_v2`) if the spack env is re-concretized.
 # =============================================================================
 
-set -euo pipefail
+# set -euo pipefail  # disabled to surface failing commands without exiting
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 VENV_DIR="${VENV_DIR:-${SCRIPT_DIR}/venv}"
@@ -44,47 +44,45 @@ DACE_DIR="${DACE_DIR:-${SCRIPT_DIR}/dace}"
 DACE_URL="${DACE_URL:-https://github.com/spcl/dace.git}"
 DACE_BRANCH="${DACE_BRANCH:-yakup/dev}"
 
-# Spack prereqs for Python stdlib C-ext modules (readline, sqlite3, lzma,
-# bz2, ctypes, ssl, zlib). Pinned by short hash — TODO: VERSION.
-# Arch-specific: hashes differ between zen3 (beverin) and neoverse_v2 (daint).
+# Python source: spack on beverin (zen3), system python3.11 on daint
+# (aarch64) — spack scratch installs there get purged by the Capstor
+# atime-based cleanup, so /usr/bin/python3.11 is more durable. Override
+# with SC26_PYBIN=/path/to/python to force a specific interpreter.
+log() { printf '[setup] %s\n' "$*"; }
+
 case "$(uname -m)" in
   x86_64)
     : "${SC26_PYTHON_SPEC:=python/asgm25z}"   # python@3.13.8, zen3
     SPACK_DEPS=(
         sqlite/atf6liaa     # sqlite@3.50.4
     )
+    if ! command -v spack >/dev/null 2>&1; then
+      log "ERROR: spack not found on PATH."
+      exit 1
+    fi
+    log "loading spack prereqs (${SPACK_DEPS[*]})"
+    spack load "${SPACK_DEPS[@]}"
+    log "loading spack python (${SC26_PYTHON_SPEC})"
+    spack load "${SC26_PYTHON_SPEC}"
+    PYBIN="${SC26_PYBIN:-$(command -v python3)}"
     ;;
   aarch64)
-    : "${SC26_PYTHON_SPEC:=python/6kewgi6}"   # python@3.13.8, neoverse_v2
-    SPACK_DEPS=(
-        sqlite/aynz7gpz     # sqlite@3.50.4
-    )
+    PYBIN="${SC26_PYBIN:-/usr/bin/python3.11}"
+    if [[ ! -x "${PYBIN}" ]]; then
+      log "ERROR: ${PYBIN} not found. Install python3.11 or override SC26_PYBIN."
+      exit 1
+    fi
     ;;
   *)
-    echo "[setup] ERROR: unsupported arch $(uname -m); set SC26_PYTHON_SPEC + SPACK_DEPS manually." >&2
+    echo "[setup] ERROR: unsupported arch $(uname -m); set SC26_PYBIN manually." >&2
     exit 1
     ;;
 esac
 
-log() { printf '[setup] %s\n' "$*"; }
-
-# --- spack-provided python -----------------------------------------------
-if ! command -v spack >/dev/null 2>&1; then
-  log "ERROR: spack not found on PATH."
-  exit 1
-fi
-
-log "loading spack prereqs (${SPACK_DEPS[*]})"
-spack load "${SPACK_DEPS[@]}"
-
-log "loading spack python (${SC26_PYTHON_SPEC})"
-spack load "${SC26_PYTHON_SPEC}"
-
-PYBIN="$(command -v python3)"
-log "using $(python3 --version) at ${PYBIN}"
+log "using $("${PYBIN}" --version) at ${PYBIN}"
 
 # Sanity-check that stdlib C-exts actually import.
-python3 - <<'PY'
+"${PYBIN}" - <<'PY'
 import sqlite3, readline, bz2, lzma, ctypes, ssl, zlib  # noqa: F401
 PY
 

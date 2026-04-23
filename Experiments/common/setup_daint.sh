@@ -19,6 +19,11 @@ export CPLUS_INCLUDE_PATH=$CUDA_HOME/include:$CUTENSOR_HOME/include:${CPLUS_INCL
 export ARCH=sm_90
 export DAINT=1
 
+# Daint special case: alias `python` to system python3.11 outside the venv.
+# Inside the venv, ${VIRTUAL_ENV}/bin/python wins via PATH precedence and
+# this alias is shadowed.
+alias python=/usr/bin/python3.11
+
 # --- OpenMP / SLURM pinning (Grace: 4 NUMA × 72 cores) -------------------
 export OMP_NUM_THREADS=288
 export OMP_PROC_BIND=close
