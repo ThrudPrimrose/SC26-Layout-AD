@@ -17,10 +17,10 @@ bash download_data.sh
 sbatch run_daint.sh
 sbatch run_beverin.sh
 
-# 4. Build the µ table and plot
-python cost_metrics.cpp            # (compiled inside run_*.sh)
-python tabularize_metrics.py
-python plot.py
+# 4. Post-process — µ table + roofline correlation + paper figure
+python tabularize_metrics.py --target cpu_scalar --runtime results/beverin/z_v_grad_w_cpu.csv
+python gen_mu_table.py --csv results/beverin/metrics_cpu_nl90.csv
+python plot_paper.py
 ```
 
 `run_*.sh` sources `../../common/activate.sh` then
@@ -34,9 +34,15 @@ to `results/{daint,beverin}/`.
   drivers under each layout candidate.
 - `bench_common.h` — shared indirection + data-loading helpers.
 - `icon_data_loader.h` — reads serialized R02B05 tables.
-- `cost_metrics.cpp` — computes µ per layout (Table IV).
-- `gen_mu_table.py` / `tabularize_metrics.py` — µ post-processing.
-- `plot.py` — produces Figure 12.
+- `cost_metrics.cpp` — analytic µ / Δ / Δ_NUMA / Δ_max sweep (Table IV).
+- `gen_mu_table.py` — emits LaTeX table + bar plots of µ per layout
+  from the `metrics_*_nl90.csv` output of `cost_metrics`.
+- `tabularize_metrics.py` — rank-correlates the analytic metrics
+  (Spearman/Kendall/Pearson) against the measured runtime CSVs.
+- `plot_paper.py` — produces the 2×2 violin bandwidth figure (one
+  panel per platform × device); annotates medians as % of STREAM
+  peak. `KERNEL = "z_v_grad_w"` at the top is the only line that
+  changes across loopnest_1..6.
 - `download_data.sh` — fetches serialized ICON fields from ETH PolyBox.
 
 ## Protocol

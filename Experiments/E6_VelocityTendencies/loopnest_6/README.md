@@ -27,6 +27,11 @@ reduction is not trivially saturated.
 bash ../../common/setup.sh        # once per machine
 sbatch run_daint.sh
 sbatch run_beverin.sh
+
+# Post-process — roofline correlation + paper figure
+python tabularize_metrics.py --target cpu_scalar --runtime results/beverin/levelmask_cpu.csv
+python gen_mu_table.py --csv results/beverin/metrics_cpu_nl90.csv
+python plot_paper.py
 ```
 
 ## Files
@@ -43,6 +48,12 @@ sbatch run_beverin.sh
   because it is NUMA-replicable. Slice partitioning follows the
   kernel's `jk_outer` parallelism.
 - `icon_data_loader.h` is shared with loopnest_1.
+- `gen_mu_table.py` — emits LaTeX table + bar plots of µ per layout
+  from the `metrics_*_nl90.csv` output of `cost_metrics`.
+- `tabularize_metrics.py` — rank-correlates the analytic metrics
+  against measured runtime CSVs.
+- `plot_paper.py` — 2×2 violin bandwidth figure with STREAM-peak
+  annotations (`KERNEL = "levelmask"` at the top of the file).
 
 ## Outputs
 

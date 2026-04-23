@@ -40,6 +40,11 @@ edge-shaped 2D arrays; neighbour indices are random flat edge-ids in
 bash ../../common/setup.sh        # once per machine
 sbatch run_daint.sh
 sbatch run_beverin.sh
+
+# Post-process — roofline correlation + paper figure
+python tabularize_metrics.py --target cpu_scalar --runtime results/beverin/ddt_vn_vert_cpu.csv
+python gen_mu_table.py --csv results/beverin/metrics_cpu_nl90.csv
+python plot_paper.py
 ```
 
 ## Files
@@ -54,6 +59,12 @@ sbatch run_beverin.sh
   excluded — they are dominated by the random indirection pattern and
   would mask the layout-sensitive signal).
 - `icon_data_loader.h` is shared with loopnest_1.
+- `gen_mu_table.py` — emits LaTeX table + bar plots of µ per layout
+  from the `metrics_*_nl90.csv` output of `cost_metrics`.
+- `tabularize_metrics.py` — rank-correlates the analytic metrics
+  against measured runtime CSVs.
+- `plot_paper.py` — 2×2 violin bandwidth figure with STREAM-peak
+  annotations (`KERNEL = "ddt_vn_vert"` at the top of the file).
 
 ## Outputs
 
