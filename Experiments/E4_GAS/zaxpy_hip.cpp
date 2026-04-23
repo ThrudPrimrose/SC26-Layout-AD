@@ -534,7 +534,7 @@ int main(int argc, char **argv)
     fclose(csv);
 
     delete[] qe_base;
-    if (d_flush) hipFree(d_flush);
+    if (d_flush) CUDA_CHECK(hipFree(d_flush));
     printf("\nDone.  CSVs: zaxpy_sweep_small.csv  zaxpy_sweep_1gb.csv\n");
     return 0;
 }

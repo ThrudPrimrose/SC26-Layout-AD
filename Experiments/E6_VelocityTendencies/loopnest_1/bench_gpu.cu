@@ -10,6 +10,7 @@
  * Compile (NVIDIA): nvcc -O3 -arch=sm_90 -std=c++17 -Xcompiler -fopenmp bench_gpu.cu -o bench_gpu
  * Compile (AMD):    hipcc -O3 -std=c++17 -fopenmp bench_gpu.cu -o bench_gpu
  */
+#include "../../common/gpu_compat.cuh"
 #include "bench_common.h"
 #include "icon_data_loader.h"
 #include <ctime>
@@ -800,8 +801,8 @@ static void run_dist_block(
             h_ref,bd,bd.sz_e,d_vn,d_id,d_w,d_ci,d_vt,d_ip,d_tg,d_zw,d_vi,d_out,ev0,ev1,h_gpu_out);
         fflush(fcsv);
     }
-    cudaFree(d_vn);cudaFree(d_w);cudaFree(d_vt);cudaFree(d_zw);cudaFree(d_out);
-    cudaFree(d_id);cudaFree(d_ip);cudaFree(d_tg);cudaFree(d_ci);cudaFree(d_vi);
+    CUDA_CHECK(cudaFree(d_vn));CUDA_CHECK(cudaFree(d_w));CUDA_CHECK(cudaFree(d_vt));CUDA_CHECK(cudaFree(d_zw));CUDA_CHECK(cudaFree(d_out));
+    CUDA_CHECK(cudaFree(d_id));CUDA_CHECK(cudaFree(d_ip));CUDA_CHECK(cudaFree(d_tg));CUDA_CHECK(cudaFree(d_ci));CUDA_CHECK(cudaFree(d_vi));
     CUDA_CHECK(cudaEventDestroy(ev0)); CUDA_CHECK(cudaEventDestroy(ev1));
     delete[]h_ref; delete[]h_gpu_out; bd.free_all();
 }
@@ -826,8 +827,8 @@ static void run_dist_block_v6(
     run_v6_configs(fcsv,N_e,N_c,N_v,nlev,nlev_end,nlev_padded,dist_label,
         h_ref,bd,bd.sz_e,d_vn,d_id,d_w,d_ci,d_vt,d_ip,d_tg,d_zw,d_vi,d_out,ev0,ev1,h_gpu_out);
     fflush(fcsv);
-    cudaFree(d_vn);cudaFree(d_w);cudaFree(d_vt);cudaFree(d_zw);cudaFree(d_out);
-    cudaFree(d_id);cudaFree(d_ip);cudaFree(d_tg);cudaFree(d_ci);cudaFree(d_vi);
+    CUDA_CHECK(cudaFree(d_vn));CUDA_CHECK(cudaFree(d_w));CUDA_CHECK(cudaFree(d_vt));CUDA_CHECK(cudaFree(d_zw));CUDA_CHECK(cudaFree(d_out));
+    CUDA_CHECK(cudaFree(d_id));CUDA_CHECK(cudaFree(d_ip));CUDA_CHECK(cudaFree(d_tg));CUDA_CHECK(cudaFree(d_ci));CUDA_CHECK(cudaFree(d_vi));
     CUDA_CHECK(cudaEventDestroy(ev0)); CUDA_CHECK(cudaEventDestroy(ev1));
     delete[]h_ref; delete[]h_gpu_out; bd.free_all();
 }
@@ -852,8 +853,8 @@ static void run_dist_block_v7(
     run_v7_configs(fcsv,N_e,N_c,N_v,nlev,dist_label,
         h_ref,bd,bd.sz_e,d_vn,d_id,d_w,d_ci,d_vt,d_ip,d_tg,d_zw,d_vi,d_out,ev0,ev1,h_gpu_out);
     fflush(fcsv);
-    cudaFree(d_vn);cudaFree(d_w);cudaFree(d_vt);cudaFree(d_zw);cudaFree(d_out);
-    cudaFree(d_id);cudaFree(d_ip);cudaFree(d_tg);cudaFree(d_ci);cudaFree(d_vi);
+    CUDA_CHECK(cudaFree(d_vn));CUDA_CHECK(cudaFree(d_w));CUDA_CHECK(cudaFree(d_vt));CUDA_CHECK(cudaFree(d_zw));CUDA_CHECK(cudaFree(d_out));
+    CUDA_CHECK(cudaFree(d_id));CUDA_CHECK(cudaFree(d_ip));CUDA_CHECK(cudaFree(d_tg));CUDA_CHECK(cudaFree(d_ci));CUDA_CHECK(cudaFree(d_vi));
     CUDA_CHECK(cudaEventDestroy(ev0)); CUDA_CHECK(cudaEventDestroy(ev1));
     delete[]h_ref; delete[]h_gpu_out; bd.free_all();
 }
@@ -899,8 +900,8 @@ static void run_dist_block_tiled(
             bd.free_all();
         }
     }
-    cudaFree(d_vn);cudaFree(d_w);cudaFree(d_vt);cudaFree(d_zw);cudaFree(d_out);
-    cudaFree(d_id);cudaFree(d_ip);cudaFree(d_tg);cudaFree(d_ci);cudaFree(d_vi);
+    CUDA_CHECK(cudaFree(d_vn));CUDA_CHECK(cudaFree(d_w));CUDA_CHECK(cudaFree(d_vt));CUDA_CHECK(cudaFree(d_zw));CUDA_CHECK(cudaFree(d_out));
+    CUDA_CHECK(cudaFree(d_id));CUDA_CHECK(cudaFree(d_ip));CUDA_CHECK(cudaFree(d_tg));CUDA_CHECK(cudaFree(d_ci));CUDA_CHECK(cudaFree(d_vi));
     CUDA_CHECK(cudaEventDestroy(ev0)); CUDA_CHECK(cudaEventDestroy(ev1));
     delete[]h_ref; delete[]h_gpu_out;
 }

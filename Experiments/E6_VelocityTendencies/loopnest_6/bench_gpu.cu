@@ -14,6 +14,7 @@
 #include <string>
 #include <vector>
 
+#include "../../common/gpu_compat.cuh"
 #include "bench_common.h"
 #include "../loopnest_1/icon_data_loader.h"
 #include "../../common/jacobi_flush_gpu.cuh"
@@ -325,7 +326,7 @@ int main(int argc, char *argv[]) {
   CUDA_CHECK(cudaMalloc(&d_lvm, sz_max*8));
   CUDA_CHECK(cudaMalloc(&d_lvout, (size_t)max_nlev*8));
   std::vector<double> h_ref(max_nlev), h_gpu_out(max_nlev);
-  cudaEvent_t ev0, ev1; cudaEventCreate(&ev0); cudaEventCreate(&ev1);
+  cudaEvent_t ev0, ev1; CUDA_CHECK(cudaEventCreate(&ev0)); CUDA_CHECK(cudaEventCreate(&ev1));
 
   const char *dists[3] = {"uniform", "normal_var1", "exact"};
   int ndists = have_exact ? 3 : 2;
@@ -376,8 +377,8 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  cudaFree(d_lvm); cudaFree(d_lvout);
-  cudaEventDestroy(ev0); cudaEventDestroy(ev1);
+  CUDA_CHECK(cudaFree(d_lvm)); CUDA_CHECK(cudaFree(d_lvout));
+  CUDA_CHECK(cudaEventDestroy(ev0)); CUDA_CHECK(cudaEventDestroy(ev1));
   if (have_exact) ied.free_all();
   fclose(fcsv);
   return 0;

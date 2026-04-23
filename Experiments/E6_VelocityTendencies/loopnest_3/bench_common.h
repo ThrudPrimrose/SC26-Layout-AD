@@ -17,6 +17,14 @@
  */
 #pragma once
 
+/* Pull the GPU runtime in BEFORE the HD macro so __forceinline__, blockIdx etc. are declared. */
+#if defined(__CUDACC__)
+#  include <cuda_runtime.h>
+#elif defined(__HIP_PLATFORM_AMD__) || defined(__HIP__)
+#  include <hip/hip_runtime.h>
+#endif
+
+
 #include <algorithm>
 #include <chrono>
 #include <cmath>

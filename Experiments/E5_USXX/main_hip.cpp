@@ -9,6 +9,18 @@
 #include <algorithm>
 #include <vector>
 #include <functional>
+#include <iostream>
+
+#define CUDA_CHECK(call)                                       \
+    do {                                                       \
+        hipError_t _e = (call);                                \
+        if (_e != hipSuccess) {                                \
+            std::cerr << "HIP error " << __FILE__ << ":"       \
+                      << __LINE__ << " -> "                    \
+                      << hipGetErrorString(_e) << std::endl;   \
+            std::exit(EXIT_FAILURE);                           \
+        }                                                      \
+    } while (0)
 
 // Array dimensions
 static constexpr int RHOC_SIZE   = 120000;
@@ -127,8 +139,8 @@ struct DeviceArrays {
 };
 
 #define CUDA_AC(d_ptr, h_ptr, count, type) \
-    hipMalloc(&da.d_ptr, (count) * sizeof(type)); \
-    hipMemcpy(da.d_ptr, h_ptr, (count) * sizeof(type), hipMemcpyHostToDevice);
+    CUDA_CHECK(hipMalloc(&da.d_ptr, (count) * sizeof(type))); \
+    CUDA_CHECK(hipMemcpy(da.d_ptr, h_ptr, (count) * sizeof(type), hipMemcpyHostToDevice));
 
 static DeviceArrays allocate_device_arrays() {
     DeviceArrays da;
@@ -152,23 +164,23 @@ static DeviceArrays allocate_device_arrays() {
     CUDA_AC(d_dfftt__nl, dfftt__nl, NL_SIZE, int);
     CUDA_AC(d_dfftt__nl_sorted, dfftt__nl_sorted, NL_SIZE, int);
     CUDA_AC(d_dfftt__nl_ix, dfftt__nl_ix, NL_SIZE, int);
-    hipMalloc(&da.d_eigqts, nat * sizeof(Complex_DP));
+    CUDA_CHECK(hipMalloc(&da.d_eigqts, nat * sizeof(Complex_DP)));
     return da;
 }
 
 static void free_device_arrays(DeviceArrays& da) {
-    hipFree(da.d_rhoc); hipFree(da.d_becphi_c); hipFree(da.d_becpsi_c);
-    hipFree(da.d_qgm); hipFree(da.d_eigts1); hipFree(da.d_eigts2); hipFree(da.d_eigts3);
-    hipFree(da.d_qgm_T); hipFree(da.d_eigts1_T); hipFree(da.d_eigts2_T); hipFree(da.d_eigts3_T);
-    hipFree(da.d_xkq); hipFree(da.d_xk); hipFree(da.d_tau);
-    hipFree(da.d_ityp); hipFree(da.d_ofsbeta); hipFree(da.d_ijtoh);
-    hipFree(da.d_mill); hipFree(da.d_dfftt__nl);
-    hipFree(da.d_dfftt__nl_sorted); hipFree(da.d_dfftt__nl_ix);
-    hipFree(da.d_eigqts);
+    CUDA_CHECK(hipFree(da.d_rhoc)); CUDA_CHECK(hipFree(da.d_becphi_c)); CUDA_CHECK(hipFree(da.d_becpsi_c));
+    CUDA_CHECK(hipFree(da.d_qgm)); CUDA_CHECK(hipFree(da.d_eigts1)); CUDA_CHECK(hipFree(da.d_eigts2)); CUDA_CHECK(hipFree(da.d_eigts3));
+    CUDA_CHECK(hipFree(da.d_qgm_T)); CUDA_CHECK(hipFree(da.d_eigts1_T)); CUDA_CHECK(hipFree(da.d_eigts2_T)); CUDA_CHECK(hipFree(da.d_eigts3_T));
+    CUDA_CHECK(hipFree(da.d_xkq)); CUDA_CHECK(hipFree(da.d_xk)); CUDA_CHECK(hipFree(da.d_tau));
+    CUDA_CHECK(hipFree(da.d_ityp)); CUDA_CHECK(hipFree(da.d_ofsbeta)); CUDA_CHECK(hipFree(da.d_ijtoh));
+    CUDA_CHECK(hipFree(da.d_mill)); CUDA_CHECK(hipFree(da.d_dfftt__nl));
+    CUDA_CHECK(hipFree(da.d_dfftt__nl_sorted)); CUDA_CHECK(hipFree(da.d_dfftt__nl_ix));
+    CUDA_CHECK(hipFree(da.d_eigqts));
 }
 
 static void reset_rhoc_device(DeviceArrays& da) {
-    hipMemcpy(da.d_rhoc, rhoc, RHOC_SIZE * sizeof(Complex_DP), hipMemcpyHostToDevice);
+    CUDA_CHECK(hipMemcpy(da.d_rhoc, rhoc, RHOC_SIZE * sizeof(Complex_DP), hipMemcpyHostToDevice));
 }
 
 // ============================================================
@@ -190,18 +202,18 @@ struct DeviceArraysSoA {
 static void alloc_soa_pair(double*& d_re, double*& d_im, const Complex_DP* h_aos, int n) {
     double* h_re = new double[n]; double* h_im = new double[n];
     aos_to_soa(h_aos, h_re, h_im, n);
-    hipMalloc(&d_re, n * sizeof(double)); hipMalloc(&d_im, n * sizeof(double));
-    hipMemcpy(d_re, h_re, n * sizeof(double), hipMemcpyHostToDevice);
-    hipMemcpy(d_im, h_im, n * sizeof(double), hipMemcpyHostToDevice);
+    CUDA_CHECK(hipMalloc(&d_re, n * sizeof(double))); CUDA_CHECK(hipMalloc(&d_im, n * sizeof(double)));
+    CUDA_CHECK(hipMemcpy(d_re, h_re, n * sizeof(double), hipMemcpyHostToDevice));
+    CUDA_CHECK(hipMemcpy(d_im, h_im, n * sizeof(double), hipMemcpyHostToDevice));
     delete[] h_re; delete[] h_im;
 }
 
 #define SOA_INT_AC(d_ptr, h_ptr, count) \
-    hipMalloc(&ds.d_ptr, (count) * sizeof(int)); \
-    hipMemcpy(ds.d_ptr, h_ptr, (count) * sizeof(int), hipMemcpyHostToDevice);
+    CUDA_CHECK(hipMalloc(&ds.d_ptr, (count) * sizeof(int))); \
+    CUDA_CHECK(hipMemcpy(ds.d_ptr, h_ptr, (count) * sizeof(int), hipMemcpyHostToDevice));
 #define SOA_DP_AC(d_ptr, h_ptr, count) \
-    hipMalloc(&ds.d_ptr, (count) * sizeof(DP)); \
-    hipMemcpy(ds.d_ptr, h_ptr, (count) * sizeof(DP), hipMemcpyHostToDevice);
+    CUDA_CHECK(hipMalloc(&ds.d_ptr, (count) * sizeof(DP))); \
+    CUDA_CHECK(hipMemcpy(ds.d_ptr, h_ptr, (count) * sizeof(DP), hipMemcpyHostToDevice));
 
 static DeviceArraysSoA allocate_device_arrays_soa() {
     DeviceArraysSoA ds;
@@ -224,35 +236,35 @@ static DeviceArraysSoA allocate_device_arrays_soa() {
     SOA_INT_AC(d_dfftt__nl, dfftt__nl, NL_SIZE);
     SOA_INT_AC(d_dfftt__nl_sorted, dfftt__nl_sorted, NL_SIZE);
     SOA_INT_AC(d_dfftt__nl_ix, dfftt__nl_ix, NL_SIZE);
-    hipMalloc(&ds.d_eigqts_re, nat * sizeof(double));
-    hipMalloc(&ds.d_eigqts_im, nat * sizeof(double));
+    CUDA_CHECK(hipMalloc(&ds.d_eigqts_re, nat * sizeof(double)));
+    CUDA_CHECK(hipMalloc(&ds.d_eigqts_im, nat * sizeof(double)));
     return ds;
 }
 
 static void free_device_arrays_soa(DeviceArraysSoA& ds) {
-    hipFree(ds.d_rhoc_re); hipFree(ds.d_rhoc_im);
-    hipFree(ds.d_becphi_re); hipFree(ds.d_becphi_im);
-    hipFree(ds.d_becpsi_re); hipFree(ds.d_becpsi_im);
-    hipFree(ds.d_qgm_re); hipFree(ds.d_qgm_im);
-    hipFree(ds.d_eigts1_re); hipFree(ds.d_eigts1_im);
-    hipFree(ds.d_eigts2_re); hipFree(ds.d_eigts2_im);
-    hipFree(ds.d_eigts3_re); hipFree(ds.d_eigts3_im);
-    hipFree(ds.d_qgm_T_re); hipFree(ds.d_qgm_T_im);
-    hipFree(ds.d_eigts1_T_re); hipFree(ds.d_eigts1_T_im);
-    hipFree(ds.d_eigts2_T_re); hipFree(ds.d_eigts2_T_im);
-    hipFree(ds.d_eigts3_T_re); hipFree(ds.d_eigts3_T_im);
-    hipFree(ds.d_xkq); hipFree(ds.d_xk); hipFree(ds.d_tau);
-    hipFree(ds.d_ityp); hipFree(ds.d_ofsbeta); hipFree(ds.d_ijtoh);
-    hipFree(ds.d_mill); hipFree(ds.d_dfftt__nl);
-    hipFree(ds.d_dfftt__nl_sorted); hipFree(ds.d_dfftt__nl_ix);
-    hipFree(ds.d_eigqts_re); hipFree(ds.d_eigqts_im);
+    CUDA_CHECK(hipFree(ds.d_rhoc_re)); CUDA_CHECK(hipFree(ds.d_rhoc_im));
+    CUDA_CHECK(hipFree(ds.d_becphi_re)); CUDA_CHECK(hipFree(ds.d_becphi_im));
+    CUDA_CHECK(hipFree(ds.d_becpsi_re)); CUDA_CHECK(hipFree(ds.d_becpsi_im));
+    CUDA_CHECK(hipFree(ds.d_qgm_re)); CUDA_CHECK(hipFree(ds.d_qgm_im));
+    CUDA_CHECK(hipFree(ds.d_eigts1_re)); CUDA_CHECK(hipFree(ds.d_eigts1_im));
+    CUDA_CHECK(hipFree(ds.d_eigts2_re)); CUDA_CHECK(hipFree(ds.d_eigts2_im));
+    CUDA_CHECK(hipFree(ds.d_eigts3_re)); CUDA_CHECK(hipFree(ds.d_eigts3_im));
+    CUDA_CHECK(hipFree(ds.d_qgm_T_re)); CUDA_CHECK(hipFree(ds.d_qgm_T_im));
+    CUDA_CHECK(hipFree(ds.d_eigts1_T_re)); CUDA_CHECK(hipFree(ds.d_eigts1_T_im));
+    CUDA_CHECK(hipFree(ds.d_eigts2_T_re)); CUDA_CHECK(hipFree(ds.d_eigts2_T_im));
+    CUDA_CHECK(hipFree(ds.d_eigts3_T_re)); CUDA_CHECK(hipFree(ds.d_eigts3_T_im));
+    CUDA_CHECK(hipFree(ds.d_xkq)); CUDA_CHECK(hipFree(ds.d_xk)); CUDA_CHECK(hipFree(ds.d_tau));
+    CUDA_CHECK(hipFree(ds.d_ityp)); CUDA_CHECK(hipFree(ds.d_ofsbeta)); CUDA_CHECK(hipFree(ds.d_ijtoh));
+    CUDA_CHECK(hipFree(ds.d_mill)); CUDA_CHECK(hipFree(ds.d_dfftt__nl));
+    CUDA_CHECK(hipFree(ds.d_dfftt__nl_sorted)); CUDA_CHECK(hipFree(ds.d_dfftt__nl_ix));
+    CUDA_CHECK(hipFree(ds.d_eigqts_re)); CUDA_CHECK(hipFree(ds.d_eigqts_im));
 }
 
 static void reset_rhoc_soa(DeviceArraysSoA& ds) {
     double* h_re = new double[RHOC_SIZE]; double* h_im = new double[RHOC_SIZE];
     aos_to_soa(rhoc, h_re, h_im, RHOC_SIZE);
-    hipMemcpy(ds.d_rhoc_re, h_re, RHOC_SIZE * sizeof(double), hipMemcpyHostToDevice);
-    hipMemcpy(ds.d_rhoc_im, h_im, RHOC_SIZE * sizeof(double), hipMemcpyHostToDevice);
+    CUDA_CHECK(hipMemcpy(ds.d_rhoc_re, h_re, RHOC_SIZE * sizeof(double), hipMemcpyHostToDevice));
+    CUDA_CHECK(hipMemcpy(ds.d_rhoc_im, h_im, RHOC_SIZE * sizeof(double), hipMemcpyHostToDevice));
     delete[] h_re; delete[] h_im;
 }
 
@@ -260,7 +272,7 @@ static void reset_rhoc_soa(DeviceArraysSoA& ds) {
 // Correctness
 // ============================================================
 static bool check_aos(DeviceArrays& da) {
-    hipMemcpy(rhoc_out_sim, da.d_rhoc, RHOC_SIZE * sizeof(Complex_DP), hipMemcpyDeviceToHost);
+    CUDA_CHECK(hipMemcpy(rhoc_out_sim, da.d_rhoc, RHOC_SIZE * sizeof(Complex_DP), hipMemcpyDeviceToHost));
     for (int i = 0; i < RHOC_SIZE; i++)
         if (cabs_val(csub(rhoc_out_sim[i], rhoc_out[i])) >= 1e-8) return false;
     return true;
@@ -268,8 +280,8 @@ static bool check_aos(DeviceArrays& da) {
 
 static bool check_soa(DeviceArraysSoA& ds) {
     double* h_re = new double[RHOC_SIZE]; double* h_im = new double[RHOC_SIZE];
-    hipMemcpy(h_re, ds.d_rhoc_re, RHOC_SIZE * sizeof(double), hipMemcpyDeviceToHost);
-    hipMemcpy(h_im, ds.d_rhoc_im, RHOC_SIZE * sizeof(double), hipMemcpyDeviceToHost);
+    CUDA_CHECK(hipMemcpy(h_re, ds.d_rhoc_re, RHOC_SIZE * sizeof(double), hipMemcpyDeviceToHost));
+    CUDA_CHECK(hipMemcpy(h_im, ds.d_rhoc_im, RHOC_SIZE * sizeof(double), hipMemcpyDeviceToHost));
     bool ok = true;
     for (int i = 0; i < RHOC_SIZE && ok; i++) {
         double dr = h_re[i] - creal_val(rhoc_out[i]);
@@ -290,22 +302,22 @@ static std::vector<float> profile_kernel(
     hipEvent_t start_ev[TOTAL_ITERS], stop_ev[TOTAL_ITERS];
     float ms[TOTAL_ITERS];
     for (int i = 0; i < TOTAL_ITERS; i++) {
-        hipEventCreate(&start_ev[i]); hipEventCreate(&stop_ev[i]);
+        CUDA_CHECK(hipEventCreate(&start_ev[i])); CUDA_CHECK(hipEventCreate(&stop_ev[i]));
     }
     reset_fn();
     for (int i = 0; i < TOTAL_ITERS; i++) {
-        hipEventRecord(start_ev[i], 0);
+        CUDA_CHECK(hipEventRecord(start_ev[i], 0));
         kernel_fn();
-        hipEventRecord(stop_ev[i], 0);
-        hipEventSynchronize(stop_ev[i]);
+        CUDA_CHECK(hipEventRecord(stop_ev[i], 0));
+        CUDA_CHECK(hipEventSynchronize(stop_ev[i]));
     }
     std::vector<float> times;
     for (int i = NUM_WARMUP; i < TOTAL_ITERS; i++) {
-        hipEventElapsedTime(&ms[i], start_ev[i], stop_ev[i]);
+        CUDA_CHECK(hipEventElapsedTime(&ms[i], start_ev[i], stop_ev[i]));
         times.push_back(ms[i]);
     }
     for (int i = 0; i < TOTAL_ITERS; i++) {
-        hipEventDestroy(start_ev[i]); hipEventDestroy(stop_ev[i]);
+        CUDA_CHECK(hipEventDestroy(start_ev[i])); CUDA_CHECK(hipEventDestroy(stop_ev[i]));
     }
     return times;
 }

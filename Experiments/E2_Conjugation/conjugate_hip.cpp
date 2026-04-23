@@ -1,4 +1,5 @@
 #include "hip/hip_runtime.h"
+#include "../common/gpu_compat.cuh"
 #include <cstdio>
 #include <cstdlib>
 #include <cstdint>
@@ -95,16 +96,16 @@ static double bw_oop(int P, int64_t n, double ms) {
 
 #define GPU_BENCH(P_val, n_base, label, call) do { \
     for (int w = 0; w < 5; w++) { call; } \
-    hipDeviceSynchronize(); \
+    GPU_CHECK(hipDeviceSynchronize()); \
     for (int r = 0; r < RUNS; r++) { \
-        hipEvent_t a, b; hipEventCreate(&a); hipEventCreate(&b); \
-        hipEventRecord(a); \
+        hipEvent_t a, b; GPU_CHECK(hipEventCreate(&a)); GPU_CHECK(hipEventCreate(&b)); \
+        GPU_CHECK(hipEventRecord(a)); \
         call; \
-        hipEventRecord(b); hipEventSynchronize(b); \
-        float ms; hipEventElapsedTime(&ms, a, b); \
+        GPU_CHECK(hipEventRecord(b)); GPU_CHECK(hipEventSynchronize(b)); \
+        float ms; GPU_CHECK(hipEventElapsedTime(&ms, a, b)); \
         fprintf(csv, "%d,%s,%d,%.6f,%.2f\n", \
                 P_val, label, r, (double)ms, bw_oop(P_val, n_base, ms)); \
-        hipEventDestroy(a); hipEventDestroy(b); \
+        GPU_CHECK(hipEventDestroy(a)); GPU_CHECK(hipEventDestroy(b)); \
     } \
     printf("  %-14s  (see csv)\n", label); \
 } while (0)
@@ -167,7 +168,7 @@ int main(int argc, char **argv) {
         double *h = (double *)malloc(bytes);
         for (int64_t i = 0; i < TOTAL_DOUBLES; i++)
             h[i] = (double)(i % 997) * 0.001;
-        hipMemcpy(di, h, bytes, hipMemcpyHostToDevice);
+        GPU_CHECK(hipMemcpy(di, h, bytes, hipMemcpyHostToDevice));
         free(h);
     }
 
@@ -179,7 +180,7 @@ int main(int argc, char **argv) {
     run_all<18>(di, dout);
     run_all<21>(di, dout);
 
-    hipFree(di); hipFree(dout);
+    GPU_CHECK(hipFree(di)); GPU_CHECK(hipFree(dout));
     fclose(csv);
     printf("\nwrote results_gpu_oop.csv\n");
 }

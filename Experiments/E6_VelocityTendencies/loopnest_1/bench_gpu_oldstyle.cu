@@ -8,6 +8,7 @@
  * Compile (NVIDIA): nvcc -O3 -arch=sm_90 -std=c++17 -Xcompiler -fopenmp bench_gpu_oldstyle.cu -o bench_gpu_old
  * Compile (AMD):    hipcc -O3 -std=c++17 -fopenmp bench_gpu_oldstyle.cu -o bench_gpu_old
  */
+#include "../../common/gpu_compat.cuh"
 #include "bench_common.h"
 #include "icon_data_loader.h"
 #include <ctime>
@@ -334,7 +335,7 @@ struct GpuFlush {
         CUDA_CHECK(cudaDeviceSynchronize());
         int ri = FLUSH_N * FLUSH_N / 2; double val;
         CUDA_CHECK(cudaMemcpy(&val,d_A+ri,8,cudaMemcpyDeviceToHost));}
-    void destroy(){if(d_A)cudaFree(d_A);if(d_B)cudaFree(d_B);d_A=d_B=nullptr;inited=false;}
+    void destroy(){if(d_A)CUDA_CHECK(cudaFree(d_A));if(d_B)CUDA_CHECK(cudaFree(d_B));d_A=d_B=nullptr;inited=false;}
 };
 static GpuFlush g_flush;
 
@@ -499,10 +500,10 @@ int main(int argc, char* argv[]) {
                 fflush(fcsv);
             }
 
-            cudaFree(d_vn); cudaFree(d_w); cudaFree(d_vt);
-            cudaFree(d_zw); cudaFree(d_out);
-            cudaFree(d_id); cudaFree(d_ip); cudaFree(d_tg);
-            cudaFree(d_ci); cudaFree(d_vi);
+            CUDA_CHECK(cudaFree(d_vn)); CUDA_CHECK(cudaFree(d_w)); CUDA_CHECK(cudaFree(d_vt));
+            CUDA_CHECK(cudaFree(d_zw)); CUDA_CHECK(cudaFree(d_out));
+            CUDA_CHECK(cudaFree(d_id)); CUDA_CHECK(cudaFree(d_ip)); CUDA_CHECK(cudaFree(d_tg));
+            CUDA_CHECK(cudaFree(d_ci)); CUDA_CHECK(cudaFree(d_vi));
             CUDA_CHECK(cudaEventDestroy(ev0));
             CUDA_CHECK(cudaEventDestroy(ev1));
             delete[] h_ref; delete[] h_gpu_out;
@@ -546,10 +547,10 @@ int main(int argc, char* argv[]) {
                 fflush(fcsv);
             }
 
-            cudaFree(d_vn); cudaFree(d_w); cudaFree(d_vt);
-            cudaFree(d_zw); cudaFree(d_out);
-            cudaFree(d_id); cudaFree(d_ip); cudaFree(d_tg);
-            cudaFree(d_ci); cudaFree(d_vi);
+            CUDA_CHECK(cudaFree(d_vn)); CUDA_CHECK(cudaFree(d_w)); CUDA_CHECK(cudaFree(d_vt));
+            CUDA_CHECK(cudaFree(d_zw)); CUDA_CHECK(cudaFree(d_out));
+            CUDA_CHECK(cudaFree(d_id)); CUDA_CHECK(cudaFree(d_ip)); CUDA_CHECK(cudaFree(d_tg));
+            CUDA_CHECK(cudaFree(d_ci)); CUDA_CHECK(cudaFree(d_vi));
             CUDA_CHECK(cudaEventDestroy(ev0));
             CUDA_CHECK(cudaEventDestroy(ev1));
             delete[] h_ref; delete[] h_gpu_out;

@@ -335,7 +335,7 @@ struct GpuFlush {
         CUDA_CHECK(hipDeviceSynchronize());
         int ri = FLUSH_N * FLUSH_N / 2; double val;
         CUDA_CHECK(hipMemcpy(&val,d_A+ri,8,hipMemcpyDeviceToHost));}
-    void destroy(){if(d_A)hipFree(d_A);if(d_B)hipFree(d_B);d_A=d_B=nullptr;inited=false;}
+    void destroy(){if(d_A)CUDA_CHECK(hipFree(d_A));if(d_B)CUDA_CHECK(hipFree(d_B));d_A=d_B=nullptr;inited=false;}
 };
 static GpuFlush g_flush;
 
@@ -499,10 +499,10 @@ int main(int argc, char* argv[]) {
                 fflush(fcsv);
             }
 
-            hipFree(d_vn); hipFree(d_w); hipFree(d_vt);
-            hipFree(d_zw); hipFree(d_out);
-            hipFree(d_id); hipFree(d_ip); hipFree(d_tg);
-            hipFree(d_ci); hipFree(d_vi);
+            CUDA_CHECK(hipFree(d_vn)); CUDA_CHECK(hipFree(d_w)); CUDA_CHECK(hipFree(d_vt));
+            CUDA_CHECK(hipFree(d_zw)); CUDA_CHECK(hipFree(d_out));
+            CUDA_CHECK(hipFree(d_id)); CUDA_CHECK(hipFree(d_ip)); CUDA_CHECK(hipFree(d_tg));
+            CUDA_CHECK(hipFree(d_ci)); CUDA_CHECK(hipFree(d_vi));
             CUDA_CHECK(hipEventDestroy(ev0));
             CUDA_CHECK(hipEventDestroy(ev1));
             delete[] h_ref; delete[] h_gpu_out;
@@ -546,10 +546,10 @@ int main(int argc, char* argv[]) {
                 fflush(fcsv);
             }
 
-            hipFree(d_vn); hipFree(d_w); hipFree(d_vt);
-            hipFree(d_zw); hipFree(d_out);
-            hipFree(d_id); hipFree(d_ip); hipFree(d_tg);
-            hipFree(d_ci); hipFree(d_vi);
+            CUDA_CHECK(hipFree(d_vn)); CUDA_CHECK(hipFree(d_w)); CUDA_CHECK(hipFree(d_vt));
+            CUDA_CHECK(hipFree(d_zw)); CUDA_CHECK(hipFree(d_out));
+            CUDA_CHECK(hipFree(d_id)); CUDA_CHECK(hipFree(d_ip)); CUDA_CHECK(hipFree(d_tg));
+            CUDA_CHECK(hipFree(d_ci)); CUDA_CHECK(hipFree(d_vi));
             CUDA_CHECK(hipEventDestroy(ev0));
             CUDA_CHECK(hipEventDestroy(ev1));
             delete[] h_ref; delete[] h_gpu_out;

@@ -161,7 +161,9 @@ def compile_kernels(force=False):
     if Path(BINARY_KERN).exists() and not force:
         print(f"  {BINARY_KERN} exists, skipping (use --compile to force)")
         return True
-    cmd = f"g++ -O3 -march=native -mtune=native -fno-vect-cost-model  -fopenmp -o {BINARY_KERN} transpose_cpu.cpp"
+    # -lnuma is required: transpose_cpu.cpp calls mbind() from <numaif.h>,
+    # which on modern glibc is not inlined — it lives in libnuma.
+    cmd = f"g++ -O3 -march=native -mtune=native -fno-vect-cost-model  -fopenmp -o {BINARY_KERN} transpose_cpu.cpp -lnuma"
     print(f"  Compiling kernels: {cmd}")
     r = subprocess.run(cmd, shell=True, capture_output=True, text=True)
     if r.returncode != 0:
@@ -197,7 +199,7 @@ def compile_hptt(force=False):
             break
 
     cmd = (f"g++ -O3 -march=native -mtune=native -fno-vect-cost-model  -fopenmp {hptt_flags} "
-           f"-o {BINARY_LIB} transpose_hptt.cpp -lhptt")
+           f"-o {BINARY_LIB} transpose_hptt.cpp -lhptt -lnuma")
     print(f"  Compiling HPTT: {cmd}")
     r = subprocess.run(cmd, shell=True, capture_output=True, text=True)
     if r.returncode != 0:
