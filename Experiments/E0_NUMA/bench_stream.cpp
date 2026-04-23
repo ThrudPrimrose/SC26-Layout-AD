@@ -22,8 +22,17 @@
  *   - 2x2_numa_tiled       : each thread stays inside its NUMA quadrant,
  *                            sweep inner tile (TILE_Y, TILE_X)
  *
+ * Every variant is run twice -- once with a canonical 8192^2 Jacobi
+ * cache flush between reps (flush=yes) and once without (flush=no).
+ * The "no flush" pass matches the old common/bench_stream.cpp
+ * methodology and reports the real achievable peak on a warm cache;
+ * the "yes flush" pass matches the cold-cache methodology used by
+ * every E1-E6 bench. Headline statistic is the arithmetic *mean*
+ * across the NREP reps (not the median), because for NUMA we care
+ * about the achievable peak rather than a robust central estimate.
+ *
  * Output CSV (one row per repetition):
- *   variant,TILE_Y,TILE_X,N,rep,threads,time_s,bw_gbs,checksum,status
+ *   variant,TILE_Y,TILE_X,N,rep,threads,time_s,bw_gbs,checksum,status,flush
  *
  * Usage: bench_stream <csv_file> [N1d=16384] [nthreads=0=env]
  */
@@ -195,6 +204,7 @@ struct IterRecord {
     double time_s, bw_gbs;
     double checksum;
     const char *status;
+    bool flush;
 };
 
 static std::vector<IterRecord> g_records;
@@ -206,14 +216,18 @@ static double reduce_sum(const float *__restrict__ A, size_t N) {
     return cs;
 }
 
-/* Run NWARMUP + NREP iterations of `run()`, with a cache flush between
- * every iteration. `run()` applies the scale-add in-place to A. Stores
- * per-rep records in g_records. */
+/* Run NWARMUP + NREP iterations of `run()`. When use_flush is true we
+ * call flush_jacobi() between every iteration (cold-cache peak). When
+ * false, no flush is issued and successive reps see warm caches -- this
+ * matches the old common/bench_stream.cpp "peak" methodology.
+ * `run()` applies the scale-add in-place to A. Stores per-rep records
+ * in g_records; the headline print is the arithmetic mean across reps. */
 template <typename Run>
 static void bench_variant(const char *variant, size_t TY, size_t TX,
                           Run &&run, float *A, float *B,
                           size_t N1d, int nthreads,
-                          double ref_checksum_after_one) {
+                          double ref_checksum_after_one,
+                          bool use_flush) {
     const size_t N = N1d * N1d;
 
     /* correctness: re-init A (and B for symmetry) then run once. */
@@ -224,36 +238,39 @@ static void bench_variant(const char *variant, size_t TY, size_t TX,
     bool ok = std::fabs(cs - ref_checksum_after_one) <= 1e-3 * std::fabs(ref_checksum_after_one);
     const char *status = ok ? "PASS" : "FAIL";
     if (!ok) {
-        fprintf(stderr, "  [%s TY=%zu TX=%zu] CHECKSUM MISMATCH: got %.6e exp %.6e\n",
-                variant, TY, TX, cs, ref_checksum_after_one);
+        fprintf(stderr, "  [%s TY=%zu TX=%zu flush=%s] CHECKSUM MISMATCH: got %.6e exp %.6e\n",
+                variant, TY, TX, use_flush ? "yes" : "no", cs, ref_checksum_after_one);
     }
 
     /* warmups */
     for (int w = 0; w < NWARMUP; w++) {
-        flush_jacobi();
+        if (use_flush) flush_jacobi();
         run();
     }
 
-    /* timed reps (flush between every one). Re-init not needed for
-     * bandwidth: the RMW moves the same bytes regardless of A's value. */
+    /* timed reps. Re-init not needed for bandwidth: the RMW moves the
+     * same bytes regardless of A's value. */
     const double data_bytes = 3.0 * (double)N * sizeof(float); /* 2 loads + 1 store */
     for (int r = 0; r < NREP; r++) {
-        flush_jacobi();
+        if (use_flush) flush_jacobi();
         auto t0 = Clock::now();
         run();
         auto t1 = Clock::now();
         double dt = elapsed_sec(t0, t1);
         double bw = data_bytes / dt / 1e9;
-        g_records.push_back({variant, TY, TX, r, nthreads, dt, bw, cs, status});
+        g_records.push_back({variant, TY, TX, r, nthreads, dt, bw, cs, status, use_flush});
     }
 
-    /* brief stdout summary (median + range) */
+    /* brief stdout summary (mean + range) */
     std::vector<double> bws;
     for (int i = (int)g_records.size() - NREP; i < (int)g_records.size(); i++)
         bws.push_back(g_records[i].bw_gbs);
+    double sum = 0.0; for (double b : bws) sum += b;
+    double mean = sum / (double)NREP;
     std::sort(bws.begin(), bws.end());
-    printf("  %-22s TY=%-5zu TX=%-5zu  median %7.1f GB/s  [%7.1f .. %7.1f]  %s\n",
-           variant, TY, TX, bws[NREP/2], bws[0], bws[NREP-1], status);
+    printf("  %-22s TY=%-5zu TX=%-5zu flush=%-3s mean %7.1f GB/s  [%7.1f .. %7.1f]  %s\n",
+           variant, TY, TX, use_flush ? "yes" : "no",
+           mean, bws.front(), bws.back(), status);
 }
 
 int main(int argc, char **argv) {
@@ -286,7 +303,9 @@ int main(int argc, char **argv) {
     printf("NUMA STREAM peak (E0)\n");
     printf("  N1d=%zu  N=%zu  (%.2f GiB/buf)  threads=%d  NUMA nodes=%d\n",
            N1d, N, bytes / (double)(1UL << 30), nthreads, numa_num_nodes());
-    printf("  reps=%d  warmup=%d  cache flush: flush_jacobi()\n\n", NREP, NWARMUP);
+    printf("  reps=%d  warmup=%d  stat=arithmetic mean\n", NREP, NWARMUP);
+    printf("  two passes: flush=yes (cold cache, flush_jacobi between reps)\n");
+    printf("              flush=no  (warm cache, legacy peak methodology)\n\n");
 
     /* ── allocate + NUMA first-touch (2x2 quadrants) ─────────────────── */
     float *A = numa_alloc<float>(N);
@@ -300,40 +319,46 @@ int main(int argc, char **argv) {
      * That's our analytic expected value independent of the variant. */
     const double ref_cs = 3.0001 * (double)N;
 
-    /* ── 1D baselines ─────────────────────────────────────────────────── */
-    printf("=== 1D default schedules ===\n");
-    bench_variant("1d_rows_static",     0, 0,
-                  [&]{ k_1d_rows_static(A, B, N1d); },
-                  A, B, N1d, nthreads, ref_cs);
-    bench_variant("1d_collapse_static", 0, 0,
-                  [&]{ k_1d_collapse_static(A, B, N1d); },
-                  A, B, N1d, nthreads, ref_cs);
-    bench_variant("1d_flat_static",     0, 0,
-                  [&]{ k_1d_flat_static(A, B, N1d); },
-                  A, B, N1d, nthreads, ref_cs);
-    bench_variant("1d_rows_dynamic",    0, 0,
-                  [&]{ k_1d_rows_dynamic(A, B, N1d); },
-                  A, B, N1d, nthreads, ref_cs);
-
-    /* ── 2x2 NUMA-aware tiled sweep ───────────────────────────────────── */
-    printf("\n=== 2x2 NUMA tiled (inner TILE_Y x TILE_X sweep) ===\n");
     const size_t TILE_Ys[] = {16, 32, 64, 128, 256, 512};
     const size_t TILE_Xs[] = {64, 128, 256, 512, 1024, 2048, 4096, 8192};
-    for (size_t TY : TILE_Ys)
-        for (size_t TX : TILE_Xs) {
-            bench_variant("2x2_numa_tiled", TY, TX,
-                          [&]{ k_2x2_numa_tiled(A, B, N1d, TY, TX); },
-                          A, B, N1d, nthreads, ref_cs);
-        }
+
+    for (bool use_flush : { true, false }) {
+        printf("\n######## flush=%s ########\n", use_flush ? "yes" : "no");
+
+        /* ── 1D baselines ─────────────────────────────────────────────── */
+        printf("=== 1D default schedules ===\n");
+        bench_variant("1d_rows_static",     0, 0,
+                      [&]{ k_1d_rows_static(A, B, N1d); },
+                      A, B, N1d, nthreads, ref_cs, use_flush);
+        bench_variant("1d_collapse_static", 0, 0,
+                      [&]{ k_1d_collapse_static(A, B, N1d); },
+                      A, B, N1d, nthreads, ref_cs, use_flush);
+        bench_variant("1d_flat_static",     0, 0,
+                      [&]{ k_1d_flat_static(A, B, N1d); },
+                      A, B, N1d, nthreads, ref_cs, use_flush);
+        bench_variant("1d_rows_dynamic",    0, 0,
+                      [&]{ k_1d_rows_dynamic(A, B, N1d); },
+                      A, B, N1d, nthreads, ref_cs, use_flush);
+
+        /* ── 2x2 NUMA-aware tiled sweep ──────────────────────────────── */
+        printf("\n=== 2x2 NUMA tiled (inner TILE_Y x TILE_X sweep) ===\n");
+        for (size_t TY : TILE_Ys)
+            for (size_t TX : TILE_Xs) {
+                bench_variant("2x2_numa_tiled", TY, TX,
+                              [&]{ k_2x2_numa_tiled(A, B, N1d, TY, TX); },
+                              A, B, N1d, nthreads, ref_cs, use_flush);
+            }
+    }
 
     /* ── write per-iteration CSV ──────────────────────────────────────── */
     FILE *fp = fopen(csv_path, "w");
     if (!fp) { perror(csv_path); return 1; }
-    fprintf(fp, "variant,TILE_Y,TILE_X,N,rep,threads,time_s,bw_gbs,checksum,status\n");
+    fprintf(fp, "variant,TILE_Y,TILE_X,N,rep,threads,time_s,bw_gbs,checksum,status,flush\n");
     for (const auto &r : g_records)
-        fprintf(fp, "%s,%zu,%zu,%zu,%d,%d,%.9f,%.3f,%.6e,%s\n",
+        fprintf(fp, "%s,%zu,%zu,%zu,%d,%d,%.9f,%.3f,%.6e,%s,%s\n",
                 r.variant.c_str(), r.TILE_Y, r.TILE_X, N,
-                r.rep, r.nthreads, r.time_s, r.bw_gbs, r.checksum, r.status);
+                r.rep, r.nthreads, r.time_s, r.bw_gbs, r.checksum, r.status,
+                r.flush ? "yes" : "no");
     fclose(fp);
     printf("\nWrote %zu records to %s\n", g_records.size(), csv_path);
 

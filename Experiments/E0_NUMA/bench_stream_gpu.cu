@@ -15,8 +15,16 @@
  *
  * Same source compiles for CUDA (nvcc) and HIP (hipcc -x hip).
  *
+ * Every kernel config is run twice -- once with a canonical 8192^2
+ * Jacobi cache flush between reps (flush=yes), once without (flush=no).
+ * The "no flush" pass matches the legacy common/bench_stream_gpu.cu
+ * methodology (warm HBM / L2 state after warmup); the "yes flush" pass
+ * forces cold cache between every timed rep. Headline statistic is the
+ * arithmetic *mean* across reps (not median), because for NUMA we care
+ * about the achievable peak rather than a robust central estimate.
+ *
  * Output CSV (one row per repetition):
- *   kernel,BX,BY,TX,TY,N,rep,time_ms,bw_gbs,checksum,status
+ *   kernel,BX,BY,TX,TY,N,rep,time_ms,bw_gbs,checksum,status,flush
  *
  * Usage: bench_stream_gpu <csv_file> [N1d=16384]
  */
@@ -31,6 +39,7 @@
 #include <functional>
 
 #include "../common/gpu_compat.cuh"
+#include "../common/jacobi_flush_gpu.cuh"
 
 #ifndef N1D_DIM
 #define N1D_DIM 16384
@@ -182,12 +191,14 @@ struct IterRecord {
     double bw_gbs;
     double checksum;
     bool ok;
+    bool flush;
 };
 
 static std::vector<IterRecord> g_records;
 
 static void run_bench(const KernelConfig &cfg, float *dA, float *dB,
-                      float *hA_scratch, double ref_cs_after_one)
+                      float *hA_scratch, double ref_cs_after_one,
+                      bool use_flush)
 {
     const size_t total = (size_t)Nd * Nd;
     const double data_bytes = 3.0 * (double)total * sizeof(float);
@@ -206,13 +217,18 @@ static void run_bench(const KernelConfig &cfg, float *dA, float *dB,
     for (size_t k = 0; k < total; k++) cs += (double)hA_scratch[k];
     bool ok = std::fabs(cs - ref_cs_after_one) <= 1e-3 * std::fabs(ref_cs_after_one);
     if (!ok) {
-        fprintf(stderr, "  [%s] CHECKSUM MISMATCH: got %.6e exp %.6e\n",
-                cfg.name.c_str(), cs, ref_cs_after_one);
+        fprintf(stderr, "  [%s flush=%s] CHECKSUM MISMATCH: got %.6e exp %.6e\n",
+                cfg.name.c_str(), use_flush ? "yes" : "no", cs, ref_cs_after_one);
     }
 
-    /* Warmups — we don't reset A because the RMW is measurement-stable
-     * for bandwidth (values grow but traffic per rep is identical). */
-    for (int w = 0; w < NWARMUP; w++) cfg.launch(dA, dB, 1.0001f);
+    /* Warmups -- we don't reset A because the RMW is measurement-stable
+     * for bandwidth (values grow but traffic per rep is identical). When
+     * flushing, flush between warmup reps too so the first timed rep
+     * starts from the same cold state as every subsequent one. */
+    for (int w = 0; w < NWARMUP; w++) {
+        if (use_flush) flush_jacobi_gpu();
+        cfg.launch(dA, dB, 1.0001f);
+    }
     CUDA_CHECK(gpuDeviceSynchronize());
 
     gpuEvent_t t0, t1;
@@ -221,6 +237,10 @@ static void run_bench(const KernelConfig &cfg, float *dA, float *dB,
 
     float times[NREP];
     for (int r = 0; r < NREP; r++) {
+        /* Flush is enqueued on the default stream before the event record,
+         * so t0 fires only after all flush kernels finish -- no flush time
+         * leaks into the measured interval. */
+        if (use_flush) flush_jacobi_gpu();
         CUDA_CHECK(gpuEventRecord(t0));
         cfg.launch(dA, dB, 1.0001f);
         CUDA_CHECK(gpuEventRecord(t1));
@@ -229,16 +249,21 @@ static void run_bench(const KernelConfig &cfg, float *dA, float *dB,
 
         double bw = data_bytes / ((double)times[r] * 1e-3) / 1e9;
         g_records.push_back({cfg.name, cfg.BX, cfg.BY, cfg.TX, cfg.TY,
-                             r, times[r], bw, cs, ok});
+                             r, times[r], bw, cs, ok, use_flush});
     }
     CUDA_CHECK(gpuEventDestroy(t0));
     CUDA_CHECK(gpuEventDestroy(t1));
 
-    std::sort(times, times + NREP);
-    double med = times[NREP / 2];
-    double bw  = data_bytes / (med * 1e-3) / 1e9;
-    printf("  %-55s  %8.3f ms  %8.1f GB/s  %s\n",
-           cfg.name.c_str(), med, bw, ok ? "OK" : "FAIL");
+    double sum_ms = 0.0, sum_bw = 0.0;
+    for (int r = 0; r < NREP; r++) {
+        sum_ms += (double)times[r];
+        sum_bw += data_bytes / ((double)times[r] * 1e-3) / 1e9;
+    }
+    double mean_ms = sum_ms / (double)NREP;
+    double mean_bw = sum_bw / (double)NREP;
+    printf("  %-55s  flush=%-3s  %8.3f ms  %8.1f GB/s  %s\n",
+           cfg.name.c_str(), use_flush ? "yes" : "no",
+           mean_ms, mean_bw, ok ? "OK" : "FAIL");
 }
 
 /* ================================================================ */
@@ -269,21 +294,26 @@ int main(int argc, char **argv) {
     const double ref_cs = 3.0001 * (double)total;
 
     register_configs();
-    printf("%-55s  %10s  %10s  %s\n", "Kernel", "median ms", "BW", "ok");
-    printf("%s\n", std::string(86, '-').c_str());
 
-    for (const auto &cfg : g_configs)
-        run_bench(cfg, dA, dB, hA, ref_cs);
+    for (bool use_flush : { true, false }) {
+        printf("\n######## flush=%s ########\n", use_flush ? "yes" : "no");
+        printf("%-55s  %-9s  %10s  %10s  %s\n",
+               "Kernel", "flush", "mean ms", "BW", "ok");
+        printf("%s\n", std::string(96, '-').c_str());
+        for (const auto &cfg : g_configs)
+            run_bench(cfg, dA, dB, hA, ref_cs, use_flush);
+    }
 
     /* Per-iteration CSV for violin plots. */
     FILE *fp = fopen(csv_path, "w");
     if (!fp) { perror(csv_path); return 1; }
-    fprintf(fp, "kernel,BX,BY,TX,TY,N,rep,time_ms,bw_gbs,checksum,status\n");
+    fprintf(fp, "kernel,BX,BY,TX,TY,N,rep,time_ms,bw_gbs,checksum,status,flush\n");
     for (const auto &r : g_records)
-        fprintf(fp, "\"%s\",%d,%d,%d,%d,%zu,%d,%.6f,%.3f,%.6e,%s\n",
+        fprintf(fp, "\"%s\",%d,%d,%d,%d,%zu,%d,%.6f,%.3f,%.6e,%s,%s\n",
                 r.kernel.c_str(), r.BX, r.BY, r.TX, r.TY, total,
                 r.rep, (double)r.time_ms, r.bw_gbs, r.checksum,
-                r.ok ? "PASS" : "FAIL");
+                r.ok ? "PASS" : "FAIL",
+                r.flush ? "yes" : "no");
     fclose(fp);
     printf("\nWrote %zu records to %s\n", g_records.size(), csv_path);
 
