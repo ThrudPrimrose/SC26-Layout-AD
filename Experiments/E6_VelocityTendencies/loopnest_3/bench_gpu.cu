@@ -394,7 +394,7 @@ int main(int argc, char *argv[]) {
   CUDA_CHECK(cudaMalloc(&d_gh, (size_t)max_nlev*8)); CUDA_CHECK(cudaMalloc(&d_iv, (size_t)max_nlev*8));
   CUDA_CHECK(cudaMalloc(&d_ft, N_e*8));      CUDA_CHECK(cudaMalloc(&d_fn, N_e*8));
   std::vector<double> h_ref(sz_max), h_gpu_out(sz_max);
-  cudaEvent_t ev0, ev1; cudaEventCreate(&ev0); cudaEventCreate(&ev1);
+  cudaEvent_t ev0, ev1; CUDA_CHECK(cudaEventCreate(&ev0)); CUDA_CHECK(cudaEventCreate(&ev1));
 
   const char *dists[3] = {"uniform", "normal_var1", "exact"};
   int ndists = have_exact ? 3 : 2;
@@ -466,9 +466,9 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  cudaFree(d_w); cudaFree(d_vie); cudaFree(d_vti);
-  cudaFree(d_gh); cudaFree(d_iv); cudaFree(d_ft); cudaFree(d_fn);
-  cudaEventDestroy(ev0); cudaEventDestroy(ev1);
+  CUDA_CHECK(cudaFree(d_w)); CUDA_CHECK(cudaFree(d_vie)); CUDA_CHECK(cudaFree(d_vti));
+  CUDA_CHECK(cudaFree(d_gh)); CUDA_CHECK(cudaFree(d_iv)); CUDA_CHECK(cudaFree(d_ft)); CUDA_CHECK(cudaFree(d_fn));
+  CUDA_CHECK(cudaEventDestroy(ev0)); CUDA_CHECK(cudaEventDestroy(ev1));
   if (have_exact) ied.free_all();
   fclose(fcsv);
   return 0;

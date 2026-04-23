@@ -20,7 +20,7 @@
 #include "../loopnest_1/icon_data_loader.h"
 
 /* ── Tunables ─── */
-static int BETA = 1;
+static double BETA = 1.0;
 static double ALPHA = 0.012, GAMMA = 1.8;
 static int P_NUMA = 4, BLOCK_BYTES_G = 64, L1_BYTES = 32768;
 #pragma omp threadprivate(BLOCK_BYTES_G)
@@ -296,13 +296,20 @@ struct Res {
 
 int main(int argc, char **argv) {
   const char *csv = (argc > 1) ? argv[1] : nullptr;
-  int N  = (argc > 2) ? atoi(argv[2]) : 81920;
-  int nl = (argc > 3) ? atoi(argv[3]) : 90;
-  BETA   = (argc > 4) ? atoi(argv[4]) : 1;
+  int N  = (argc > 2) ? (int)atof(argv[2]) : 81920;
+  int nl = (argc > 3) ? (int)atof(argv[3]) : 90;
+  BETA   = (argc > 4) ? atof(argv[4]) : 1.0;
   ALPHA  = (argc > 5) ? atof(argv[5]) : 0.012;
   GAMMA  = (argc > 6) ? atof(argv[6]) : 1.8;
-  P_NUMA = (argc > 7) ? atoi(argv[7]) : 4;
-  L1_BYTES = (argc > 8) ? atoi(argv[8]) : 32768;
+  P_NUMA = (argc > 7) ? (int)atof(argv[7]) : 4;
+  L1_BYTES = (argc > 8) ? (int)atof(argv[8]) : 32768;
+
+  /* Guard: atoi("0.25") returns 0, which makes every (x / P_NUMA) div */
+  /* in this file a SIGFPE. Be defensive against run-script arg-order */
+  /* mishaps and fall back to sane defaults instead of crashing.       */
+  if (P_NUMA < 1) { fprintf(stderr, "[cost_metrics] argv[7] P_NUMA must be >= 1 (got %s); using 4\n", argc > 7 ? argv[7] : "<unset>"); P_NUMA = 4; }
+  if (BETA < 0.0) { fprintf(stderr, "[cost_metrics] argv[4] BETA must be >= 0 (got %s); using 1.0\n", argc > 4 ? argv[4] : "<unset>"); BETA = 1.0; }
+  if (L1_BYTES < 1) { fprintf(stderr, "[cost_metrics] argv[8] L1_BYTES must be >= 1 (got %s); using 32768\n", argc > 8 ? argv[8] : "<unset>"); L1_BYTES = 32768; }
 
   Schedule scs[] = {SCHED_OMP_FOR, SCHED_OMP_COLLAPSE2};
   std::vector<Res> res;
@@ -383,7 +390,7 @@ int main(int argc, char **argv) {
     if (!r.m.T) continue;
     fprintf(fcsv, "%d,%d,%d,%d,%s,%s,%d,%d,"
                   "%.6f,%.6f,%.6f,%.6f,%.6f,%.6f,%.6f,"
-                  "%d,%.4f,%.4f,%d,%ld\n",
+                  "%.4f,%.4f,%.4f,%d,%ld\n",
             nl, r.V, r.B, r.TY, r.sch, r.tgt, r.bb, r.w,
             r.m.mu, r.m.delta, r.m.delta_numa, r.m.delta_max,
             r.m.mu_delta, r.m.mu_delta_numa, r.l1r,
@@ -391,7 +398,7 @@ int main(int argc, char **argv) {
   }
   fclose(fcsv);
 
-  printf("\n  [ln2] N=%d nl=%d (partial vert [%d,%d)) beta=%d alpha=%.4f gamma=%.3f P=%d\n\n",
+  printf("\n  [ln2] N=%d nl=%d (partial vert [%d,%d)) beta=%.4f alpha=%.4f gamma=%.3f P=%d\n\n",
          N, nl, nflat_for(nl), nl, BETA, ALPHA, GAMMA, P_NUMA);
   return 0;
 }

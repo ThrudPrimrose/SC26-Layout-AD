@@ -39,7 +39,7 @@ ${GPU_CXX} ${GPU_CXXFLAGS} -fgpu-rdc  -o bench_gpu_a  bench_gpu_hip.cpp ${GPU_LD
 
 # --- T4 cost metrics -----------------------------------------------------
 ${CPU_CXX} ${CPU_CXXFLAGS} -o cost_metrics cost_metrics.cpp ${CPU_LDFLAGS}
-./cost_metrics results/beverin/metrics_cpu_nl90.csv  81920 90 0.6 0.4 0.05 0.25 32768
-./cost_metrics results/beverin/metrics_gpu_nl90.csv  81920 90 0.6 0.4 0.05 0.25 16384
+./cost_metrics results/beverin/metrics_cpu_nl90.csv  81920 90 1 0.012 1.8 4 32768
+./cost_metrics results/beverin/metrics_gpu_nl90.csv  81920 90 1 0.012 1.8 4 16384
 
 echo "[E6L2 beverin] done. CSVs under results/beverin/"
