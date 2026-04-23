@@ -2,19 +2,20 @@
 #SBATCH --job-name=E6L6_levelmask_daint
 #SBATCH --nodes=1
 #SBATCH --partition=normal
-#SBATCH --time=04:00:00
+#SBATCH --time=05:00:00
 #SBATCH --account=g177-1
 #SBATCH --ntasks=1
 #SBATCH --gpus-per-task=1
 #SBATCH --cpus-per-task=288
 #SBATCH --exclusive
+#SBATCH --chdir=.
 #SBATCH --output=results/daint/E6L6_levelmask_daint_%j.out
 #SBATCH --error=results/daint/E6L6_levelmask_daint_%j.err
 #
 # E6 / loopnest_6 -- vertical-only level reduction (ANY over edges per level).
 # sweep on Daint.Alps.
 
-EXP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+EXP_DIR="${SLURM_SUBMIT_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}"
 COMMON_DIR="$(cd "${EXP_DIR}/../../common" && pwd)"
 
 source "${COMMON_DIR}/activate.sh"
@@ -27,10 +28,8 @@ export ICON_DATA_PATH="${ICON_DATA_PATH:-/capstor/scratch/cscs/ybudanaz/icon-art
 
 echo "[E6L6 daint] host=$(hostname) threads=$OMP_NUM_THREADS data=$ICON_DATA_PATH"
 
-${CPU_CXX} ${CPU_CXXFLAGS} -o bench_stream_cpu "${COMMON_DIR}/bench_stream.cpp"     ${CPU_LDFLAGS}
-${GPU_CXX} ${GPU_CXXFLAGS} -o bench_stream_gpu "${COMMON_DIR}/bench_stream_gpu.cu"  ${GPU_LDFLAGS}
-./bench_stream_cpu results/daint/stream_peak_cpu.csv
-./bench_stream_gpu results/daint/stream_peak_gpu.csv
+# NOTE: the NUMA / STREAM peak baseline (formerly T1 here) is now owned
+# by E0_NUMA; run `sbatch ../../E0_NUMA/run_{daint,beverin}.sh` separately.
 
 ${CPU_CXX} ${CPU_CXXFLAGS} -o bench_cpu_a bench_cpu.cpp ${CPU_LDFLAGS}
 ${GPU_CXX} ${GPU_CXXFLAGS} -o bench_gpu_a bench_gpu.cu  ${GPU_LDFLAGS}

@@ -2,17 +2,18 @@
 #SBATCH --job-name=E2_conj_beverin
 #SBATCH --nodes=1
 #SBATCH --partition=mi300
-#SBATCH --time=03:30:00
+#SBATCH --time=04:00:00
 #SBATCH --ntasks=1
 #SBATCH --gpus-per-task=1
 #SBATCH --cpus-per-task=192
 #SBATCH --exclusive
+#SBATCH --chdir=.
 #SBATCH --output=results/beverin/E2_conj_beverin_%j.out
 #SBATCH --error=results/beverin/E2_conj_beverin_%j.err
 #
 # E2 Complex Conjugation (Figure 8) on Beverin.
 
-EXP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+EXP_DIR="${SLURM_SUBMIT_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}"
 COMMON_DIR="$(cd "${EXP_DIR}/../common" && pwd)"
 
 source "${COMMON_DIR}/activate.sh"

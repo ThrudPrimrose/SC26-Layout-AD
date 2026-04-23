@@ -2,12 +2,13 @@
 #SBATCH --job-name=E6FVT_daint
 #SBATCH --nodes=1
 #SBATCH --partition=normal
-#SBATCH --time=16:00:00
+#SBATCH --time=18:00:00
 #SBATCH --account=g177-1
 #SBATCH --ntasks=1
 #SBATCH --gpus-per-task=1
 #SBATCH --cpus-per-task=288
 #SBATCH --exclusive
+#SBATCH --chdir=.
 #SBATCH --output=results/daint/E6FVT_daint_%j.out
 #SBATCH --error=results/daint/E6FVT_daint_%j.err
 #
@@ -29,7 +30,7 @@
 #   STAGE_SET default "4 8"  (space-separated stages to run)
 #   DACE_BRANCH default f2dace/staging
 
-EXP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+EXP_DIR="${SLURM_SUBMIT_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}"
 COMMON_DIR="$(cd "${EXP_DIR}/../../common" && pwd)"
 
 export DACE_BRANCH="${DACE_BRANCH:-f2dace/staging}"

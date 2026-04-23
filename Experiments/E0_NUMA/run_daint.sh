@@ -2,11 +2,12 @@
 #SBATCH --job-name=E0_stream_daint
 #SBATCH --nodes=1
 #SBATCH --partition=normal
-#SBATCH --time=00:30:00
+#SBATCH --time=02:00:00
 #SBATCH --account=g177-1
 #SBATCH --ntasks=1
 #SBATCH --gpus-per-task=1
 #SBATCH --cpus-per-task=288
+#SBATCH --exclusive
 #SBATCH --chdir=.
 #SBATCH --output=results/daint/E0_stream_daint_%j.out
 #SBATCH --error=results/daint/E0_stream_daint_%j.err

@@ -2,17 +2,18 @@
 #SBATCH --job-name=E3_transpose_beverin
 #SBATCH --nodes=1
 #SBATCH --partition=mi300
-#SBATCH --time=04:00:00
+#SBATCH --time=05:00:00
 #SBATCH --ntasks=1
 #SBATCH --gpus-per-task=1
 #SBATCH --cpus-per-task=192
 #SBATCH --exclusive
+#SBATCH --chdir=.
 #SBATCH --output=results/beverin/E3_transpose_beverin_%j.out
 #SBATCH --error=results/beverin/E3_transpose_beverin_%j.err
 #
 # E3 Matrix Transpose (Figure 9, Table III) on Beverin.
 
-EXP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+EXP_DIR="${SLURM_SUBMIT_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}"
 COMMON_DIR="$(cd "${EXP_DIR}/../common" && pwd)"
 
 source "${COMMON_DIR}/activate.sh"
@@ -24,13 +25,9 @@ export RESULTS_DIR="${EXP_DIR}/results/beverin"
 
 echo "[E3 beverin] host=$(hostname) threads=$OMP_NUM_THREADS"
 
-# --- T1 STREAM peak (scale-add RMW, huge square matrix, NUMA + hugepages) -
-${CPU_CXX} ${CPU_CXXFLAGS} -o bench_stream_cpu "${COMMON_DIR}/bench_stream.cpp"     ${CPU_LDFLAGS}
-${GPU_CXX} ${GPU_CXXFLAGS} -o bench_stream_gpu "${COMMON_DIR}/bench_stream_gpu_hip.cpp" ${GPU_LDFLAGS}
-./bench_stream_cpu "${RESULTS_DIR}/stream_peak_cpu.csv"
-./bench_stream_gpu "${RESULTS_DIR}/stream_peak_gpu.csv"
-
 # --- T2 build + sweep (Python drivers honor RESULTS_DIR) -----------------
+# NOTE: the NUMA / STREAM peak baseline (formerly T1 here) is now owned
+# by E0_NUMA; run `sbatch ../E0_NUMA/run_beverin.sh` separately.
 python run_cpu_transpose.py --compile          # CPU kernels + HPTT + OpenBLAS
 python run_transpose.py     --compile          # GPU kernels + hipTensor
 

@@ -2,21 +2,22 @@
 #SBATCH --job-name=SUP_numa_beverin
 #SBATCH --nodes=1
 #SBATCH --partition=mi300
-#SBATCH --time=01:30:00
+#SBATCH --time=02:00:00
 #SBATCH --ntasks=1
 #SBATCH --gpus-per-task=1
 #SBATCH --cpus-per-task=192
 #SBATCH --exclusive
+#SBATCH --chdir=.
 #SBATCH --output=results/beverin/SUP_numa_beverin_%j.out
 #SBATCH --error=results/beverin/SUP_numa_beverin_%j.err
 #
-# Supplemental / NumaStream: C = alpha * (A + B) on very large fp64
+# NumaStream (supplemental): C = alpha * (A + B) on very large fp64
 # matrices. Beverin (MI300A APU) edition.
 #
 # Env overrides: NLIST, REPS, ALPHA. See run_daint.sh for documentation.
 
-EXP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-COMMON_DIR="$(cd "${EXP_DIR}/../../common" && pwd)"
+EXP_DIR="${SLURM_SUBMIT_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}"
+COMMON_DIR="$(cd "${EXP_DIR}/../common" && pwd)"
 
 source "${COMMON_DIR}/activate.sh"
 source "${COMMON_DIR}/setup_beverin.sh"

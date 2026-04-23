@@ -7,13 +7,14 @@
 #SBATCH --gpus-per-task=1
 #SBATCH --cpus-per-task=192
 #SBATCH --exclusive
+#SBATCH --chdir=.
 #SBATCH --output=results/beverin/E6FVT_beverin_%j.out
 #SBATCH --error=results/beverin/E6FVT_beverin_%j.err
 #
 # E6 / full_velocity_tendencies -- end-to-end SDFG permutation sweep on
 # Beverin (MI300A). See run_daint.sh for documentation.
 
-EXP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+EXP_DIR="${SLURM_SUBMIT_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}"
 COMMON_DIR="$(cd "${EXP_DIR}/../../common" && pwd)"
 
 export DACE_BRANCH="${DACE_BRANCH:-f2dace/staging}"

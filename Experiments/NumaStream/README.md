@@ -1,4 +1,11 @@
-# Supplemental / NumaStream
+# NumaStream (supplemental benchmark)
+
+> **Note.** [`E0_NUMA`](../E0_NUMA/) is the canonical NUMA-aware STREAM
+> baseline (scale-add RMW, 2D block/tile sweep, per-rep CSV modelled
+> after E1). `NumaStream/` is the older `C = α·(A+B)` sweep kept
+> in-tree for cross-variant comparison. It does not map to any paper
+> figure; prefer `E0_NUMA` unless you need the explicit
+> `first-touch / mbind / INTERLEAVE` variant breakdown.
 
 Bandwidth sweep for `C = alpha * (A + B)` on very large fp64 matrices.
 Two dimensions:
@@ -20,7 +27,7 @@ C[i] = alpha * (A[i] + B[i])
 
 Traffic: 2 loads + 1 store per fp64 element = **24 B / element**. All
 three buffers are allocated via `numa_alloc_unfaulted<double>` from
-[`common/numa_util.h`](../../common/numa_util.h); page placement is
+[`common/numa_util.h`](../common/numa_util.h); page placement is
 driven by the variant under test.
 
 ## Sweep configuration
@@ -37,9 +44,9 @@ driven by the variant under test.
 
 Between every timed rep both benches invoke the canonical 8192² 3-step
 Jacobi flush — the CPU side uses
-[`common/jacobi_flush.h`](../../common/jacobi_flush.h) and the GPU side
+[`common/jacobi_flush.h`](../common/jacobi_flush.h) and the GPU side
 uses the twin
-[`common/jacobi_flush_gpu.cuh`](../../common/jacobi_flush_gpu.cuh) (same
+[`common/jacobi_flush_gpu.cuh`](../common/jacobi_flush_gpu.cuh) (same
 size, same sweep count, same buffer-swap pattern; allocated once per
 process and reused). This is the same convention as every E1–E6 bench.
 
@@ -47,7 +54,7 @@ process and reused). This is the same convention as every E1–E6 bench.
 
 ```bash
 # one-time per machine (from repo root)
-bash ../../common/setup.sh
+bash ../common/setup.sh
 
 # submit
 sbatch run_daint.sh         # Grace + Hopper
@@ -57,8 +64,8 @@ sbatch run_beverin.sh       # Zen 4 + MI300A
 NLIST="16384,32768" REPS=100 sbatch run_daint.sh
 ```
 
-Each run script sources `../../common/activate.sh` and
-`../../common/setup_{daint,beverin}.sh`, then compiles `bench_cpu.cpp`
+Each run script sources `../common/activate.sh` and
+`../common/setup_{daint,beverin}.sh`, then compiles `bench_cpu.cpp`
 and `bench_gpu.cu` (or `bench_gpu_hip.cpp` on Beverin) against the
 shared `CPU_CXX`, `CPU_CXXFLAGS`, `GPU_CXX`, `GPU_CXXFLAGS` from the
 platform env.
@@ -88,7 +95,7 @@ device,N,elems,bytes_per_iter,block,grid_mult,grid,warmup,nruns,run_id,bw_gbs,bw
 ```
 
 Plot scripts should load these via
-[`common/plot_util.py`](../../common/plot_util.py):
+[`common/plot_util.py`](../common/plot_util.py):
 ```python
 from plot_util import load_csv, PLATFORMS, experiment_dir
 EXP_DIR = experiment_dir(__file__)

@@ -213,24 +213,138 @@ __global__ void tr_smem_pad_blk(const float* __restrict__ in,
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
+ *  V8: Smem + padding + SB blocking + vectorized (float4) global loads/stores
+ *
+ *  Identical layout to V7 — the only change is that every global memory
+ *  access moves 4 fp32 at once (128-bit transactions). Input loads are
+ *  naturally vectorizable along the row; output stores are contiguous
+ *  along `r` (for fixed output column c) so they too are float4-safe.
+ *  Smem access stays scalar because SW = BW + PAD has odd stride when
+ *  PAD=1 and the padding is exactly what kills bank conflicts.
+ *
+ *  Requires BW % 4 == 0 and BH % 4 == 0 (every TRY() config satisfies).
+ * ═══════════════════════════════════════════════════════════════════════ */
+template<int BX, int BY, int TX, int TY, int SB, int PAD>
+__global__ void tr_smem_pad_blk_vec(const float* __restrict__ in,
+                                    float* __restrict__ out, int N) {
+    constexpr int BW = BX * TX, BH = BY * TY, TOT = BX * BY;
+    constexpr int SW = BW + PAD;
+    constexpr int NVEC = (BH * BW) / 4;
+    static_assert(BW % 4 == 0, "BW must be a multiple of 4 for float4 I/O");
+    static_assert(BH % 4 == 0, "BH must be a multiple of 4 for float4 I/O");
+
+    __shared__ float sm[BH * SW];
+    const int c0 = blockIdx.x * BW, r0 = blockIdx.y * BH;
+    const int tid = threadIdx.y * BX + threadIdx.x;
+
+    /* --- Load: 1 float4 from input, 4 scalars into smem -------------- */
+    #pragma unroll
+    for (int k = tid; k < NVEC; k += TOT) {
+        const int lr = (k * 4) / BW;
+        const int lc = (k * 4) % BW;
+        const int gr = r0 + lr, gc = c0 + lc;
+        float4 v = *reinterpret_cast<const float4*>(&in[gr * N + gc]);
+        sm[lr * SW + lc + 0] = v.x;
+        sm[lr * SW + lc + 1] = v.y;
+        sm[lr * SW + lc + 2] = v.z;
+        sm[lr * SW + lc + 3] = v.w;
+    }
+    __syncthreads();
+
+    /* --- Store: 4 smem scalars from a transposed column → 1 float4 -- */
+    #pragma unroll
+    for (int k = tid; k < NVEC; k += TOT) {
+        const int lc = (k * 4) / BH;   /* output row inside the tile  */
+        const int lr = (k * 4) % BH;   /* starting output col in tile */
+        const int gr = r0 + lr, gc = c0 + lc;
+        float4 v;
+        v.x = sm[(lr + 0) * SW + lc];
+        v.y = sm[(lr + 1) * SW + lc];
+        v.z = sm[(lr + 2) * SW + lc];
+        v.w = sm[(lr + 3) * SW + lc];
+        *reinterpret_cast<float4*>(&out[gc * N + gr]) = v;
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+ *  V9: V8 with each CTA processing 2 tiles along Y
+ *
+ *  Halves grid.y; each CTA loops over two BH-row tiles. The two tile
+ *  pairs (load_1 → store_1 → load_2 → store_2) leave enough independent
+ *  memory ops in scope that the compiler can reorder load_2 ahead of
+ *  store_1 to overlap DRAM latency with smem work. No explicit
+ *  cp.async / async copies — we rely on the vendor compiler's pipeliner.
+ * ═══════════════════════════════════════════════════════════════════════ */
+template<int BX, int BY, int TX, int TY, int SB, int PAD>
+__global__ void tr_smem_pad_blk_vec_2x(const float* __restrict__ in,
+                                       float* __restrict__ out, int N) {
+    constexpr int BW = BX * TX, BH = BY * TY, TOT = BX * BY;
+    constexpr int SW = BW + PAD;
+    constexpr int NVEC = (BH * BW) / 4;
+    static_assert(BW % 4 == 0, "BW must be a multiple of 4 for float4 I/O");
+    static_assert(BH % 4 == 0, "BH must be a multiple of 4 for float4 I/O");
+
+    __shared__ float sm[BH * SW];
+    const int c0 = blockIdx.x * BW;
+    const int r0_base = blockIdx.y * (BH * 2);
+    const int tid = threadIdx.y * BX + threadIdx.x;
+
+    #pragma unroll
+    for (int it = 0; it < 2; it++) {
+        const int r0 = r0_base + it * BH;
+
+        #pragma unroll
+        for (int k = tid; k < NVEC; k += TOT) {
+            const int lr = (k * 4) / BW;
+            const int lc = (k * 4) % BW;
+            const int gr = r0 + lr, gc = c0 + lc;
+            float4 v = *reinterpret_cast<const float4*>(&in[gr * N + gc]);
+            sm[lr * SW + lc + 0] = v.x;
+            sm[lr * SW + lc + 1] = v.y;
+            sm[lr * SW + lc + 2] = v.z;
+            sm[lr * SW + lc + 3] = v.w;
+        }
+        __syncthreads();
+
+        #pragma unroll
+        for (int k = tid; k < NVEC; k += TOT) {
+            const int lc = (k * 4) / BH;
+            const int lr = (k * 4) % BH;
+            const int gr = r0 + lr, gc = c0 + lc;
+            float4 v;
+            v.x = sm[(lr + 0) * SW + lc];
+            v.y = sm[(lr + 1) * SW + lc];
+            v.z = sm[(lr + 2) * SW + lc];
+            v.w = sm[(lr + 3) * SW + lc];
+            *reinterpret_cast<float4*>(&out[gc * N + gr]) = v;
+        }
+        __syncthreads();
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
  *  Dispatch
  * ═══════════════════════════════════════════════════════════════════════ */
 enum Variant { V_NAIVE=0, V_BLOCKED, V_SMEM, V_SMEM_BLK, V_SMEM_PAD,
-               V_SMEM_SWIZ, V_SMEM_BLK_SWIZ, V_SMEM_PAD_BLK, V_COUNT };
+               V_SMEM_SWIZ, V_SMEM_BLK_SWIZ, V_SMEM_PAD_BLK,
+               V_SMEM_PAD_BLK_VEC, V_SMEM_PAD_BLK_VEC_2X, V_COUNT };
 static const char* V_NAMES[] = {
     "naive","blocked","smem","smem_blk","smem_pad",
-    "smem_swiz","smem_blk_swiz","smem_pad_blk"};
+    "smem_swiz","smem_blk_swiz","smem_pad_blk",
+    "smem_pad_blk_vec","smem_pad_blk_vec_2x"};
 
 #define DISPATCH(BX_,BY_,TX_,TY_,SB_,PAD_,var,grid,blk,in,out,N) \
     switch(var){ \
-    case V_NAIVE:        tr_naive        <BX_,BY_,TX_,TY_>          <<<grid,blk>>>(in,out,N);break;\
-    case V_BLOCKED:      tr_blocked      <BX_,BY_,TX_,TY_,SB_>     <<<grid,blk>>>(in,out,N);break;\
-    case V_SMEM:         tr_smem         <BX_,BY_,TX_,TY_>          <<<grid,blk>>>(in,out,N);break;\
-    case V_SMEM_BLK:     tr_smem_blk     <BX_,BY_,TX_,TY_,SB_>     <<<grid,blk>>>(in,out,N);break;\
-    case V_SMEM_PAD:     tr_smem_pad     <BX_,BY_,TX_,TY_,PAD_>    <<<grid,blk>>>(in,out,N);break;\
-    case V_SMEM_SWIZ:    tr_smem_swiz    <BX_,BY_,TX_,TY_>          <<<grid,blk>>>(in,out,N);break;\
-    case V_SMEM_BLK_SWIZ:tr_smem_blk_swiz<BX_,BY_,TX_,TY_,SB_>    <<<grid,blk>>>(in,out,N);break;\
-    case V_SMEM_PAD_BLK: tr_smem_pad_blk <BX_,BY_,TX_,TY_,SB_,PAD_><<<grid,blk>>>(in,out,N);break;\
+    case V_NAIVE:              tr_naive              <BX_,BY_,TX_,TY_>           <<<grid,blk>>>(in,out,N);break;\
+    case V_BLOCKED:            tr_blocked            <BX_,BY_,TX_,TY_,SB_>      <<<grid,blk>>>(in,out,N);break;\
+    case V_SMEM:               tr_smem               <BX_,BY_,TX_,TY_>           <<<grid,blk>>>(in,out,N);break;\
+    case V_SMEM_BLK:           tr_smem_blk           <BX_,BY_,TX_,TY_,SB_>      <<<grid,blk>>>(in,out,N);break;\
+    case V_SMEM_PAD:           tr_smem_pad           <BX_,BY_,TX_,TY_,PAD_>     <<<grid,blk>>>(in,out,N);break;\
+    case V_SMEM_SWIZ:          tr_smem_swiz          <BX_,BY_,TX_,TY_>           <<<grid,blk>>>(in,out,N);break;\
+    case V_SMEM_BLK_SWIZ:      tr_smem_blk_swiz      <BX_,BY_,TX_,TY_,SB_>     <<<grid,blk>>>(in,out,N);break;\
+    case V_SMEM_PAD_BLK:       tr_smem_pad_blk       <BX_,BY_,TX_,TY_,SB_,PAD_><<<grid,blk>>>(in,out,N);break;\
+    case V_SMEM_PAD_BLK_VEC:   tr_smem_pad_blk_vec   <BX_,BY_,TX_,TY_,SB_,PAD_><<<grid,blk>>>(in,out,N);break;\
+    case V_SMEM_PAD_BLK_VEC_2X:tr_smem_pad_blk_vec_2x<BX_,BY_,TX_,TY_,SB_,PAD_><<<grid,blk>>>(in,out,N);break;\
     default:fprintf(stderr,"bad variant %d\n",var);exit(1);}
 
 static void dispatch(int var, int bx, int by, int tx, int ty, int sb, int pad,
@@ -278,7 +392,8 @@ int main(int argc, char** argv) {
             "Usage: %s N [variant=0] [BX=32] [BY=8] [TX=1] [TY=8]"
             " [csv] [SB=32] [PAD=1] [WARMUP=5] [REPS=100]\n"
             "  0=naive 1=blocked 2=smem 3=smem_blk 4=smem_pad"
-            " 5=smem_swiz 6=smem_blk_swiz 7=smem_pad_blk\n", argv[0]);
+            " 5=smem_swiz 6=smem_blk_swiz 7=smem_pad_blk"
+            " 8=smem_pad_blk_vec 9=smem_pad_blk_vec_2x\n", argv[0]);
         return 1;
     }
 
@@ -302,7 +417,9 @@ int main(int argc, char** argv) {
 
     int BW = BX_ * TX_, BH = BY_ * TY_;
     dim3 block(BX_, BY_);
-    dim3 grid((N + BW - 1) / BW, (N + BH - 1) / BH);
+    /* V_SMEM_PAD_BLK_VEC_2X processes 2 tiles along Y per CTA → halve grid.y. */
+    const int GRID_Y_MULT = (VAR == V_SMEM_PAD_BLK_VEC_2X) ? (BH * 2) : BH;
+    dim3 grid((N + BW - 1) / BW, (N + GRID_Y_MULT - 1) / GRID_Y_MULT);
 
     size_t elems = (size_t)N * N, bytes = elems * sizeof(float);
 

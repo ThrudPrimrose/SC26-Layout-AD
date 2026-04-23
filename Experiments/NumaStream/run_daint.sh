@@ -2,16 +2,17 @@
 #SBATCH --job-name=SUP_numa_daint
 #SBATCH --nodes=1
 #SBATCH --partition=normal
-#SBATCH --time=01:30:00
+#SBATCH --time=02:00:00
 #SBATCH --account=g177-1
 #SBATCH --ntasks=1
 #SBATCH --gpus-per-task=1
 #SBATCH --cpus-per-task=288
 #SBATCH --exclusive
+#SBATCH --chdir=.
 #SBATCH --output=results/daint/SUP_numa_daint_%j.out
 #SBATCH --error=results/daint/SUP_numa_daint_%j.err
 #
-# Supplemental / NumaStream: C = alpha * (A + B) on very large fp64
+# NumaStream (supplemental): C = alpha * (A + B) on very large fp64
 # matrices. CPU bench sweeps {baseline_ft, numa4_stripe, interleave}
 # across three matrix sizes; GPU bench sweeps 5 block sizes x 5 grid
 # multipliers across the same three sizes. Daint.Alps edition (Grace +
@@ -22,8 +23,8 @@
 #   REPS   : timed iterations per variant (default 50)
 #   ALPHA  : scalar constant in C = alpha * (A + B) (default 1.0001)
 
-EXP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-COMMON_DIR="$(cd "${EXP_DIR}/../../common" && pwd)"
+EXP_DIR="${SLURM_SUBMIT_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}"
+COMMON_DIR="$(cd "${EXP_DIR}/../common" && pwd)"
 
 source "${COMMON_DIR}/activate.sh"
 source "${COMMON_DIR}/setup_daint.sh"

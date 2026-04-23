@@ -25,7 +25,7 @@ N           = 16384
 REPS        = 100
 WARMUP      = 5
 
-V_NAMES = {0:"naive", 1:"blocked", 2:"smem", 3:"smem_blk", 4:"smem_pad", 5:"smem_swiz", 6:"smem_blk_swiz", 7:"smem_pad_blk"}
+V_NAMES = {0:"naive", 1:"blocked", 2:"smem", 3:"smem_blk", 4:"smem_pad", 5:"smem_swiz", 6:"smem_blk_swiz", 7:"smem_pad_blk", 8:"smem_pad_blk_vec", 9:"smem_pad_blk_vec_2x"}
 LIB_NAMES = {"cutensor", "cutensor_blk", "hiptensor", "hiptensor_blk"}
 
 CONFIGS = [
@@ -50,7 +50,7 @@ CONFIGS = [
     (64,  8, 1, 4), (64, 16, 1, 2), (64, 16, 1, 4), (64, 16, 2, 1),
     (64, 16, 2, 2), 
 ]
-VARIANTS    = [0, 1, 2, 3, 4, 5, 6, 7]
+VARIANTS    = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 SB_VALS     = [32, 64, 128, 256] if AMD else [8, 32, 64, 128, 256]
 PAD_VALS    = [1]
 LIB_SB_VALS = [32, 64, 128, 256] if AMD else [8, 32, 64, 128]
