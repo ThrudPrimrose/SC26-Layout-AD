@@ -2,7 +2,7 @@
 #SBATCH --job-name=E6L2_zwconcorrme_beverin
 #SBATCH --nodes=1
 #SBATCH --partition=mi300
-#SBATCH --time=12:00:00
+#SBATCH --time=24:00:00
 #SBATCH --ntasks=1
 #SBATCH --gpus-per-task=1
 #SBATCH --cpus-per-task=192
