@@ -27,11 +27,19 @@ and the analytic cost-metric tables.
    - `plot_util.py` — repo-wide plotting policy (no outlier trimming,
      Scott-bandwidth KDE, 200 evaluation points)
 
-4. **[`Figures/`](Figures/)** — illustrative figure generators for the
-   proof section (Figures 2–3 and supplemental). Pure matplotlib
-   scripts, no benchmarks. All outputs land in
-   [`Figures/GeneratedFigures/`](Figures/GeneratedFigures/). Run
-   `bash Figures/plot_all.sh` to regenerate everything.
+4. **[`Figures/`](Figures/)** — single regeneration driver for **every**
+   figure in the paper. `bash Figures/plot_all.sh` rebuilds the
+   illustrative proof figures (2–3, supplemental) AND the runtime
+   figures (4, 8–11) from both the frozen paper snapshot and any fresh
+   local reproduction, all in one command. Outputs land under
+   [`Figures/GeneratedFigures/`](Figures/GeneratedFigures/). See
+   [Regenerate all figures](#regenerate-all-figures) below for the
+   subset flags (`Runtime`, `Peaks`, etc.).
+
+5. **[`PaperSnapshot/`](PaperSnapshot/)** — frozen, paper-canonical CSVs
+   that produced the submitted figures. Mirrors `Experiments/<exp>/results/`
+   layout so every `plot_paper.py` reads from either root unchanged;
+   `plot_all.sh` plots both sides side-by-side.
 
 ## Quick start (10-minute first experiment)
 
@@ -56,19 +64,56 @@ The per-experiment READMEs under `Experiments/EX_*/README.md` give
 the analogous recipe for each experiment and the exact CSV filenames
 that the run scripts emit.
 
+## Regenerate all figures
+
+```bash
+bash Figures/plot_all.sh                  # everything — all groups
+bash Figures/plot_all.sh Runtime          # only Fig. 4, 8–11 (paper + new)
+bash Figures/plot_all.sh Peaks            # refresh common/stream_peak.json
+bash Figures/plot_all.sh AccessCost       # one illustrative group
+bash Figures/plot_all.sh Peaks Runtime    # any combination
+```
+
+The `Runtime` group runs every `Experiments/<exp>/plot_paper.py` twice
+in one invocation:
+
+- from `PaperSnapshot/<exp>/` (frozen, paper-canonical CSVs) →
+  `Figures/GeneratedFigures/Runtime/`
+- from `Experiments/<exp>/` (fresh local reproduction after an `sbatch`
+  run) → `Figures/GeneratedFigures/Runtime/new/`
+
+Both runs land flat in their respective folders — no filename overlap
+because the destinations differ — so reviewers can `diff` / image-diff
+the two folders to check their rerun matches the paper. Missing CSVs
+(e.g. an experiment not yet re-run locally, or an empty snapshot slot)
+produce a `[warn]` line and are skipped for that step, never aborting
+the rest of the sweep.
+
+Illustrative-group outputs (`AccessCost`, `Pebble_Game`,
+`LayoutTransformations`, `Replay`) land under
+`Figures/GeneratedFigures/<group>/` unchanged. `Peaks` refreshes
+`Experiments/common/stream_peak.json` from measured CSVs (no figures).
+
+Prerequisites: `matplotlib`, `numpy`, `pandas`, `scipy`. On a cluster,
+`source Experiments/common/activate.sh` first; elsewhere, a plain `pip
+install matplotlib numpy pandas scipy` is enough.
+
 ## Repo structure
 
 ```
 SC26-Layout-AD/
 ├── README.md                 (this file)
 ├── Latex/                    (AD/AE appendix sources + built PDF)
-├── Figures/                  (illustrative figure generators; pure matplotlib)
-│   ├── plot_all.sh
+├── Figures/                  (figure regeneration driver + illustrative scripts)
+│   ├── plot_all.sh           (ONE entry point: illustrative + runtime + peaks)
 │   ├── AccessCost/           (block / NUMA access-cost plots)
 │   ├── Pebble_Game/          (pebble-game illustrations)
 │   ├── LayoutTransformations/(stage-by-stage layout transform figures)
 │   ├── Replay/               (stride replay figure)
 │   └── GeneratedFigures/     (all .pdf / .png outputs, one folder per group)
+│       ├── Runtime/          (Fig. 4, 8–11 from PaperSnapshot CSVs)
+│       └── Runtime/new/      (Fig. 4, 8–11 from Experiments/*/results/)
+├── PaperSnapshot/            (frozen paper-canonical CSVs; mirrors results/ layout)
 └── Experiments/
     ├── README.md             (experiment entry point + runtime table)
     ├── common/               (shared env + shared headers + plot util)
