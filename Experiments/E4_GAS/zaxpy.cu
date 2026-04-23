@@ -34,6 +34,8 @@
 #include <array>
 #include <cmath>
 
+#include "../common/prng.h"
+
 #define CUDA_CHECK(call)                                     \
     do                                                       \
     {                                                        \
@@ -203,14 +205,14 @@ void profile_config(
     CUDA_CHECK(cudaMalloc(&d_yms, nx*sizeof(int)));
     CUDA_CHECK(cudaMalloc(&d_xm,  nx*sizeof(int)));
 
-    srand(seed);
+    Xor64Rng rng((uint64_t)seed);
     for (int i = 0; i < ny; i++) {
-        double re = (double)rand()/RAND_MAX, im = (double)rand()/RAND_MAX;
+        double re = rng.uniform01(), im = rng.uniform01();
         h_ya[i] = make_cuDoubleComplex(re,im); h_ra[i] = h_ya[i];
         h_yr[i] = re; h_yi[i] = im; h_rr[i] = re; h_ri[i] = im;
     }
     for (int i = 0; i < nx; i++) {
-        double re = (double)rand()/RAND_MAX, im = (double)rand()/RAND_MAX;
+        double re = rng.uniform01(), im = rng.uniform01();
         h_xa[i] = make_cuDoubleComplex(re,im);
         h_xr[i] = re; h_xi[i] = im;
     }
@@ -396,7 +398,7 @@ void sweep_all_configs(
         for (int cf : cfs) {
             printf("  %s tpb=%d cf=%d\n", ename, tpb, cf);
             profile_config(csv, ename, ny, nx, ymap, ymap_s, xmap,
-                           tpb, cf, iters, warmup, 0);
+                           tpb, cf, iters, warmup, SC26_SEED);
             fflush(csv);
         }
 }
@@ -410,8 +412,9 @@ int main(int argc, char **argv)
     const char *csv_small_path = (argc > 1) ? argv[1] : "zaxpy_sweep_small.csv";
     const char *csv_1gb_path   = (argc > 2) ? argv[2] : "zaxpy_sweep_1gb.csv";
 
+    /* Canonical across the whole artifact: 100 timed reps, 5 warmups. */
     constexpr int ITERS  = 100;
-    constexpr int WARMUP = 10;
+    constexpr int WARMUP = 5;
     constexpr int NUM_SAMPLES = 5;
     constexpr size_t TARGET_1GB = 1ULL << 30;
 

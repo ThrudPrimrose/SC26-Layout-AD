@@ -29,71 +29,29 @@
 #include <sys/mman.h>
 #include <unistd.h>
 
+#include "../common/jacobi_flush.h"
+#include "../common/prng.h"
+
 /* ================================================================ */
 /*  NUMA helpers                                                     */
+/*                                                                   */
+/*  numa_alloc_unfaulted<T>, numa_dealloc<T>, first_touch_zero<T>,  */
+/*  first_touch_copy<T> come from ../common/numa_util.h (transitively*/
+/*  included via jacobi_flush.h). Global policy: MADV_HUGEPAGE on    */
+/*  every allocation.                                                */
 /* ================================================================ */
 
 static constexpr int NUMA_NODES = 4;
-
-template <typename T>
-static T *numa_alloc_unfaulted(size_t count)
-{
-    size_t bytes = count * sizeof(T);
-    void *p = mmap(nullptr, bytes, PROT_READ | PROT_WRITE,
-                   MAP_PRIVATE | MAP_ANONYMOUS | MAP_NORESERVE, -1, 0);
-    if (p == MAP_FAILED) { perror("mmap"); std::abort(); }
-    madvise(p, bytes, MADV_HUGEPAGE);
-    return static_cast<T *>(p);
-}
-
-template <typename T>
-static void numa_dealloc(T *p, size_t count)
-{
-    if (p) munmap(p, count * sizeof(T));
-}
-
-/**
- * First-touch a 1-D array in parallel with schedule(static) so that
- * pages land on the NUMA node of the touching thread.
- * Relies on OMP_PROC_BIND=spread + OMP_PLACES=cores.
- */
-template <typename T>
-static void first_touch_zero(T *arr, size_t count)
-{
-    #pragma omp parallel for schedule(static)
-    for (size_t i = 0; i < count; i++)
-        arr[i] = T(0);
-}
-
-template <typename T>
-static void first_touch_copy(T *dst, const T *src, size_t count)
-{
-    #pragma omp parallel for schedule(static)
-    for (size_t i = 0; i < count; i++)
-        dst[i] = src[i];
-}
 
 /**
  * Flush caches: write a large buffer to evict resident data.
  * Uses same 256 MiB approach as the GPU version.
  */
-static constexpr size_t FLUSH_ELEMS = 256ULL * 1024 * 1024 / sizeof(double);
-static double *g_flush = nullptr;
-
-static void init_flush()
-{
-    if (!g_flush) {
-        g_flush = numa_alloc_unfaulted<double>(FLUSH_ELEMS);
-        first_touch_zero(g_flush, FLUSH_ELEMS);
-    }
-}
-
-static void flush_caches()
-{
-    #pragma omp parallel for schedule(static)
-    for (size_t i = 0; i < FLUSH_ELEMS; i++)
-        g_flush[i] = 1.0;
-}
+/* Canonical Jacobi-2D cache flush shared across all experiments
+ * (see ../common/jacobi_flush.h). 8192x8192, 3 swept Jacobi sweeps,
+ * buffers allocated once at init and NUMA-spread via first-touch. */
+static void init_flush()    { flush_jacobi_init(); }
+static void flush_caches()  { flush_jacobi(); }
 
 /* ================================================================ */
 /*  Verification                                                     */
@@ -337,10 +295,11 @@ void profile_config(
     double *ref_im  = (double *)malloc(ny * sizeof(double));
 
     // ── Fill random data + first-touch ──────────────────────────────────
-    srand(0);
+    // Deterministic: all draws come from Xor64Rng seeded with SC26_SEED=42.
+    Xor64Rng fill_rng(SC26_SEED);
     for (int i = 0; i < ny; i++) {
-        double re = (double)rand() / RAND_MAX;
-        double im = (double)rand() / RAND_MAX;
+        double re = fill_rng.uniform01();
+        double im = fill_rng.uniform01();
         ref_aos[2*i] = re; ref_aos[2*i+1] = im;
         ref_re[i] = re; ref_im[i] = im;
     }
@@ -354,25 +313,22 @@ void profile_config(
         yi_init[i] = ref_im[i];
     }
 
+    // x values follow y in the same RNG stream, so the sequence stays
+    // reproducible even without re-seeding. We materialize them into a
+    // temp first, then first-touch-copy into the NUMA buffers below.
+    std::vector<double> tmp_re(nx), tmp_im(nx);
     for (int i = 0; i < nx; i++) {
-        double re = (double)rand() / RAND_MAX;
-        double im = (double)rand() / RAND_MAX;
-        // Stored in temp, will first-touch copy below
-        ref_re[0] = re; // reuse buffer temporarily
-        // Direct write for now, first_touch_copy for x arrays below
-        x_aos[2*i] = re; x_aos[2*i+1] = im;  // will be overwritten
-        xr[i] = re; xi[i] = im;               // will be overwritten
+        tmp_re[i] = fill_rng.uniform01();
+        tmp_im[i] = fill_rng.uniform01();
     }
-    // Regenerate x with proper first-touch
+    // Intentional placeholder writes so the initial NUMA binding of x
+    // buffers isn't skewed by the sequential-main initialization thread.
+    for (int i = 0; i < nx; i++) {
+        x_aos[2*i] = tmp_re[i]; x_aos[2*i+1] = tmp_im[i];
+        xr[i] = tmp_re[i]; xi[i] = tmp_im[i];
+    }
+    // Re-copy via first-touch for proper NUMA placement.
     {
-        // Need stable random sequence — re-seed and skip ny values
-        srand(0);
-        for (int i = 0; i < ny; i++) { rand(); rand(); }  // skip y values
-        std::vector<double> tmp_re(nx), tmp_im(nx);
-        for (int i = 0; i < nx; i++) {
-            tmp_re[i] = (double)rand() / RAND_MAX;
-            tmp_im[i] = (double)rand() / RAND_MAX;
-        }
         #pragma omp parallel for schedule(static)
         for (int i = 0; i < nx; i++) {
             x_aos[2*i]   = tmp_re[i];
@@ -604,8 +560,9 @@ int main(int argc, char **argv)
     const char *csv_small_path = (argc > 1) ? argv[1] : "zaxpy_sweep_small.csv";
     const char *csv_1gb_path   = (argc > 2) ? argv[2] : "zaxpy_sweep_1gb.csv";
 
+    /* Canonical across the whole artifact: 100 timed reps, 5 warmups. */
     constexpr int ITERS  = 100;
-    constexpr int WARMUP = 10;
+    constexpr int WARMUP = 5;
     constexpr int NUM_SAMPLES = 5;
     constexpr size_t TARGET_1GB = 1ULL << 30;
 

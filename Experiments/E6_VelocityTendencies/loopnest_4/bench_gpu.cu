@@ -300,10 +300,12 @@ int main(int argc, char *argv[]) {
 
   double *d_ddt,*d_vn,*d_zw,*d_ze,*d_dq,*d_cle,*d_gf,*d_ar,*d_ta,*d_ip;
   int *d_ici,*d_iqi,*d_ivi,*d_lvm;
-  size_t sz = (size_t)N_e * NLEVS[0];
-  CUDA_CHECK(cudaMalloc(&d_ddt, sz*8)); CUDA_CHECK(cudaMalloc(&d_vn, sz*8));
-  CUDA_CHECK(cudaMalloc(&d_zw, sz*8));  CUDA_CHECK(cudaMalloc(&d_ze, sz*8));
-  CUDA_CHECK(cudaMalloc(&d_dq, sz*8));
+  int max_nlev = 0;
+  for (int ni = 0; ni < N_NLEVS; ni++) if (NLEVS[ni] > max_nlev) max_nlev = NLEVS[ni];
+  size_t sz_max = (size_t)N_e * max_nlev;
+  CUDA_CHECK(cudaMalloc(&d_ddt, sz_max*8)); CUDA_CHECK(cudaMalloc(&d_vn, sz_max*8));
+  CUDA_CHECK(cudaMalloc(&d_zw, sz_max*8));  CUDA_CHECK(cudaMalloc(&d_ze, sz_max*8));
+  CUDA_CHECK(cudaMalloc(&d_dq, sz_max*8));
   CUDA_CHECK(cudaMalloc(&d_cle, (size_t)N_e*2*8));
   CUDA_CHECK(cudaMalloc(&d_gf,  (size_t)N_e*5*8));
   CUDA_CHECK(cudaMalloc(&d_ar, N_e*8));
@@ -312,7 +314,7 @@ int main(int argc, char *argv[]) {
   CUDA_CHECK(cudaMalloc(&d_ici, (size_t)N_e*2*sizeof(int)));
   CUDA_CHECK(cudaMalloc(&d_iqi, (size_t)N_e*4*sizeof(int)));
   CUDA_CHECK(cudaMalloc(&d_ivi, (size_t)N_e*2*sizeof(int)));
-  CUDA_CHECK(cudaMalloc(&d_lvm, (NLEVS[0]+1)*sizeof(int)));
+  CUDA_CHECK(cudaMalloc(&d_lvm, (size_t)(max_nlev+1)*sizeof(int)));
 
   cudaEvent_t ev0, ev1; cudaEventCreate(&ev0); cudaEventCreate(&ev1);
 
@@ -322,6 +324,7 @@ int main(int argc, char *argv[]) {
   for (int ni = 0; ni < N_NLEVS; ni++) {
     int nlev = NLEVS[ni];
     int jk0 = jk_lo_for(nlev), jk1 = jk_hi_for(nlev);
+    size_t sz = (size_t)N_e * nlev;
 
     for (int di = 0; di < ndists; di++) {
       for (int V = 1; V <= 4; V++) {

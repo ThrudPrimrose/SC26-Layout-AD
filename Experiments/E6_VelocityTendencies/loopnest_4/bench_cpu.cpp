@@ -22,6 +22,7 @@
 
 #include "bench_common.h"
 #include "../loopnest_1/icon_data_loader.h"
+#include "../../common/jacobi_flush.h"
 
 using clk = std::chrono::high_resolution_clock;
 
@@ -198,12 +199,117 @@ static inline double elapsed_ms(clk::time_point a, clk::time_point b) {
   return std::chrono::duration<double, std::milli>(b - a).count();
 }
 
-static void jacobi_flush(double *a, double *b, int n) {
-#pragma omp parallel for schedule(static)
-  for (int i = 0; i < n*n; i++) a[i] = 0.5 * (a[i] + b[i]);
-}
+/* Canonical Jacobi-2D cache flush (see ../../common/jacobi_flush.h). */
+static void jacobi_flush(double *, double *, int) { flush_jacobi(); }
 
 static SchedKind sched_for(int V) { return (V <= 2) ? SCHED_JK_OUTER : SCHED_JE_OUTER; }
+
+/* ================================================================== */
+/*  Numerical verification                                             */
+/*                                                                    */
+/*  Strategy: compute a row-major (V=1) reference from the src_* input*/
+/*  arrays and compare every layout variant's output (after a single  */
+/*  kernel call) against it, re-reading through that variant's IC().  */
+/*  The reference is independent of the kernel templates so it won't  */
+/*  mask a systematic bug introduced into every template.             */
+/*                                                                    */
+/*  Tolerance: the kernel performs multiply-add fused ops in a well-  */
+/*  defined order and bit-identical arithmetic on every layout (only  */
+/*  the address computation changes). We therefore check with strict  */
+/*  bitwise equality first, then fall back to a relative tolerance of */
+/*  1e-12 to tolerate permitted FMA contraction differences.          */
+/* ================================================================== */
+
+static void ref_kernel_v1(
+    double *__restrict__ ddt_rm, const double *__restrict__ vn_rm,
+    const double *__restrict__ zw_rm, const double *__restrict__ zeta_rm,
+    const double *__restrict__ ddqz_rm,
+    const double *__restrict__ cle, const double *__restrict__ gf,
+    const double *__restrict__ area, const double *__restrict__ tang,
+    const double *__restrict__ invp,
+    const int *__restrict__ ici, const int *__restrict__ iqi,
+    const int *__restrict__ ivi, const int *__restrict__ lvlm,
+    int N_e, int nlev, int jk_start, int jk_end)
+{
+  for (int jk = jk_start; jk < jk_end; jk++) {
+    if (!(lvlm[jk] || lvlm[jk+1])) continue;
+    for (int je = 0; je < N_e; je++) {
+      int c  = je + jk * N_e;
+      int c0 = ici[je*2+0] + jk * N_e;
+      int c1 = ici[je*2+1] + jk * N_e;
+      double wce = cle[je*2+0]*zw_rm[c0] + cle[je*2+1]*zw_rm[c1];
+      double dq = ddqz_rm[c];
+      if (std::fabs(wce) > CFL_W_LIMIT * dq) {
+        double dif = SFEX * std::min(0.85 - CFL_W_LIMIT*DTIME,
+                                     std::fabs(wce)*DTIME/dq - CFL_W_LIMIT*DTIME);
+        double s = gf[je*5+0]*vn_rm[c];
+        s += gf[je*5+1]*vn_rm[iqi[je*4+0] + jk*N_e];
+        s += gf[je*5+2]*vn_rm[iqi[je*4+1] + jk*N_e];
+        s += gf[je*5+3]*vn_rm[iqi[je*4+2] + jk*N_e];
+        s += gf[je*5+4]*vn_rm[iqi[je*4+3] + jk*N_e];
+        s += tang[je]*invp[je]*(zeta_rm[ivi[je*2+1] + jk*N_e]
+                              - zeta_rm[ivi[je*2+0] + jk*N_e]);
+        ddt_rm[c] += dif * area[je] * s;
+      }
+    }
+  }
+}
+
+/* Compare `got` (read through `to_flat(je, jk)`) against `ref_rm`. */
+template <typename Index>
+static long long verify_compare(const double *got, const double *ref_rm,
+                                int N_e, int nlev, int jk0, int jk1,
+                                Index to_flat) {
+  long long bad = 0;
+  double maxrel = 0.0;
+  #pragma omp parallel for schedule(static) reduction(+:bad) reduction(max:maxrel)
+  for (int jk = jk0; jk < jk1; jk++)
+    for (int je = 0; je < N_e; je++) {
+      double g = got[to_flat(je, jk)];
+      double r = ref_rm[je + jk * N_e];
+      if (g == r) continue;
+      double denom = std::fabs(r);
+      double rel = denom > 0 ? std::fabs(g - r) / denom : std::fabs(g - r);
+      if (rel > maxrel) maxrel = rel;
+      if (rel > 1e-12) bad++;
+    }
+  if (bad) fprintf(stderr, "[verify][FAIL] loopnest_4 bad=%lld maxrel=%g\n", bad, maxrel);
+  return bad;
+}
+
+/* Verify a single layout variant V. Caller must have set bd.set_variant(V, ...)
+ * before the call; on return, bd.h_ddt has been overwritten by one kernel
+ * execution and must be reset if further timing is intended. */
+static void verify_variant_V(int V, BenchData &bd, int jk0, int jk1,
+                             const double *ref_rm) {
+  int ki = V - 1;
+  CALL_K(kfun_unblocked[ki][0]);   /* jk_outer is the least-reorder reference */
+  int N_e = bd.N_e, nlev = bd.nlev;
+  long long bad = 0;
+  switch (V) {
+    case 1: bad = verify_compare(bd.h_ddt, ref_rm, N_e, nlev, jk0, jk1,
+              [&](int je,int jk){ return IC<1>(je,jk,N_e,nlev); }); break;
+    case 2: bad = verify_compare(bd.h_ddt, ref_rm, N_e, nlev, jk0, jk1,
+              [&](int je,int jk){ return IC<2>(je,jk,N_e,nlev); }); break;
+    case 3: bad = verify_compare(bd.h_ddt, ref_rm, N_e, nlev, jk0, jk1,
+              [&](int je,int jk){ return IC<3>(je,jk,N_e,nlev); }); break;
+    case 4: bad = verify_compare(bd.h_ddt, ref_rm, N_e, nlev, jk0, jk1,
+              [&](int je,int jk){ return IC<4>(je,jk,N_e,nlev); }); break;
+  }
+  if (!bad) fprintf(stderr, "[verify][OK]   loopnest_4 V%d\n", V);
+}
+
+static void verify_blocked_B(int B, BenchData &bd, int jk0, int jk1,
+                             const double *ref_rm) {
+  int bi = -1;
+  for (int i = 0; i < N_BLOCK_SIZES; i++) if (BLOCK_SIZES[i] == B) { bi = i; break; }
+  if (bi < 0) return;
+  CALL_K(kfun_blocked[bi][0]);
+  int N_e = bd.N_e, nlev = bd.nlev;
+  long long bad = verify_compare(bd.h_ddt, ref_rm, N_e, nlev, jk0, jk1,
+      [&](int je,int jk){ return IC_blocked(je,jk,B,nlev); });
+  if (!bad) fprintf(stderr, "[verify][OK]   loopnest_4 B=%d\n", B);
+}
 
 #define CALL_K(fn) \
   fn(bd.h_ddt, bd.h_vn, bd.h_zw, bd.h_zeta, bd.h_ddqz, \
@@ -290,11 +396,10 @@ int main(int argc, char *argv[]) {
   bool have_exact = (icon_nproma > 0) && icon_load_patch(pp.c_str(), icon_nproma, ied);
 
   int N_e = have_exact ? ied.n_edges : 122880;
-  const int FN = 16384;
-  double *fb0 = numa_alloc_unfaulted<double>((size_t)FN*FN);
-  double *fb1 = numa_alloc_unfaulted<double>((size_t)FN*FN);
-#pragma omp parallel for schedule(static)
-  for (size_t i = 0; i < (size_t)FN*FN; i++) { fb0[i]=0.0; fb1[i]=1.0; }
+  /* Canonical flush owns its buffers (see ../../common/jacobi_flush.h). */
+  double *fb0 = nullptr, *fb1 = nullptr;
+  const int FN = 0;
+  flush_jacobi_init();
 
   for (int ni = 0; ni < N_NLEVS; ni++) {
     int nlev = NLEVS[ni];
@@ -305,6 +410,24 @@ int main(int argc, char *argv[]) {
 
     for (int di = 0; di < ndists; di++) {
       BenchData bd; bd.alloc(N_e, nlev); bd.fill(nlev);
+
+      /* Reference: compute the row-major (V=1) expected output once.
+       * The reference reads src_* directly and writes into `ref_rm`
+       * which starts as a copy of src_ddt. */
+      std::vector<double> ref_rm((size_t)N_e * nlev);
+      std::memcpy(ref_rm.data(), bd.src_ddt, (size_t)N_e * nlev * sizeof(double));
+      ref_kernel_v1(ref_rm.data(), bd.src_vn, bd.src_zw, bd.src_zeta, bd.src_ddqz,
+                    bd.h_cle, bd.h_gf, bd.h_area, bd.h_tang, bd.h_invp,
+                    bd.h_ici, bd.h_iqi, bd.h_ivi, bd.h_lvlm,
+                    N_e, nlev, jk0, jk1);
+
+      if (di == 0) {           /* verify only once per nlev to keep runtime bounded */
+        for (int V = 1; V <= 4; V++) {
+          bd.set_variant(V, sched_for(V));
+          verify_variant_V(V, bd, jk0, jk1, ref_rm.data());
+        }
+      }
+
       for (int V = 1; V <= 4; V++) run_variant(fcsv, V, bd, jk0, jk1, dists[di], fb0, fb1, FN);
       fflush(fcsv); bd.free_all();
     }
@@ -315,6 +438,18 @@ int main(int argc, char *argv[]) {
         if (N_e % B != 0) { printf("SKIP B=%d !| N_e=%d\n", B, N_e); continue; }
         BenchData bd; bd.alloc(N_e, nlev); bd.fill(nlev);
         bd.set_variant_blocked(B, SCHED_JE_OUTER);
+
+        if (di == 0) {  /* one verification per (nlev, B) */
+          std::vector<double> ref_rm((size_t)N_e * nlev);
+          std::memcpy(ref_rm.data(), bd.src_ddt, (size_t)N_e * nlev * sizeof(double));
+          ref_kernel_v1(ref_rm.data(), bd.src_vn, bd.src_zw, bd.src_zeta, bd.src_ddqz,
+                        bd.h_cle, bd.h_gf, bd.h_area, bd.h_tang, bd.h_invp,
+                        bd.h_ici, bd.h_iqi, bd.h_ivi, bd.h_lvlm,
+                        N_e, nlev, jk0, jk1);
+          verify_blocked_B(B, bd, jk0, jk1, ref_rm.data());
+          bd.set_variant_blocked(B, SCHED_JE_OUTER);  /* reset h_ddt after verify */
+        }
+
         run_blocked(fcsv, bi, bd, jk0, jk1, dists[di], fb0, fb1, FN);
         fflush(fcsv); bd.free_all();
       }
@@ -336,7 +471,7 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  numa_dealloc(fb0, (size_t)FN*FN); numa_dealloc(fb1, (size_t)FN*FN);
+  /* fb0/fb1 are nullptr; canonical flush owns its buffers. */
   if (have_exact) ied.free_all();
   fclose(fcsv);
   return 0;

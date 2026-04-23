@@ -142,18 +142,10 @@ static void layout_2d_tiled(double *dst, const double *src,
       dst[IC_tiled(i,jk,TX,TY,N,nlev)] = src[i + jk*N];
 }
 
+/* numa_alloc_unfaulted<T> / numa_dealloc<T> / first_touch_* come from
+ * ../../common/numa_util.h. Global policy: MADV_HUGEPAGE on every alloc. */
 #ifndef __CUDACC__
-template <typename T> static T *numa_alloc_unfaulted(size_t count) {
-  size_t bytes = count * sizeof(T);
-  void *p = mmap(nullptr, bytes, PROT_READ|PROT_WRITE,
-                 MAP_PRIVATE|MAP_ANONYMOUS|MAP_NORESERVE, -1, 0);
-  if (p == MAP_FAILED) { perror("mmap"); std::abort(); }
-  madvise(p, bytes, MADV_HUGEPAGE);
-  return (T *)p;
-}
-template <typename T> static void numa_dealloc(T *p, size_t count) {
-  if (p) munmap(p, count * sizeof(T));
-}
+#include "../../common/numa_util.h"
 
 template <int V>
 static double *redistribute_2d(const double *src, int N, int nlev, SchedKind sched) {

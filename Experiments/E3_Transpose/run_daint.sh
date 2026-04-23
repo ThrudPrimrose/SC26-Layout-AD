@@ -5,6 +5,7 @@
 #SBATCH --time=04:00:00
 #SBATCH --account=g177-1
 #SBATCH --ntasks=1
+#SBATCH --gpus-per-task=1
 #SBATCH --cpus-per-task=288
 #SBATCH --exclusive
 #SBATCH --output=results/daint/E3_transpose_daint_%j.out

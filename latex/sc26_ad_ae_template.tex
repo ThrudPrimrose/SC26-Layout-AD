@@ -1,0 +1,338 @@
+\documentclass[conference]{IEEEtran}
+
+\usepackage{cite}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{algorithmic}
+\usepackage{graphicx}
+\usepackage{textcomp}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{tagging}
+\usepackage{hyperref}
+
+\usepackage{sc26repro}
+
+% Comment both lines for the final submission.
+%\usetag{explanation}
+%\usetag{example}
+
+\begin{document}
+
+\twocolumn[%
+{\begin{center}
+\Huge
+Appendix: Artifact Description/Artifact Evaluation
+\end{center}}
+]
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  AD Appendix
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\appendixAD
+
+\section{Overview of Contributions and Artifacts}
+
+\subsection{Paper's Main Contributions}
+
+\begin{description}
+\item[$C_1$] A theoretical proof, via blocked CDAGs and the Red-Blue-White Pebble Game, that a poor data layout can inflate the I/O lower bound by up to a factor of the cache-line length~$B$ relative to a layout-aware optimum, and that no schedule can close this gap.
+\item[$C_2$] A composable layout algebra of five primitives (pad, permute, block, shuffle, zip) whose compositions suffice to express any bijective array rearrangement.
+\item[$C_3$] Two heuristic cost metrics---the average new-block count~$\mu$ (guiding permutation) and the average block distance~$\Delta$ (guiding blocking)---together with a cookbook (Table~II) that maps observable performance symptoms to corrective primitives.
+\item[$C_4$] Empirical validation on microbenchmarks and two production HPC codes---Quantum ESPRESSO and the ICON dynamical core (2025 ACM Gordon Bell Prize for Weather and Climate Modelling winner)---demonstrating up to $1.18\times$ speedup on GPUs and $1.12\times$ on CPUs.
+\end{description}
+
+\subsection{Computational Artifacts}
+
+\begin{description}
+\item[$A_1$] \url{https://doi.org/XX.XXXX/zenodo.XXXXXXX}
+%% TODO: Replace with actual Zenodo DOI after archival
+\end{description}
+
+The artifact comprises two Git repositories and the DaCe framework:
+\begin{itemize}
+\item \textbf{R1:} \url{https://github.com/ThrudPrimrose/SC26-Layout-Artifacts} --- microbenchmarks, Quantum ESPRESSO case study, and the ICON single-loopnest benchmarks.
+\item \textbf{R2:} \url{https://github.com/spcl/icon-artifacts} (branch \texttt{sc26}) --- ICON velocity-tendencies source SDFGs and the full-module lowering pipeline. A curated snapshot (SDFGs, transformation utilities, and driver scripts) is also mirrored into~R1 under \texttt{E6\_VelocityTendencies/full\_velocity\_tendencies/} for self-contained reproduction.
+\item \textbf{R3:} \url{https://github.com/spcl/dace} (branches \texttt{yakup/dev} and \texttt{f2dace/staging}) --- the DaCe parallel programming framework with the layout-transformation infrastructure.
+\end{itemize}
+
+\begin{center}
+\small
+\begin{tabular}{clll}
+\toprule
+Exp. & Contributions & Paper Elements & Repo \\
+\midrule
+E1 & $C_3$, $C_4$         & Fig.~4             & R1 \\
+E2 & $C_{2\text{--}4}$    & Fig.~8             & R1 \\
+E3 & $C_{2\text{--}4}$    & Fig.~9, Tab.~III   & R1 \\
+E4 & $C_{2\text{--}4}$    & Fig.~10            & R1 \\
+E5 & $C_{2\text{--}4}$    & Fig.~11, Lst.~1    & R1 \\
+E6 & $C_3$, $C_4$         & Figs.~12--13, Tab.~IV & R1, R2 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+All experiments depend on R3 (DaCe): E1--E5 and E6 single-loopnest benchmarks (loopnests~1--6) use branch \texttt{yakup/dev}; E6's full-module evaluation uses branch \texttt{f2dace/staging}.
+Contribution~$C_1$ is a pen-and-paper proof with no computational artifact; the illustrative quotient-graph figures (Figures~2--3) are produced by a helper script in the supplemental material folder of~R1.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Artifact Identification}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\newartifact
+
+\artrel
+
+Artifact~$A_1$ validates the layout algebra~($C_2$), cost metrics~($C_3$), and the cookbook-driven optimization workflow~($C_4$) through six experiments.
+Experiments E1--E4 are microbenchmarks that isolate individual layout primitives and measure their effect on achieved memory bandwidth.
+Experiment~E5 evaluates composed layout transformations on a production kernel from Quantum ESPRESSO.
+Experiment~E6 applies the full optimization workflow to the ICON dynamical core, encompassing loop-nest canonicalization, per-pattern layout selection, cross-nest conflict resolution, and end-to-end evaluation of the velocity-tendencies module.
+
+\artexp
+
+\textbf{E1 (Matrix Addition, Figure~4):}
+Elementwise addition $C \mathrel{+}= A + B$ with $B$ stored in column-major layout.
+On our platforms, schedule-only optimization recovers 36\% (Zen4) to 72\% (Grace) of STREAM peak on CPUs and 78\% (MI300A) to 95\% (Hopper) on GPUs; applying layout transformations closes the gap to 68\% (Zen4) and 88\% (Grace) on CPUs and 99\% (both GPUs).
+More broadly, on any platform with explicit scratchpad memory, schedule-only tiling into shared memory should recover most of the peak bandwidth.
+On CPUs, where the programmer has no direct cache control, a persistent gap should remain that only layout transformations can close; its magnitude depends on hardware characteristics.
+
+\textbf{E2 (Complex Conjugation, Figure~8):}
+In-place conjugation of $P$ complex arrays under AoS, SoA, and AoSoA-16 layouts.
+SoA should outperform AoS at low~$P$ due to fewer wasted cache-line bytes.
+As $P$ grows, SoA may collapse on CPUs with limited L1D associativity because of set conflicts from page-aligned allocations; we observe this on Zen4 at $P \geq 15$ but not on Grace.
+On both GPUs, SoA and AoSoA-16 sustain near-peak bandwidth, while AoS suffers from strided access to non-contiguous fields.
+AoSoA-16 remains robust across all four backends and all~$P$ values, demonstrating the value of partial zipping when the optimal granularity cannot be selected statically.
+
+\textbf{E3 (Matrix Transpose, Figure~9, Table~III):}
+$N \times N$ fp32 transpose under row-major and blocked layouts.
+On CPUs, row-major writes scatter at stride~$N$, exceeding prefetcher and TLB capacity; blocking improves bandwidth by $1.7\times$ on Zen4 and $3.2\times$ on Grace over row-major.
+Our sweep reaches 61\% (Zen4) and 81\% (Grace) of STREAM peak, compared with HPTT's 44\% on both CPUs.
+On GPUs, shared-memory tiling absorbs the stride: our sweep reaches 60\% (MI300A) and 85\% (Hopper) under row-major, matching vendor libraries; padding or shuffling remain necessary to avoid bank conflicts.
+Table~III reports the reduction in~$\Delta$ from blocking at each cache-line size.
+On any CPU without an explicit scratchpad, blocking should be the primary recourse for stride-heavy access patterns; on GPUs, the layout penalty is absorbed by shared-memory staging.
+
+\textbf{E4 (Gather-Accumulate-Scatter, Figure~10):}
+Indirect scatter--accumulate pattern $y[\sigma(i)] \mathrel{+}= x[i]$ before and after applying a shuffle (index sorting), evaluated under uniform-random and exact BaTiO$_3$ index distributions.
+On MI300A GPU, the shuffle improves bandwidth from 21\% to 30\% (uniform) and from 23\% to 42\% (BaTiO$_3$) of STREAM peak.
+On Hopper GPU, from 35\% to 62\% (uniform) and from 48\% to 82\% (BaTiO$_3$).
+On CPUs, the improvement is modest across both distributions---9--15\% on Zen4 and 7--13\% on Grace---because the shuffle introduces a new indirect gather that limits prefetcher effectiveness.
+The GPU gains should generalize to any coalescing-sensitive architecture; CPU gains depend on the trade-off between improved scatter locality and degraded gather locality.
+
+\textbf{E5 (Quantum ESPRESSO \texttt{addusxx\_g}, Figure~11):}
+Composed unzip, permute, and shuffle on the \texttt{addusxx\_g} kernel.
+The composed transformations yield $1.12\times$ on Zen4 CPU, $1.11\times$ on Grace CPU, $1.18\times$ on Hopper GPU, and $1.00\times$ on MI300A GPU.
+The improvement should generalize to any platform where the baseline Fortran AoS layout wastes cache-line bandwidth on the untouched real part (unzip), misaligns the innermost stride (permute), and scatters indirect writes (shuffle).
+The MI300A GPU shows no gain because its unified memory architecture already absorbs the access pattern efficiently.
+
+\textbf{E6 (ICON Velocity Tendencies, Figures~12--13, Table~IV):}
+The velocity-tendencies module contains 25~loop nests that access 50~arrays.
+After canonicalization, these collapse into 6~pattern classes with 7~layout-equivalent array groups.
+Experiment~E6 evaluates a representative loop nest from each class individually and the full module end-to-end:
+\begin{itemize}
+\item \emph{Loopnest~1 (indirect stencil, complete vertical):} Vertical-first layout improves CPU bandwidth by $1.85\times$ on Zen4 (from 30\% to 55\% of STREAM peak) with a modest gain on Grace (from 44\% to 47\%).
+On GPUs, both layouts achieve comparable bandwidth under exact R02B05 connectivity: 48--49\% on MI300A and 90--91\% on Hopper.
+Under uniform random indirection, GPUs show large vertical-first gains: $3.3\times$ on MI300A and $2.3\times$ on Hopper.
+The metric~$\mu$ is invariant to the indirection distribution under vertical-first layout on any platform (Table~IV).
+\item \emph{Loopnests~2--6:} Representative nests from the remaining five pattern classes (direct stencil / partial vertical, direct stencil / complete vertical, indirect stencil + CFL clip / partial vertical, horizontal-only boundary, and vertical-only level reduction) are each implemented as a full C++/OpenMP + CUDA + HIP benchmark suite and an analytic cost-metric sweep.
+Each suite sweeps V1--V4 dimension-order variants, 1D blocking $B \in \{8,16,32,64,128\}$, and (where vertical locality is meaningful) 2D tiling over $(T_X, T_Y) \in \{8,16,32,64\}^2$; GPU variants add a thread-block-size sweep.
+The analytic cost metrics mirror the sweep axes and let us cross-check the empirical ordering against~$\mu$ and~$\Delta$.
+\item \emph{Full module (GPU, cross-layout sweep):} Vertical-first yields $1.17\times$ on MI300A GPU and $1.07\times$ on Hopper GPU for Config~B (5 of every 6~calls); Config~A shows $1.06\times$ on MI300A and $0.97\times$ on Hopper.
+The net per-timestep improvement is approximately 15\% on MI300A and 5\% on Hopper, weighted by the 5:1 call ratio.
+The evaluation is driven by \texttt{run\_stage\{4,8\}\_permutations.py}, which sweeps a 95-configuration layout-permutation matrix (five dimension groups: \texttt{cv}, \texttt{ch}, \texttt{f}, \texttt{s}, \texttt{n}) per device, per loop-nest lowering stage.
+On any platform, the aggregate improvement should be positive whenever the dominant configuration benefits from vertical-first layout.
+\end{itemize}
+
+\arttime
+\begin{center}
+\small
+\begin{tabular}{lrr}
+\toprule
+Step & Daint & Beverin \\
+\midrule
+Setup                          &  15 &  15 \\
+E1 Matrix Add.                 &  90 &  90 \\
+E2 Conjugation                 & 210 & 210 \\
+E3 Transpose                   & 180 & 180 \\
+E4 GAS                         &  60 &  60 \\
+E5 QE addusxx\_g               &  60 &  60 \\
+E6 Loopnest 1 (indirect)       & 150 & 150 \\
+E6 Loopnests 2--6              & 300 & 300 \\
+E6 Full module sweep           & 240 & 240 \\
+Analysis                       &  10 &  10 \\
+\midrule
+\textbf{Total}                 & \multicolumn{2}{c}{\textbf{$\sim$22~hr / cluster}} \\
+\bottomrule
+\end{tabular}
+\end{center}
+\noindent All times in minutes.
+The E6 loopnests 2--6 line is an aggregate across five nests; each is a short-running sweep ($\sim$60~min) that can be scheduled independently.
+The E6 full-module sweep assumes the three named configurations (\texttt{unpermuted}, \texttt{nlev\_first}, \texttt{index\_only}); a full 95-configuration sweep (\texttt{CONFIGS=full\_sweep}) is also supported but extends the full-module step to roughly 12~hr.
+
+\artin
+
+\artinpart{Hardware}
+
+Two HPC clusters at the Swiss National Supercomputing Centre (CSCS):
+
+\begin{itemize}
+\item \textbf{Daint.Alps (Cluster~A):} Quad-GH200 nodes with 72-core Arm Neoverse~V2 Grace CPUs (512\,GB/s LPDDR5X) and NVIDIA H200 GPUs (4\,TB/s HBM3).
+Measured STREAM Triad peaks: CPU 1.807\,TB/s, GPU 3.780\,TB/s.
+\item \textbf{Beverin (Cluster~B):} Quad-MI300A APU nodes with 24 AMD Zen\,4 cores sharing 128\,GB unified HBM3.
+Measured STREAM Triad peaks: CPU 1.161\,TB/s, GPU 4.294\,TB/s.
+\end{itemize}
+
+Both clusters are accessed via SLURM and require exclusive single-node allocations.
+The results should generalize to any system with comparable cache-line sizes (64\,B on CPUs, 128\,B on GPUs), though absolute bandwidths will differ.
+
+\artinpart{Software}
+
+\begin{center}
+\small
+\begin{tabular}{lll}
+\toprule
+Package & Version & Notes \\
+\midrule
+GCC & 14.2 / 14.3 & via Spack \\
+CUDA & 12.9 & Daint only \\
+ROCm & 6.4.1 & Beverin only \\
+HPTT & latest & E3 only \\
+cuTENSOR & latest & E3, Daint only \\
+hipTensor & latest & E3, Beverin only \\
+DaCe & \texttt{yakup/dev} & E1--E5, E6 loopnests \\
+     & \texttt{f2dace/staging} & E6 full module \\
+Python & 3.10+ & numpy, scipy, matplotlib \\
+libnuma & system & NUMA-aware allocation \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+DaCe is available at \url{https://github.com/spcl/dace}.
+Experiments E1--E5 and the E6 single-loopnest benchmarks use branch \texttt{yakup/dev}; E6's full-module evaluation uses branch \texttt{f2dace/staging} with layout transformations cherry-picked from \texttt{yakup/dev} (automated by \texttt{E6\_VelocityTendencies/full\_velocity\_tendencies/sc26\_layout/prepare.sh}).
+
+Platform-specific setup and activation scripts are centralized under \texttt{Experiments/common/}:
+\texttt{setup.sh} (first-time install), \texttt{activate.sh} (per-session), and the per-cluster environment scripts \texttt{setup\_daint.sh} / \texttt{setup\_beverin.sh}.
+Every experiment's \texttt{run\_\{daint,beverin\}.sh} sources these in turn, so a single invocation of \texttt{common/setup.sh} at the repository root covers all experiments.
+
+\artinpart{Datasets / Inputs}
+
+Microbenchmarks (E1--E4) generate all input data synthetically at runtime.
+The two production-code experiments require serialized datasets, each downloadable via a provided script:
+
+\begin{itemize}
+\item \textbf{E5 (Quantum ESPRESSO):} Serialized BaTiO$_3$ data from a QE \texttt{pw.x} HSE06 self-consistent calculation (10-atom unit cell).
+Run \texttt{E5\_USXX/download\_data.sh} to fetch the data from ETH PolyBox.
+%% TODO: insert final PolyBox share link once archived.
+\item \textbf{E6 (ICON):} Serialized R02B05 grid connectivity tables (\texttt{p\_patch}), prognostic/diagnostic fields, and metric arrays from a single ICON timestep (timestep~9).
+Run \texttt{E6\_VelocityTendencies/loopnest\_1/download\_data.sh} (or the equivalent \texttt{scripts/download\_nproma20480\_data.sh} in the full-module folder) to fetch the data from ETH PolyBox.
+%% TODO: insert final PolyBox share link once archived.
+\end{itemize}
+
+\artinpart{Installation and Deployment}
+
+Each experiment folder contains two self-contained scripts---\texttt{run\_daint.sh} and \texttt{run\_beverin.sh}---that handle the full pipeline: loading the platform environment, downloading data (if needed), compiling sources, executing benchmarks, and collecting results.
+A typical script proceeds as follows:
+
+\begin{enumerate}
+\item Source the shared environment layer:
+\begin{itemize}
+\item \texttt{source ../../common/activate.sh} (activates the pyenv venv and pins DaCe to the branch specified by \texttt{\$DACE\_BRANCH}, defaulting to \texttt{yakup/dev}; \texttt{f2dace/staging} for E6 full module).
+\item \texttt{source ../../common/setup\_\{daint,beverin\}.sh} (platform-specific Spack loads and OMP/NUMA pinning).
+\end{itemize}
+\item Download input data if not already present (E5 and E6 only).
+\item Compile C++/CUDA/HIP benchmark sources (host tool\-chain selected by \texttt{CPU\_CXX}/\texttt{GPU\_CXX} from the platform env script).
+\item Execute benchmarks with the configured OpenMP and NUMA settings (100~repetitions $+$ 5~warm-ups with inter-run cache flushes).
+\item Collect CSV results into \texttt{results/\{beverin,daint\}/}.
+\end{enumerate}
+
+\noindent To reproduce a single experiment (e.g., E3 on Daint):
+\begin{verbatim}
+bash Experiments/common/setup.sh    # once per cluster
+cd Experiments/E3_Transpose
+sbatch run_daint.sh
+# Results: results/daint/*.csv
+python plot_paper.py                # produces Figure 9
+\end{verbatim}
+
+\artcomp
+
+The artifact is organized as one folder per experiment.
+Experiments E1--E5 each follow the same four-task workflow, encapsulated in their respective \texttt{run\_\{daint,beverin\}.sh} scripts:
+
+\begin{description}
+\item[$T_1$] \textbf{Setup:} source shared env, install DaCe, and download data (E5 only).
+\item[$T_2$] \textbf{Build and execute:} compile sources and run benchmarks (100~repetitions after 5~warm-up iterations with cache flushes between repetitions).
+\item[$T_3$] \textbf{Compute cost metrics} (E3 only): run \texttt{cost\_metrics} to compute $\mu$ and~$\Delta$ for each layout candidate.
+\item[$T_4$] \textbf{Generate plots:} run \texttt{plot\_paper.py} to produce violin plots from the CSV results.
+\end{description}
+
+\noindent Dependencies: $T_1 \to T_2$; $T_1 \to T_3$; $\{T_2, T_3\} \to T_4$.
+The run script handles $T_1$--$T_3$; $T_4$ is invoked manually afterwards.
+Experiments E1--E5 are mutually independent and can run in parallel.
+
+\textbf{E6 (ICON) workflow.}
+Experiment~E6 follows a multi-stage pipeline that mirrors the paper's optimization methodology (Section~III-F):
+
+\begin{description}
+\item[$T_{6.1}$] \textbf{Download data:} fetch R02B05 connectivity tables and serialized fields via the per-loopnest \texttt{download\_data.sh} (or the full-module \texttt{scripts/download\_nproma20480\_data.sh}).
+
+\item[$T_{6.2}$] \textbf{Access analysis:} \texttt{access\_analysis/analyze\_access.py} (plus \texttt{select\_loopnests.py}, \texttt{jaccard.py}, \texttt{coaccess.py}) canonicalizes the 25~loop nests into 6~pattern classes, groups the 50~arrays into 7~layout-equivalent groups, and computes $\mu$/$\Delta$ for each candidate layout per group.
+Outputs the candidate configuration file \texttt{layout\_candidates.json}.
+
+\item[$T_{6.3}$] \textbf{Per-loopnest evaluation:} each \texttt{loopnest\_\{1..6\}/} folder is a full bench\-mark suite (\texttt{bench\_cpu.cpp}, \texttt{bench\_gpu.cu}, \texttt{bench\_gpu\_hip.cpp}, \texttt{cost\_metrics.cpp}) that sweeps V1--V4 dimension orderings, 1D blocking, and (where meaningful) 2D tiling.
+Each folder's \texttt{run\_\{daint,beverin\}.sh} compiles, runs, and writes CSVs to \texttt{results/\{daint,beverin\}/}; the per-folder \texttt{README.md} explains the Fortran reference nest and the mapping between the code's macros and the nest class.
+
+\item[$T_{6.4}$] \textbf{Conflict resolution:} \texttt{conflict\_resolution/} reads the per-loopnest CSV rankings from $T_{6.3}$, weights them by call frequency (Config~A: 1/6, Config~B: 5/6), and emits \texttt{selected\_layouts.json}---the cross-product of locally-optimal layouts fed forward into $T_{6.5}$.
+%% TODO: conflict-resolution implementation is currently scoped; only the README and input-schema contract are in place.
+
+\item[$T_{6.5}$] \textbf{Full-module sweep:} \texttt{full\_velocity\_tendencies/} applies each selected layout from $T_{6.4}$ to the velocity-tendencies DaCe SDFG, drives the stage-by-stage lowering pipeline (stage1 $\to$ stage9), and benchmarks the terminal stage (stage4 on CPU, stage8 on GPU).
+The driver is \texttt{run\_stage\{4,8\}\_permutations.py}; the clean submission scripts \texttt{run\_daint.sh} / \texttt{run\_beverin.sh} wire in \texttt{common/activate.sh} and \texttt{setup\_\{daint,beverin\}.sh}, set \texttt{DACE\_BRANCH=f2dace/staging}, and write outputs to \texttt{results/\{daint,beverin\}/stage\{4,8\}/}.
+Outputs CSV results for Figure~13.
+
+\item[$T_{6.6}$] \textbf{Analysis:} \texttt{plot\_paper.py} (top-level) and the per-folder plotting scripts under \texttt{full\_velocity\_tendencies/scripts/plotting/} produce Figures~12--13 and Table~IV from the combined results of $T_{6.3}$ and $T_{6.5}$.
+\end{description}
+
+\noindent Dependencies: $T_{6.1} \to T_{6.2} \to T_{6.3} \to T_{6.4} \to T_{6.5} \to T_{6.6}$.
+
+\textbf{E6 sub-experiment structure.}
+The ICON experiment spans two repositories and two DaCe branches.
+Its folder is subdivided as follows:
+
+\begin{itemize}
+\item \texttt{access\_analysis/}: implements $T_{6.2}$.
+Parses the annotated velocity-tendencies source (\texttt{velocity\_advection.f90}), canonicalizes the 25~loop nests into 6~pattern classes, groups the 50~arrays into 7~layout-equivalent groups, and emits \texttt{layout\_candidates.json}.
+
+\item \texttt{loopnest\_\{1..6\}/}: one subfolder per pattern class, implementing $T_{6.3}$.
+All six are complete C++/OpenMP + CUDA + HIP benchmark suites with matching analytic cost metrics.
+The pattern classes are: (1) indirect stencil, complete vertical; (2) direct stencil, partial vertical; (3) direct stencil, complete vertical; (4) indirect stencil + CFL clip, partial vertical; (5) horizontal-only boundary; (6) vertical-only level reduction.
+
+\item \texttt{conflict\_resolution/}: implements $T_{6.4}$.
+Reads per-loopnest CSV results, applies call-frequency weighting, resolves cross-nest conflicts, and outputs the selected global layout configurations consumed by $T_{6.5}$.
+
+\item \texttt{full\_velocity\_tendencies/}: implements $T_{6.5}$.
+Contains the snapshot of the velocity SDFGs (pre-lowering baselines, per-stage checkpoints for stages~1--9, and the terminal stage5/stage8 program SDFGs in \texttt{SDFGs/}), the layout-transformation research code (\texttt{sc26\_layout/}), the DaCe-side transformation library (\texttt{scripts/utils/}), the permutation drivers (\texttt{scripts/run\_stage\{4,8\}\_permutations.py}), and the clean cluster submission scripts.
+Uses repository~R2 with DaCe branch \texttt{f2dace/staging}.
+\end{itemize}
+
+\textbf{Statistical methodology.}
+Following Hoefler and Belli~[52], each configuration runs 100~repetitions after 5~warm-up iterations.
+Between repetitions, an $8192^2$ Jacobi stencil (3~sweeps with buffer swap, shared via \texttt{common/jacobi\_flush.h}) flushes all cache levels.
+We report medians and 95\% bootstrap confidence intervals of the median (BCa method, $n=10{,}000$ resamples).
+Violin plots show the full empirical distribution of all 100~samples; \emph{no outlier trimming is applied}.
+The kernel density estimator uses Scott's rule for bandwidth and is evaluated at 200~equally-spaced points---the same settings in every figure---so violin shapes can be compared panel-to-panel and CPU-to-GPU without a hidden smoothing term distorting the comparison.
+All random draws (input fills, index permutations, synthetic connectivity) are deterministic: every RNG is seeded from the canonical \texttt{SC26\_SEED=42} via a shared XOR-shift implementation (\texttt{common/prng.h}).
+All bandwidths are normalized to the measured STREAM Triad peak on each platform.
+
+\artout
+
+Each experiment produces:
+\begin{itemize}
+\item CSV files with columns: variant, layout, repetition, time (ms), and bandwidth (GB/s).
+\item PDF violin plots matching the corresponding paper figure (Figures~4, 8--13).
+\item LaTeX-formatted metric tables where applicable (Tables~III and~IV).
+\end{itemize}
+
+Results are stored in \texttt{results/\{beverin,daint\}/} within each experiment folder.
+The \texttt{plot\_paper.py} script reads these CSVs and produces PDF figures that can be compared visually with the paper.
+Expected trends---the relative ordering of layouts and gap magnitudes---should be reproducible; absolute bandwidths will depend on the specific hardware and system load.
+
+\end{document}

@@ -223,7 +223,7 @@ static float verify(const float *out, const float *ref, int N, int SB, bool blk)
 int main(int argc, char **argv) {
     if (argc < 4) {
         fprintf(stderr,
-                "Usage: %s <N> <variant> <csv> [SB=32] [WARMUP=3] [REPS=20] [THREADS=0]\n"
+                "Usage: %s <N> <variant> <csv> [SB=32] [WARMUP=5] [REPS=100] [THREADS=0]\n"
                 "\n"
                 "  0 = hptt               full N×N 2D, ESTIMATE\n"
                 "  1 = hptt_blk           blocked 4D [NB,NB,SB,SB], ESTIMATE\n"
@@ -237,8 +237,9 @@ int main(int argc, char **argv) {
     int VAR = atoi(argv[2]);
     const char *csv = argv[3];
     int SB = (argc > 4) ? atoi(argv[4]) : 32;
-    int WARMUP = (argc > 5) ? atoi(argv[5]) : 3;
-    int REPS = (argc > 6) ? atoi(argv[6]) : 20;
+    /* Canonical across the artifact: 100 reps, 5 warmups. */
+    int WARMUP = (argc > 5) ? atoi(argv[5]) : 5;
+    int REPS = (argc > 6) ? atoi(argv[6]) : 100;
     int THREADS = (argc > 7) ? atoi(argv[7]) : 0;
 
     if (VAR < 0 || VAR >= N_VARIANTS) {

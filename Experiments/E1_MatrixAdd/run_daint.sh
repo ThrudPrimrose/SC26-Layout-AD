@@ -5,6 +5,7 @@
 #SBATCH --time=01:30:00
 #SBATCH --account=g177-1
 #SBATCH --ntasks=1
+#SBATCH --gpus-per-task=1
 #SBATCH --cpus-per-task=288
 #SBATCH --output=results/daint/E1_madd_daint_%j.out
 #SBATCH --error=results/daint/E1_madd_daint_%j.err

@@ -215,10 +215,12 @@ int main(int argc, char *argv[]) {
   bool have_exact = (icon_nproma > 0) && icon_load_patch(pp.c_str(), icon_nproma, ied);
   int N_e = have_exact ? ied.n_edges : 122880;
 
-  size_t sz = (size_t)N_e * NLEVS[0];
+  int max_nlev = 0;
+  for (int ni = 0; ni < N_NLEVS; ni++) if (NLEVS[ni] > max_nlev) max_nlev = NLEVS[ni];
+  size_t sz_max = (size_t)N_e * max_nlev;
   double *d_lvm, *d_lvout;
-  CUDA_CHECK(cudaMalloc(&d_lvm, sz*8));
-  CUDA_CHECK(cudaMalloc(&d_lvout, (size_t)NLEVS[0]*8));
+  CUDA_CHECK(cudaMalloc(&d_lvm, sz_max*8));
+  CUDA_CHECK(cudaMalloc(&d_lvout, (size_t)max_nlev*8));
   cudaEvent_t ev0, ev1; cudaEventCreate(&ev0); cudaEventCreate(&ev1);
 
   const char *dists[3] = {"uniform", "normal_var1", "exact"};
@@ -226,6 +228,7 @@ int main(int argc, char *argv[]) {
 
   for (int ni = 0; ni < N_NLEVS; ni++) {
     int nlev = NLEVS[ni];
+    size_t sz = (size_t)N_e * nlev;
 
     for (int di = 0; di < ndists; di++) {
       for (int V = 1; V <= 4; V++) {

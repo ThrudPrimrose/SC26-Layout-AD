@@ -61,15 +61,6 @@ STREAM_PEAK = {
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
-def remove_outliers(vals, k=3.0):
-    if len(vals) < 4:
-        return vals
-    q1, q3 = np.percentile(vals, [25, 75])
-    iqr = q3 - q1
-    lo, hi = q1 - k * iqr, q3 + k * iqr
-    c = vals[(vals >= lo) & (vals <= hi)]
-    return c if len(c) > 2 else vals
-
 def bootstrap_ci(arr, confidence_level=0.95, n_resamples=10000):
     if len(arr) < 3:
         med = np.median(arr)
@@ -177,7 +168,7 @@ def paint_subplot(ax, df, peak_label, tiled, is_cpu, add_peak=False, draw_arrow=
             else:
                 vals, chosen = best_across_variants(df_slice, opt_candidates, is_cpu)
 
-            vals = remove_outliers(vals)
+            # No outlier trimming (repo-wide policy).
             pos = di * group_spacing + vi
             if len(vals) > 0:
                 data_all.append(vals)
@@ -200,11 +191,13 @@ def paint_subplot(ax, df, peak_label, tiled, is_cpu, add_peak=False, draw_arrow=
         ticks = ticks[:7]
     top = ticks[-1] * 1.06 if len(ticks) else mx * 1.15
 
-    # Violins
+    # Violins -- canonical sampling (bw_method=scott, points=200) shared
+    # with every other plot in the artifact.
     if data_all:
         parts = ax.violinplot(data_all, positions=positions,
                               showmeans=True, showmedians=True,
-                              showextrema=False, widths=0.9)
+                              showextrema=False, widths=0.9,
+                              bw_method="scott", points=200)
         for i, body in enumerate(parts["bodies"]):
             body.set_facecolor(col_all[i])
             body.set_edgecolor("black")

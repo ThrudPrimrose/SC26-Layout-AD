@@ -6,6 +6,7 @@
  */
 #include "bench_common.h"
 #include "icon_data_loader.h"
+#include "../../common/jacobi_flush.h"
 #include <ctime>
 #include <omp.h>
 #include <utility>
@@ -309,30 +310,9 @@ static bool verify(const double *got, const double *ref, size_t n,
   return *nf==0;
 }
 
-/* ---- Flush ---- */
-static constexpr int FN=8192*2, FS=3;
-static double *fb0=nullptr, *fb1=nullptr;
-static void flush() {
-  static bool init=false;
-  if (!init) {
-    size_t n=(size_t)FN*FN;
-    fb0=numa_alloc_unfaulted<double>(n); fb1=numa_alloc_unfaulted<double>(n);
-#pragma omp parallel for schedule(static)
-    for (size_t i=0;i<n;i++) {
-      uint64_t h=splitmix64(12345ULL+i);
-      fb0[i]=(double)(h>>11)/(double)(1ULL<<53); fb1[i]=fb0[i];
-    }
-    init=true;
-  }
-  double *A=fb0, *B=fb1;
-  for (int s=0;s<FS;s++) {
-#pragma omp parallel for schedule(static)
-    for (int i=1;i<FN-1;i++)
-      for (int j=1;j<FN-1;j++)
-        B[i*FN+j]=0.25*(A[(i-1)*FN+j]+A[(i+1)*FN+j]+A[i*FN+(j-1)]+A[i*FN+(j+1)]);
-    std::swap(A,B);
-  }
-}
+/* Canonical Jacobi-2D cache flush (see ../../common/jacobi_flush.h).
+ * 8192x8192, 3 swept Jacobi sweeps, buffers first-touched once at init. */
+static void flush() { flush_jacobi(); }
 
 /* ---- helper: benchmark one kernel variant ---- */
 static void bench_kernel(FILE *f, kern_t kern, const char *par_label,
@@ -594,7 +574,8 @@ int main(int argc, char *argv[]) {
          nthreads, NUMA_DOMAINS, L1_bytes);
   for (int bi=0;bi<N_BLOCK_SIZES;bi++)
     printf("  B=%3d L1%%=%.1f%%\n", BLOCK_SIZES[bi], l1_ratio(BLOCK_SIZES[bi],L1_bytes)*100);
-  srand((unsigned)time(NULL));
+  /* Deterministic: no libc srand/rand used anywhere; all random draws
+   * go through common/prng.h with SC26_SEED=42. */
   flush();
   printf("Ready\n\n");
 
@@ -738,8 +719,7 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  numa_dealloc(fb0, (size_t)FN*FN);
-  numa_dealloc(fb1, (size_t)FN*FN);
+  /* Flush buffers are owned by ../../common/jacobi_flush.h (freed at exit). */
   delete[] cell_logical;
   delete[] vert_logical;
   if (have_exact) ied.free_all();

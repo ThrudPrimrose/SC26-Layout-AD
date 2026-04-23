@@ -13,6 +13,8 @@
 #include <sys/mman.h>
 #include <sys/stat.h>
 
+#include "../common/jacobi_flush.h"
+
 // ============================================================
 // Data loading
 // ============================================================
@@ -44,44 +46,17 @@ static bool data_load_cmplx_array(Complex_DP* d, int n, const char* fn) {
 
 // ============================================================
 // NUMA helpers
+//
+// numa_alloc<T>, first_touch_zero<T>, first_touch_copy<T> are provided
+// by ../common/numa_util.h (transitively included via jacobi_flush.h).
+// Global policy: MADV_HUGEPAGE on every allocation.
 // ============================================================
-template<typename T>
-static T* numa_alloc(size_t count) {
-    size_t bytes = count * sizeof(T);
-    void* p = mmap(nullptr, bytes, PROT_READ|PROT_WRITE,
-                   MAP_PRIVATE|MAP_ANONYMOUS|MAP_NORESERVE, -1, 0);
-    if (p == MAP_FAILED) { perror("mmap"); abort(); }
-    madvise(p, bytes, MADV_HUGEPAGE);
-    return static_cast<T*>(p);
-}
 
-template<typename T>
-static void first_touch_zero(T* arr, size_t count) {
-    #pragma omp parallel for schedule(static)
-    for (size_t i = 0; i < count; i++) arr[i] = T{};
-}
-
-template<typename T>
-static void first_touch_copy(T* dst, const T* src, size_t count) {
-    #pragma omp parallel for schedule(static)
-    for (size_t i = 0; i < count; i++) dst[i] = src[i];
-}
-
-// Cache flush
-static constexpr size_t FLUSH_ELEMS = 256ULL * 1024 * 1024 / sizeof(double);
-static double* g_flush = nullptr;
-
-static void init_flush() {
-    if (!g_flush) {
-        g_flush = numa_alloc<double>(FLUSH_ELEMS);
-        first_touch_zero(g_flush, FLUSH_ELEMS);
-    }
-}
-
-static void flush_caches() {
-    #pragma omp parallel for schedule(static)
-    for (size_t i = 0; i < FLUSH_ELEMS; i++) g_flush[i] = 1.0;
-}
+/* Canonical Jacobi-2D cache flush shared across all experiments
+ * (see ../common/jacobi_flush.h). 8192x8192, 3 swept Jacobi sweeps,
+ * buffers allocated once at init and NUMA-spread via first-touch. */
+static void init_flush()   { flush_jacobi_init(); }
+static void flush_caches() { flush_jacobi(); }
 
 // ============================================================
 // Array dimensions

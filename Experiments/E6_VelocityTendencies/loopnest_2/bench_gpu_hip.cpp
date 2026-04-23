@@ -234,10 +234,12 @@ int main(int argc, char *argv[]) {
   int N_e = have_exact ? ied.n_edges : 122880;
 
   double *d_vn,*d_vt,*d_xn,*d_xt,*d_out;
-  size_t sz = (size_t)N_e * NLEVS[0];
-  HIP_CHECK(hipMalloc(&d_vn, sz*8)); HIP_CHECK(hipMalloc(&d_vt, sz*8));
-  HIP_CHECK(hipMalloc(&d_xn, sz*8)); HIP_CHECK(hipMalloc(&d_xt, sz*8));
-  HIP_CHECK(hipMalloc(&d_out, sz*8));
+  int max_nlev = 0;
+  for (int ni = 0; ni < N_NLEVS; ni++) if (NLEVS[ni] > max_nlev) max_nlev = NLEVS[ni];
+  size_t sz_max = (size_t)N_e * max_nlev;
+  HIP_CHECK(hipMalloc(&d_vn, sz_max*8)); HIP_CHECK(hipMalloc(&d_vt, sz_max*8));
+  HIP_CHECK(hipMalloc(&d_xn, sz_max*8)); HIP_CHECK(hipMalloc(&d_xt, sz_max*8));
+  HIP_CHECK(hipMalloc(&d_out, sz_max*8));
   hipEvent_t ev0, ev1; hipEventCreate(&ev0); hipEventCreate(&ev1);
 
   const char *dists[3] = {"uniform", "normal_var1", "exact"};
@@ -245,6 +247,7 @@ int main(int argc, char *argv[]) {
 
   for (int ni = 0; ni < N_NLEVS; ni++) {
     int nlev = NLEVS[ni], nlev_end = nlev;
+    size_t sz = (size_t)N_e * nlev;
 
     for (int di = 0; di < ndists; di++) {
       for (int V = 1; V <= 4; V++) {

@@ -173,12 +173,14 @@ int main(int argc, char *argv[]) {
   int N_e = have_exact ? ied.n_edges : 122880;
 
   double *d_vnie,*d_zvt,*d_zk,*d_vn,*d_vt,*d_ubc,*d_wgt;
-  size_t sz = (size_t)N_e * (NLEVS[0] + 1);
-  CUDA_CHECK(cudaMalloc(&d_vnie, sz*8));
-  CUDA_CHECK(cudaMalloc(&d_zvt,  sz*8));
-  CUDA_CHECK(cudaMalloc(&d_zk,   sz*8));
-  CUDA_CHECK(cudaMalloc(&d_vn,   sz*8));
-  CUDA_CHECK(cudaMalloc(&d_vt,   sz*8));
+  int max_nlev = 0;
+  for (int ni = 0; ni < N_NLEVS; ni++) if (NLEVS[ni] > max_nlev) max_nlev = NLEVS[ni];
+  size_t sz_max = (size_t)N_e * (max_nlev + 1);
+  CUDA_CHECK(cudaMalloc(&d_vnie, sz_max*8));
+  CUDA_CHECK(cudaMalloc(&d_zvt,  sz_max*8));
+  CUDA_CHECK(cudaMalloc(&d_zk,   sz_max*8));
+  CUDA_CHECK(cudaMalloc(&d_vn,   sz_max*8));
+  CUDA_CHECK(cudaMalloc(&d_vt,   sz_max*8));
   CUDA_CHECK(cudaMalloc(&d_ubc, (size_t)N_e*2*8));
   CUDA_CHECK(cudaMalloc(&d_wgt, (size_t)N_e*3*8));
   cudaEvent_t ev0, ev1; cudaEventCreate(&ev0); cudaEventCreate(&ev1);
@@ -188,6 +190,7 @@ int main(int argc, char *argv[]) {
 
   for (int ni = 0; ni < N_NLEVS; ni++) {
     int nlev = NLEVS[ni];
+    size_t sz = (size_t)N_e * (nlev + 1);
 
     for (int di = 0; di < ndists; di++) {
       for (int V = 1; V <= 4; V++) {

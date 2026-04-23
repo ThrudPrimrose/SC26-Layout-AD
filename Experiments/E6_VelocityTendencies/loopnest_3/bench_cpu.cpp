@@ -15,6 +15,7 @@
 
 #include "bench_common.h"
 #include "../loopnest_1/icon_data_loader.h"
+#include "../../common/jacobi_flush.h"
 
 using clk = std::chrono::high_resolution_clock;
 
@@ -153,10 +154,9 @@ static inline double elapsed_ms(clk::time_point a, clk::time_point b) {
   return std::chrono::duration<double, std::milli>(b - a).count();
 }
 
-static void jacobi_flush(double *a, double *b, int n) {
-#pragma omp parallel for schedule(static)
-  for (int i = 0; i < n*n; i++) a[i] = 0.5 * (a[i] + b[i]);
-}
+/* Canonical Jacobi-2D cache flush (see ../../common/jacobi_flush.h).
+ * Wrapper keeps the legacy signature so existing call sites compile. */
+static void jacobi_flush(double *, double *, int) { flush_jacobi(); }
 
 static SchedKind sched_for(int V) {
   return (V <= 2) ? SCHED_JK_OUTER : SCHED_JE_OUTER;
@@ -247,11 +247,11 @@ int main(int argc, char *argv[]) {
   bool have_exact = (icon_nproma > 0) && icon_load_patch(pp.c_str(), icon_nproma, ied);
 
   int N_e = have_exact ? ied.n_edges : 122880;
-  const int FN = 16384;
-  double *fb0 = numa_alloc_unfaulted<double>((size_t)FN*FN);
-  double *fb1 = numa_alloc_unfaulted<double>((size_t)FN*FN);
-#pragma omp parallel for schedule(static)
-  for (size_t i = 0; i < (size_t)FN*FN; i++) { fb0[i]=0.0; fb1[i]=1.0; }
+  /* Canonical flush owns its buffers (see ../../common/jacobi_flush.h);
+   * fb0/fb1/FN kept as plumbing no-ops to avoid touching signatures. */
+  double *fb0 = nullptr, *fb1 = nullptr;
+  const int FN = 0;
+  flush_jacobi_init();
 
   for (int ni = 0; ni < N_NLEVS; ni++) {
     int nlev = NLEVS[ni];
@@ -293,7 +293,7 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  numa_dealloc(fb0, (size_t)FN*FN); numa_dealloc(fb1, (size_t)FN*FN);
+  /* fb0/fb1 are nullptr; canonical flush owns its buffers. */
   if (have_exact) ied.free_all();
   fclose(fcsv);
   return 0;

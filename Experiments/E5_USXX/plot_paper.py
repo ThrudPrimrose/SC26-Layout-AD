@@ -35,15 +35,6 @@ MIN_TIME_MS = 0.1
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
-def remove_outliers(vals, k=3.0):
-    if len(vals) < 4:
-        return vals
-    q1, q3 = np.percentile(vals, [25, 75])
-    iqr = q3 - q1
-    lo, hi = q1 - k * iqr, q3 + k * iqr
-    c = vals[(vals >= lo) & (vals <= hi)]
-    return c if len(c) > 2 else vals
-
 def bootstrap_ci(arr, confidence_level=0.95, n_resamples=10000):
     """Bootstrap CI of the median using scipy BCa method, fallback to percentile."""
     if len(arr) < 3:
@@ -121,7 +112,7 @@ def paint_subplot(ax, df, platform_label, is_gpu):
     positions, data_all, col_all, tick_labels = [], [], [], []
     for i, (gkey, variants, xlabel) in enumerate(entries):
         vals, _ = get_best(df, variants)
-        vals = remove_outliers(vals)
+        # No outlier trimming (repo-wide policy).
         if len(vals) > 0:
             positions.append(i)
             data_all.append(vals)
@@ -132,9 +123,12 @@ def paint_subplot(ax, df, platform_label, is_gpu):
         ax.text(0.5, 0.5, "No data", transform=ax.transAxes, ha="center")
         return
 
+    # Canonical violin sampling (bw_method=scott, points=200) shared
+    # with every other plot in the artifact.
     parts = ax.violinplot(data_all, positions=positions,
                           showmeans=True, showmedians=True,
-                          showextrema=False, widths=0.6)
+                          showextrema=False, widths=0.6,
+                          bw_method="scott", points=200)
     for i, body in enumerate(parts["bodies"]):
         body.set_facecolor(col_all[i])
         body.set_edgecolor("black")

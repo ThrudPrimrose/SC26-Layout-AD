@@ -9,6 +9,8 @@
 #include <numaif.h>
 #include <unistd.h>
 
+#include "../common/jacobi_flush.h"
+
 /*  Conjugate P complex arrays in-place:
  *      buf[i].im_p = -buf[i].im_p      (negate im only)
  *
@@ -34,67 +36,23 @@ struct AoSoA {
     struct { double re[VL], im[VL]; } c[P];
 };
 
-/* ═══ NUMA helpers ═══ */
+/* ═══ NUMA helpers ═══
+ *
+ * Provided by ../common/numa_util.h (included via jacobi_flush.h):
+ *   - numa_alloc(bytes), numa_free(p, bytes)
+ *   - bind_and_touch(base, total_bytes)
+ * Global policy: MADV_HUGEPAGE on every allocation. */
 
-static long PAGE_SZ;
-
-static int get_numa_node() {
-    unsigned cpu, node;
-    syscall(__NR_getcpu, &cpu, &node, nullptr);
-    return (int)node;
-}
-
-static void *numa_alloc(size_t bytes) {
-    void *p = mmap(nullptr, bytes, PROT_READ | PROT_WRITE,
-                   MAP_PRIVATE | MAP_ANONYMOUS | MAP_NORESERVE, -1, 0);
-    if (p == MAP_FAILED) { perror("mmap"); std::abort(); }
-    madvise(p, bytes, MADV_HUGEPAGE);
-    return p;
-}
-static void numa_free(void *p, size_t bytes) { munmap(p, bytes); }
-
-static void bind_and_touch(void *base, size_t total_bytes) {
-    int64_t n_pages = (total_bytes + PAGE_SZ - 1) / PAGE_SZ;
-    #pragma omp parallel
-    {
-        int tid  = omp_get_thread_num();
-        int nthr = omp_get_num_threads();
-        int64_t chunk = (n_pages + nthr - 1) / nthr;
-        int64_t lo = tid * chunk;
-        int64_t hi = std::min(lo + chunk, n_pages);
-        if (lo < n_pages && lo < hi) {
-            uintptr_t pbeg = (uintptr_t)base + lo * PAGE_SZ;
-            uintptr_t pend = std::min((uintptr_t)base + hi * PAGE_SZ,
-                                      (uintptr_t)base + total_bytes);
-            int node = get_numa_node();
-            unsigned long mask = 1UL << node;
-            mbind((void *)pbeg, pend - pbeg, MPOL_BIND, &mask, 64, 0);
-            for (uintptr_t a = pbeg; a < pend; a += PAGE_SZ)
-                *(volatile char *)a = 0;
-        }
-    }
-}
-
-/* ═══ Cache flush ═══ */
-
-constexpr int64_t FLUSH_N = 1 << 28;   /* 2 GB */
-static double *flush_buf;
-
-static void flush_init() {
-    size_t b = FLUSH_N * sizeof(double);
-    flush_buf = (double *)numa_alloc(b);
-    bind_and_touch(flush_buf, b);
-    #pragma omp parallel for schedule(static)
-    for (int64_t i = 0; i < FLUSH_N; i++) flush_buf[i] = 0.0;
-}
-static void flush_free() { numa_free(flush_buf, FLUSH_N * sizeof(double)); }
-
-/* Flush inside an existing parallel region — uses omp for, not omp parallel for */
-static void flush_inner() {
-    #pragma omp for schedule(static)
-    for (int64_t i = 0; i < FLUSH_N; i++) flush_buf[i] += 1.0;
-    /* implicit barrier at end of omp for */
-}
+/* ═══ Cache flush ═══
+ *
+ * Canonical Jacobi-2D cache flush shared across all experiments
+ * (see ../common/jacobi_flush.h). 8192x8192, 3 swept Jacobi sweeps,
+ * buffers allocated once at init and NUMA-spread via first-touch.
+ * The _inner variant is used from inside the persistent parallel
+ * region — flush_init() must be called from the serial driver first. */
+static void flush_init()  { flush_jacobi_init(); }
+static void flush_free()  {}
+static void flush_inner() { flush_jacobi_inner(); }
 
 /* ═══ Init helpers ═══ */
 
@@ -163,6 +121,85 @@ static void kern_aosoa_inner(AoSoA<P,VL> *__restrict__ buf, int64_t n_base) {
                 buf[b].c[p].im[l] = -buf[b].c[p].im[l];
 }
 
+/* ═══ Numerical verification (in-place) ═══
+ *
+ * Contract: after one conjugate call, buf[i].c[p].im == -original_im
+ * and buf[i].c[p].re is unchanged. Kernel has no floating-point
+ * rounding (pure unary negation), so we compare with tolerance 0.
+ * verify_* runs the kernel exactly once on a fresh buffer and compares
+ * against the init-time formula with sign flipped. Called once from
+ * each bench function before the timed loop. */
+
+template<int P>
+static bool verify_aos_inplace(int64_t n) {
+    size_t bytes = n * sizeof(AoS<P>);
+    auto *buf = (AoS<P> *)numa_alloc(bytes); init_aos<P>(buf, n);
+    #pragma omp parallel
+    { kern_aos_inner<P>(buf, n); }
+    long long mism = 0;
+    #pragma omp parallel for schedule(static) reduction(+:mism)
+    for (int64_t i = 0; i < n; i++)
+        for (int p = 0; p < P; p++) {
+            double ref_re = (double)((i * P + p) % 997) * 0.001;
+            double ref_im = (double)((i * P + p) % 991) * 0.001;
+            if (buf[i].c[p].re != ref_re)   mism++;
+            if (buf[i].c[p].im != -ref_im)  mism++;
+        }
+    numa_free(buf, bytes);
+    if (mism) fprintf(stderr, "[verify][FAIL] AoS-inplace<P=%d>  mismatches=%lld\n", P, mism);
+    else      fprintf(stderr, "[verify][OK]   AoS-inplace<P=%d>\n", P);
+    return mism == 0;
+}
+
+template<int P>
+static bool verify_soa_inplace(int64_t n) {
+    double *im[P];
+    for (int p = 0; p < P; p++) {
+        im[p] = numa_alloc<double>(n);
+        #pragma omp parallel for schedule(static)
+        for (int64_t i = 0; i < n; i++)
+            im[p][i] = (double)((i * P + p) % 991) * 0.001;
+    }
+    #pragma omp parallel
+    { kern_soa_inner<P>(im, n); }
+    long long mism = 0;
+    for (int p = 0; p < P; p++) {
+        #pragma omp parallel for schedule(static) reduction(+:mism)
+        for (int64_t i = 0; i < n; i++) {
+            double ref_im = (double)((i * P + p) % 991) * 0.001;
+            if (im[p][i] != -ref_im) mism++;
+        }
+    }
+    for (int p = 0; p < P; p++) numa_dealloc(im[p], n);
+    if (mism) fprintf(stderr, "[verify][FAIL] SoA-inplace<P=%d>  mismatches=%lld\n", P, mism);
+    else      fprintf(stderr, "[verify][OK]   SoA-inplace<P=%d>\n", P);
+    return mism == 0;
+}
+
+template<int P, int VL>
+static bool verify_aosoa_inplace(int64_t n, const char *label) {
+    int64_t nblks = n / VL;
+    size_t bytes = nblks * sizeof(AoSoA<P,VL>);
+    auto *buf = (AoSoA<P,VL> *)numa_alloc(bytes); init_aosoa<P,VL>(buf, n);
+    #pragma omp parallel
+    { kern_aosoa_inner<P,VL>(buf, n); }
+    long long mism = 0;
+    #pragma omp parallel for schedule(static) reduction(+:mism)
+    for (int64_t b = 0; b < nblks; b++)
+        for (int p = 0; p < P; p++)
+            for (int l = 0; l < VL; l++) {
+                int64_t idx = b * VL + l;
+                double ref_re = (double)((idx * P + p) % 997) * 0.001;
+                double ref_im = (double)((idx * P + p) % 991) * 0.001;
+                if (buf[b].c[p].re[l] != ref_re)  mism++;
+                if (buf[b].c[p].im[l] != -ref_im) mism++;
+            }
+    numa_free(buf, bytes);
+    if (mism) fprintf(stderr, "[verify][FAIL] %s-inplace<P=%d>  mismatches=%lld\n", label, P, mism);
+    else      fprintf(stderr, "[verify][OK]   %s-inplace<P=%d>\n", label, P);
+    return mism == 0;
+}
+
 /* ═══ Bench driver ═══
  *
  * Single persistent parallel region: flush + barrier + time + kernel
@@ -223,6 +260,7 @@ static void bench_persistent(int P, int64_t n_base, const char *label, Fn &&kern
 
 template<int P>
 static void bench_aos(int64_t n) {
+    verify_aos_inplace<P>(n < 1<<16 ? n : 1<<16);
     size_t bytes = n * sizeof(AoS<P>);
     auto *buf = (AoS<P> *)numa_alloc(bytes); init_aos<P>(buf, n);
     bench_persistent(P, n, "AoS",
@@ -232,6 +270,7 @@ static void bench_aos(int64_t n) {
 
 template<int P>
 static void bench_soa(int64_t n) {
+    verify_soa_inplace<P>(n < 1<<16 ? n : 1<<16);
     size_t bytes = n * sizeof(double);
     size_t pad   = (size_t)P * 64;          /* per-array cache-line offset budget */
     double *re[P], *im[P];
@@ -257,6 +296,9 @@ static void bench_soa(int64_t n) {
 
 template<int P, int VL>
 static void bench_aosoa(int64_t n, const char *label) {
+    int64_t nverif = n < 1<<16 ? n : 1<<16;
+    nverif = (nverif / VL) * VL;           /* align to VL */
+    if (nverif > 0) verify_aosoa_inplace<P, VL>(nverif, label);
     int64_t nblks = n / VL;
     size_t bytes = nblks * sizeof(AoSoA<P,VL>);
     auto *buf = (AoSoA<P,VL> *)numa_alloc(bytes); init_aosoa<P,VL>(buf, n);
@@ -287,7 +329,6 @@ static void run_all() {
 
 int main(int argc, char **argv) {
     const char *csv_path = (argc > 1) ? argv[1] : "results_cpu_inplace.csv";
-    PAGE_SZ = sysconf(_SC_PAGESIZE);
     flush_init();
 
     csv = fopen(csv_path, "w");

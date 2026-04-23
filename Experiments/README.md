@@ -6,15 +6,20 @@ benchmark; `common/` holds the shared setup used by every experiment.
 
 ## Layout
 
-| Folder | Paper element | Contributions |
-|---|---|---|
-| [E1_MatrixAdd/](E1_MatrixAdd/) | Fig. 4 | C₃, C₄ |
-| [E2_Conjugation/](E2_Conjugation/) | Fig. 8 | C₂–C₄ |
-| [E3_Transpose/](E3_Transpose/) | Fig. 9, Tab. III | C₂–C₄ |
-| [E4_GAS/](E4_GAS/) | Fig. 10 | C₂–C₄ |
-| [E5_USXX/](E5_USXX/) | Fig. 11, Lst. 1 | C₂–C₄ |
-| [E6_VelocityTendencies/](E6_VelocityTendencies/) | Fig. 12–13, Tab. IV | C₃, C₄ |
-| [Supplemental/](Supplemental/) | Fig. 2–3 (illustrations) | C₁ |
+E1–E5 are mutually independent — a reviewer can dispatch up to five
+`sbatch` jobs in parallel. E6 is the longest single experiment; run it
+last (or on a separate allocation). Jobs marked *download* require a
+one-time data fetch before the first submission.
+
+| Folder | Paper element | Contributions | Runtime (est.) | Data prep | CSV path |
+|---|---|---|---|---|---|
+| [E1_MatrixAdd/](E1_MatrixAdd/)     | Fig. 4              | C₃, C₄   | ≈ 90 min  | none                                         | `results/{daint,beverin}/madd_{daint,beverin}_{cpu,gpu}.csv` |
+| [E2_Conjugation/](E2_Conjugation/) | Fig. 8              | C₂–C₄    | ≈ 210 min | none                                         | `results/{daint,beverin}/results_{cpu,gpu}_{inplace,oop}.csv` |
+| [E3_Transpose/](E3_Transpose/)     | Fig. 9, Tab. III    | C₂–C₄    | ≈ 180 min | none                                         | `results/{daint,beverin}/transpose_*.csv` + `transpose_metrics_{cpu,gpu}.csv` |
+| [E4_GAS/](E4_GAS/)                 | Fig. 10             | C₂–C₄    | ≈ 60 min  | ≈ 200 MB BaTiO₃ — `bash E4_GAS/download_data.sh` | `results/{daint,beverin}/zaxpy_sweep_{small,1gb}{,_cpu}.csv` |
+| [E5_USXX/](E5_USXX/)               | Fig. 11, Lst. 1     | C₂–C₄    | ≈ 60 min  | ≈ 1 GB BaTiO₃ — `bash E5_USXX/download_data.sh`  | `results/{daint,beverin}/addusxx_{cpu,gpu}_sweep.csv` |
+| [E6_VelocityTendencies/](E6_VelocityTendencies/) | Fig. 12–13, Tab. IV | C₃, C₄ | ≈ 690 min (≈ 150 min loopnest 1 + 5 × 60 min loopnests 2–6 + 240 min full module) | ICON R02B05 — per-subtask `download_data.sh` / `scripts/download_nproma20480_data.sh` | see per-subtask READMEs |
+| [Supplemental/](Supplemental/)     | Fig. 2–3 (illustrations) | C₁ | < 5 min | none                                           | figures rendered directly                     |
 
 ## How to run any experiment
 
@@ -99,5 +104,9 @@ allocations.
 
 ## Expected time budget
 
-~17 hr per cluster end-to-end. Per-experiment breakdown in the AD
-appendix.
+~22 hr per cluster end-to-end: 90 + 210 + 180 + 60 + 60 min for E1–E5
+(≈ 10 hr, parallelizable across five independent `sbatch` jobs) plus
+≈ 11.5 hr for E6 (loopnest 1 ≈ 150 min, loopnests 2–6 ≈ 300 min,
+full-module sweep ≈ 240 min), plus ≈ 25 min for one-time setup and
+post-run analysis. Per-experiment and per-cluster breakdown is in the
+AD appendix (Table "\arttime").

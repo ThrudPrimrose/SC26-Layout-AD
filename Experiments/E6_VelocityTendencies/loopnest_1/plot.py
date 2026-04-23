@@ -67,14 +67,6 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--add-peak', action='store_true')
 args = parser.parse_args()
 
-def remove_outliers(vals, k=3.0):
-    if len(vals) < 4: return vals
-    q1, q3 = np.percentile(vals, [25, 75])
-    iqr = q3 - q1
-    lo, hi = q1 - k * iqr, q3 + k * iqr
-    clean = vals[(vals >= lo) & (vals <= hi)]
-    return clean if len(clean) > 2 else vals
-
 def compute_bandwidth(df):
     return BYTES / (df["time_ms"] * 1e-3) / 1e12
 
@@ -181,7 +173,7 @@ def main():
                     else:
                         vals = get_overall_best_data(df_full, fcol, dist, NLEV)
 
-                    vals = remove_outliers(vals)
+                    # No outlier trimming (repo-wide policy).
                     pos = di * group_spacing + vi
                     if len(vals) > 0:
                         data_all.append(vals)
@@ -203,11 +195,12 @@ def main():
 
             top_lim = candidate_ticks[-1] * 1.06 if len(candidate_ticks) else max_val * 1.15
 
-            # ── Plot violins ──────────────────────────────────────────────
+            # ── Plot violins (canonical sampling: bw=scott, pts=200) ──────
             if data_all:
                 parts = ax.violinplot(data_all, positions=positions,
                                       showmeans=True, showmedians=True,
-                                      showextrema=False, widths=1.2)
+                                      showextrema=False, widths=1.2,
+                                      bw_method="scott", points=200)
                 for i, body in enumerate(parts["bodies"]):
                     body.set_facecolor(col_all[i])
                     body.set_edgecolor("black")

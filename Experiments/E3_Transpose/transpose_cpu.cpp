@@ -13,55 +13,27 @@
 #include <unistd.h>
 #include <vector>
 
-/* ── NUMA (no libnuma) ────────────────────────────────────────────── */
-static long sys_mbind(void *a, unsigned long l, int m, const unsigned long *nm, unsigned long mx,
-                      unsigned f) {
-}
-static int detect_numa_nodes() {
-    int n = 0;
-    for (int i = 0; i < 128; i++) {
-        char p[128];
-        snprintf(p, 128, "/sys/devices/system/node/node%d", i);
-        if (access(p, F_OK) == 0)
-            n = i + 1;
-        else if (n)
-            break;
-    }
-    return n ? n : 1;
-}
+#include "../common/jacobi_flush.h"
+
+/* ── NUMA helpers ─────────────────────────────────────────────────── */
+/* numa_alloc<T> / numa_dealloc<T>, numa_num_nodes, and numa_page_size
+ * come from ../common/numa_util.h (included via jacobi_flush.h).
+ * Global policy there applies MADV_HUGEPAGE to every allocation. */
+
+static int detect_numa_nodes() { return numa_num_nodes(); }
+
+/* Page-level mbind helper retained for the per-policy transpose sweep
+ * (bind_contiguous / bind_by_map use it with various masks). */
 static void bind_pages(void *a, size_t l, int node) {
-    if (!l || node < 0)
-        return;
-    unsigned long m[4] = {};
-    m[node / 64] |= 1UL << (node % 64);
-}
-template <typename T> static T *numa_alloc(size_t c) {
-    size_t b = c * sizeof(T);
-    void *p = mmap(nullptr, b, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_NORESERVE,
-                   -1, 0);
-    if (p == MAP_FAILED) {
-        perror("mmap");
-        std::abort();
-    }
-//#if NOHUGEPAGE
-    madvise(p, b, MADV_NOHUGEPAGE);
-//#else
-//    madvise(p, b, MADV_HUGEPAGE);
-//#endif
-    return (T *)p;
-}
-template <typename T> static void numa_dealloc(T *p, size_t c) {
-    if (p)
-        munmap(p, c * sizeof(T));
+    if (!l || node < 0) return;
+    unsigned long m = 1UL << node;
+    mbind(a, l, MPOL_BIND, &m, 64, 0);
 }
 
 enum NumaPolicy { NP_NONE = 0, NP_CONTIG = 1, NP_CYCLIC = 2, NP_TRANSPOSE = 3 };
 static const char *NP_SUFFIX[] = {"", "_nd", "_nc", "_nt"};
 static const int NP_COUNT = 4;
-static size_t pagesz() {
-    static size_t p = sysconf(_SC_PAGESIZE);
-    return p;
-}
+static size_t pagesz() { return numa_page_size(); }
 
 static void bind_contiguous(void *base, size_t tot, int D) {
     size_t ps = pagesz();
@@ -888,7 +860,7 @@ int main(int argc, char **argv) {
     if (argc < 4) {
         fprintf(stderr,
                 "Usage: %s <N> <variant> <csv> [TB=64] [SB=32] [MT=8] "
-                "[WARMUP=3] [REPS=20] [THREADS=0] [NUMA=0]\n",
+                "[WARMUP=5] [REPS=100] [THREADS=0] [NUMA=0]\n",
                 argv[0]);
         return 1;
     }
@@ -896,7 +868,8 @@ int main(int argc, char **argv) {
     const char *csv = argv[3];
     int TB = argc > 4 ? atoi(argv[4]) : 64, SB = argc > 5 ? atoi(argv[5]) : 32,
         MT = argc > 6 ? atoi(argv[6]) : 8;
-    int WARMUP = argc > 7 ? atoi(argv[7]) : 3, REPS = argc > 8 ? atoi(argv[8]) : 20;
+    /* Canonical across the artifact: 100 reps, 5 warmups. */
+    int WARMUP = argc > 7 ? atoi(argv[7]) : 5, REPS = argc > 8 ? atoi(argv[8]) : 100;
     int THREADS = argc > 9 ? atoi(argv[9]) : 0, NPOL = argc > 10 ? atoi(argv[10]) : 0;
     if (VAR < 0 || VAR >= N_VARIANTS) {
         fprintf(stderr, "bad variant\n");
@@ -962,14 +935,18 @@ int main(int argc, char **argv) {
     parallel_zero(h_out, elems);
     printf("  %s N=%d TB=%d SB=%d MT=%d thr=%d numa=%d nodes=%d\n", vname, N, TB, SB, MT, nthreads,
            NPOL, D);
-    for (int i = 0; i < WARMUP; i++)
+    flush_jacobi_init(); /* one-time alloc + first-touch of the shared flush buffers */
+    for (int i = 0; i < WARMUP; i++) {
+        flush_jacobi();
         dispatch(VAR, TB, SB, MT, h_in, h_out, N);
+    }
     parallel_zero(h_out, elems);
     dispatch(VAR, TB, SB, MT, h_in, h_out, N);
     float maxerr = verify(h_out, h_ref, N, SB, blocked);
     bool pass = (maxerr == 0.0f);
     double *times = (double *)malloc(REPS * sizeof(double));
     for (int i = 0; i < REPS; i++) {
+        flush_jacobi();
         double t0 = omp_get_wtime();
         dispatch(VAR, TB, SB, MT, h_in, h_out, N);
         times[i] = omp_get_wtime() - t0;

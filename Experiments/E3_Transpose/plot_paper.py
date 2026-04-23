@@ -63,12 +63,6 @@ def is_blocked_cpu(v):
 def is_blocked_gpu(v):
     return ("blk" in v) or (v == "blocked")
 
-def remove_outliers(v, k=3.0):
-    if len(v) < 4: return v
-    q1, q3 = np.percentile(v, [25, 75]); iqr = q3 - q1
-    c = v[(v >= q1 - k * iqr) & (v <= q3 + k * iqr)]
-    return c if len(c) > 2 else v
-
 def bootstrap_ci(arr, confidence_level=0.95, n_resamples=10000):
     if len(arr) < 3:
         med = np.median(arr)
@@ -234,7 +228,7 @@ def draw_panel(ax, cats, title, peak, add_peak, xlabels_map, is_gpu=False):
         if vk == "lib_blk" and sep_x is None and pos > 0:
             sep_x = pos - 0.5
             pos += 0.4
-        arr = remove_outliers(cats[vk])
+        arr = cats[vk]  # no outlier trimming (repo-wide policy)
         if len(arr) == 0:
             pos += 1; continue
         data.append(arr)
@@ -254,11 +248,13 @@ def draw_panel(ax, cats, title, peak, add_peak, xlabels_map, is_gpu=False):
     if len(ticks) > 7: ticks = ticks[:7]
     top = ticks[-1] * 1.01 if len(ticks) else ymax
 
-    # violins
+    # violins -- canonical sampling (bw_method=scott, points=200) applied
+    # uniformly across every plot in the artifact.
     if data:
         parts = ax.violinplot(data, positions=positions,
                               showmeans=True, showmedians=True,
-                              showextrema=False, widths=0.9)
+                              showextrema=False, widths=0.9,
+                              bw_method="scott", points=200)
         for i, body in enumerate(parts["bodies"]):
             body.set_facecolor(colors[i])
             body.set_edgecolor("black")

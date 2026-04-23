@@ -75,12 +75,6 @@ def parse_gpu(path):
 #  Grouping
 # ══════════════════════════════════════════════════════════════════════
 
-def remove_outliers(v, k=3.0):
-    if len(v) < 4: return v
-    q1, q3 = np.percentile(v, [25, 75]); iqr = q3 - q1
-    c = v[(v >= q1 - k * iqr) & (v <= q3 + k * iqr)]
-    return c if len(c) > 2 else v
-
 import warnings
 
 def bootstrap_ci(arr, confidence_level=0.95, n_resamples=10000):
@@ -185,7 +179,7 @@ def draw_panel(ax, cats, title, peak=None, add_peak=False, xlabels_map=None, gpu
         if vk == "perm" and sep_x is None and pos > 0:
             sep_x = pos - 0.5
             pos += 0.4
-        arr = remove_outliers(cats[vk])
+        arr = cats[vk]  # no outlier trimming (repo-wide policy)
         if len(arr) == 0: pos += 1; continue
         data.append(arr)
         positions.append(pos)
@@ -209,9 +203,11 @@ def draw_panel(ax, cats, title, peak=None, add_peak=False, xlabels_map=None, gpu
 
     # violins
     if data:
+        # Canonical violin sampling (see ../common/plot_util.py).
         parts = ax.violinplot(data, positions=positions,
                               showmeans=True, showmedians=True,
-                              showextrema=False, widths=0.9)
+                              showextrema=False, widths=0.9,
+                              bw_method="scott", points=200)
         for i, body in enumerate(parts["bodies"]):
             body.set_facecolor(colors[i])
             body.set_edgecolor("black")

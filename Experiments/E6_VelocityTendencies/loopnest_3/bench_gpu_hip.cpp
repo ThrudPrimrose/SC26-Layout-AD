@@ -249,10 +249,12 @@ int main(int argc, char *argv[]) {
   int N_e = have_exact ? ied.n_edges : 122880;
 
   double *d_w,*d_vie,*d_vti,*d_gh,*d_iv,*d_ft,*d_fn;
-  size_t sz = (size_t)N_e * NLEVS[0];
-  HIP_CHECK(hipMalloc(&d_w,   sz*8)); HIP_CHECK(hipMalloc(&d_vie, sz*8));
-  HIP_CHECK(hipMalloc(&d_vti, sz*8));
-  HIP_CHECK(hipMalloc(&d_gh, NLEVS[0]*8)); HIP_CHECK(hipMalloc(&d_iv, NLEVS[0]*8));
+  int max_nlev = 0;
+  for (int ni = 0; ni < N_NLEVS; ni++) if (NLEVS[ni] > max_nlev) max_nlev = NLEVS[ni];
+  size_t sz_max = (size_t)N_e * max_nlev;
+  HIP_CHECK(hipMalloc(&d_w,   sz_max*8)); HIP_CHECK(hipMalloc(&d_vie, sz_max*8));
+  HIP_CHECK(hipMalloc(&d_vti, sz_max*8));
+  HIP_CHECK(hipMalloc(&d_gh, (size_t)max_nlev*8)); HIP_CHECK(hipMalloc(&d_iv, (size_t)max_nlev*8));
   HIP_CHECK(hipMalloc(&d_ft, N_e*8));      HIP_CHECK(hipMalloc(&d_fn, N_e*8));
   hipEvent_t ev0, ev1; hipEventCreate(&ev0); hipEventCreate(&ev1);
 
@@ -261,6 +263,7 @@ int main(int argc, char *argv[]) {
 
   for (int ni = 0; ni < N_NLEVS; ni++) {
     int nlev = NLEVS[ni], nlev_end = nlev;
+    size_t sz = (size_t)N_e * nlev;
 
     for (int di = 0; di < ndists; di++) {
       for (int V = 1; V <= 4; V++) {

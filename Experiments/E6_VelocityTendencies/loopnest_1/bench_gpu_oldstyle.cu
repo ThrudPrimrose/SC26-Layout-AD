@@ -332,7 +332,7 @@ struct GpuFlush {
     void flush(){init(); dim3 bl(16,16),gr((FLUSH_N+15)/16,(FLUSH_N+15)/16);
         for(int s=0;s<FLUSH_STEPS;s++){flush_stencil_step<<<gr,bl>>>(d_A,d_B,FLUSH_N);std::swap(d_A,d_B);}
         CUDA_CHECK(cudaDeviceSynchronize());
-        int ri=rand()%(FLUSH_N*FLUSH_N); double val;
+        int ri = FLUSH_N * FLUSH_N / 2; double val;
         CUDA_CHECK(cudaMemcpy(&val,d_A+ri,8,cudaMemcpyDeviceToHost));}
     void destroy(){if(d_A)cudaFree(d_A);if(d_B)cudaFree(d_B);d_A=d_B=nullptr;inited=false;}
 };
@@ -448,7 +448,7 @@ int main(int argc, char* argv[]) {
     printf("GPU: %s  SM=%d  Configs: %d (old-style)\n",
            prop.name, prop.multiProcessorCount, N_GCFG);
 
-    srand((unsigned)time(NULL));
+    /* All random draws go through common/prng.h with SC26_SEED=42. */
     g_flush.init();
 
     for (int ni = 0; ni < N_NLEVS; ni++) {

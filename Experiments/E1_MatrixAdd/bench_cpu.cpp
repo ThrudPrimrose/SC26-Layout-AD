@@ -13,7 +13,8 @@
  *   blk_all_rm    — A,B,C all row-major-in-block  (control)
  *   blk_conflict  — A,C row-major-in-block; B col-major-in-block
  *
- * NUMA: mmap + MADV_NOHUGEPAGE + per-thread mbind(MPOL_BIND) + first-touch
+ * NUMA: mmap + MADV_HUGEPAGE + mbind(MPOL_BIND) + parallel first-touch
+ *       (all implemented in ../common/numa_util.h, shared across E1-E6).
  * CSV:  one row per iteration for violin plots
  *
  * Compile: g++ -O3 -march=native -std=c++17 -fopenmp -o bench_cpu bench_cpu.cpp
@@ -35,14 +36,10 @@
 #include <sys/syscall.h>
 #include <unistd.h>
 
-#if __has_include(<numaif.h>)
-  #include <numaif.h>
-  #define HAS_NUMA 1
-#else
-  #define HAS_NUMA 0
-  #define MPOL_BIND 2
-  static int mbind(void*, size_t, int, const unsigned long*, unsigned long, unsigned) { return 0; }
-#endif
+#include "../common/jacobi_flush.h"
+/* numa_util.h is transitively included by jacobi_flush.h: it provides
+ * numa_alloc / numa_free, bind_and_touch, first_touch_zero, and the
+ * numaif.h shim for hosts without libnuma. */
 
 #ifndef M_DIM
 #define M_DIM 16384
@@ -82,56 +79,13 @@ static inline double elapsed_sec(Clock::time_point t0, Clock::time_point t1) {
 
 /* ════════════════════════════════════════════════════════════════════
  *  NUMA-aware allocation
+ *
+ * Provided by ../common/numa_util.h (included via jacobi_flush.h):
+ *   - numa_alloc(bytes) / numa_free(p, bytes)
+ *   - bind_and_touch(base, total_bytes): per-NUMA-node page binding
+ *     with parallel first-touch.
+ *   - Global policy: MADV_HUGEPAGE on every allocation.
  * ════════════════════════════════════════════════════════════════════ */
-static long PAGE_SZ;
-
-static int get_numa_node() {
-    unsigned cpu, node;
-    syscall(__NR_getcpu, &cpu, &node, nullptr);
-    return (int)node;
-}
-
-static void *numa_alloc(size_t bytes) {
-    void *p = mmap(nullptr, bytes, PROT_READ | PROT_WRITE,
-                   MAP_PRIVATE | MAP_ANONYMOUS | MAP_NORESERVE, -1, 0);
-    if (p == MAP_FAILED) { perror("mmap"); std::abort(); }
-#if NOHUGEPAGE
-    madvise(p, bytes, MADV_NOHUGEPAGE);
-#else
-    madvise(p, bytes, MADV_HUGEPAGE);
-#endif
-    return p;
-}
-
-static void numa_free(void *p, size_t bytes) { munmap(p, bytes); }
-
-static void bind_and_touch(void *base, size_t total_bytes) {
-    int64_t n_pages = (total_bytes + PAGE_SZ - 1) / PAGE_SZ;
-    #pragma omp parallel
-    {
-        int tid  = omp_get_thread_num();
-        int nthr = omp_get_num_threads();
-        int64_t chunk = (n_pages + nthr - 1) / nthr;
-        int64_t lo = tid * chunk;
-        int64_t hi = std::min(lo + chunk, n_pages);
-        if (lo < n_pages && lo < hi) {
-            uintptr_t pbeg = (uintptr_t)base + lo * PAGE_SZ;
-            uintptr_t pend = (uintptr_t)base + hi * PAGE_SZ;
-            if (pend > (uintptr_t)base + total_bytes)
-                pend = (uintptr_t)base + total_bytes;
-
-            int node = get_numa_node();
-            unsigned long mask[16] = {};
-            mask[node / (8 * sizeof(unsigned long))] =
-                1UL << (node % (8 * sizeof(unsigned long)));
-            mbind((void *)pbeg, pend - pbeg, MPOL_BIND, mask,
-                  sizeof(mask) * 8 + 1, 0);
-
-            for (uintptr_t addr = pbeg; addr < pend; addr += PAGE_SZ)
-                *(volatile char *)addr = 0;
-        }
-    }
-}
 
 /* First-touch init for row-major */
 static void ft_init_rm(double *buf, size_t total, int M_, int N_, bool is_B) {
@@ -193,20 +147,10 @@ static void ft_init_blk_cm(double *buf, size_t total, int M_, int N_) {
 /* ════════════════════════════════════════════════════════════════════
  *  Cache flush
  * ════════════════════════════════════════════════════════════════════ */
-static constexpr int64_t FLUSH_N = 1 << 27;
-static double *g_flush_buf = nullptr;
-
-static void cache_flush() {
-    if (!g_flush_buf) {
-        g_flush_buf = (double *)numa_alloc(FLUSH_N * sizeof(double));
-        bind_and_touch(g_flush_buf, FLUSH_N * sizeof(double));
-    }
-    #pragma omp parallel for schedule(static)
-    for (int64_t i = 0; i < FLUSH_N; i++)
-        g_flush_buf[i] = (double)i;
-    volatile double sink = g_flush_buf[FLUSH_N - 1];
-    (void)sink;
-}
+/* Canonical Jacobi-2D cache flush shared across all experiments
+ * (see ../common/jacobi_flush.h). 8192x8192, 3 swept Jacobi sweeps,
+ * buffers allocated once at init and NUMA-spread via first-touch. */
+static void cache_flush() { flush_jacobi(); }
 
 /* ════════════════════════════════════════════════════════════════════
  *  Row-major kernels (unchanged)
@@ -463,7 +407,6 @@ int main(int argc, char **argv) {
     if (req_threads > 0)
         omp_set_num_threads(req_threads);
 
-    PAGE_SZ = sysconf(_SC_PAGESIZE);
     int nthreads;
     #pragma omp parallel
     { nthreads = omp_get_num_threads(); }
@@ -473,8 +416,10 @@ int main(int argc, char **argv) {
 
     printf("Layout-conflict benchmark (CPU)\n");
     printf("  M=%d  N=%d  reps=%d  warmup=%d\n", M, N, NREP, NWARMUP);
-    printf("  threads=%d  page=%ld B  NUMA=%s\n",
-           nthreads, PAGE_SZ, HAS_NUMA ? "yes" : "fallback");
+    printf("  threads=%d  page=%zu B  NUMA=%s  nodes=%d\n",
+           nthreads, numa_page_size(),
+           NUMA_UTIL_HAS_NUMAIF ? "yes" : "fallback",
+           numa_num_nodes());
     printf("  A: row-major   B: col-major   C: row-major\n");
     printf("  cache line = 64 B  ->  %.0f doubles/line\n\n",
            64.0 / sizeof(double));

@@ -9,6 +9,8 @@
 #include <numaif.h>
 #include <unistd.h>
 
+#include "../common/jacobi_flush.h"
+
 /*  Conjugate P complex arrays out-of-place:
  *      out[i].re_p =  in[i].re_p       (copy)
  *      out[i].im_p = -in[i].im_p       (negate)
@@ -33,66 +35,21 @@ struct AoSoA {
     struct { double re[VL], im[VL]; } c[P];
 };
 
-/* ═══ NUMA helpers ═══ */
+/* ═══ NUMA helpers ═══
+ *
+ * Provided by ../common/numa_util.h (included via jacobi_flush.h):
+ *   - numa_alloc(bytes), numa_free(p, bytes)
+ *   - bind_and_touch(base, total_bytes)
+ * Global policy: MADV_HUGEPAGE on every allocation. */
 
-static long PAGE_SZ;
-
-static int get_numa_node() {
-    unsigned cpu, node;
-    syscall(__NR_getcpu, &cpu, &node, nullptr);
-    return (int)node;
-}
-
-static void *numa_alloc(size_t bytes) {
-    void *p = mmap(nullptr, bytes, PROT_READ | PROT_WRITE,
-                   MAP_PRIVATE | MAP_ANONYMOUS | MAP_NORESERVE, -1, 0);
-    if (p == MAP_FAILED) { perror("mmap"); std::abort(); }
-    madvise(p, bytes, MADV_HUGEPAGE);
-    return p;
-}
-static void numa_free(void *p, size_t bytes) { munmap(p, bytes); }
-
-static void bind_and_touch(void *base, size_t total_bytes) {
-    int64_t n_pages = (total_bytes + PAGE_SZ - 1) / PAGE_SZ;
-    #pragma omp parallel
-    {
-        int tid  = omp_get_thread_num();
-        int nthr = omp_get_num_threads();
-        int64_t chunk = (n_pages + nthr - 1) / nthr;
-        int64_t lo = tid * chunk;
-        int64_t hi = std::min(lo + chunk, n_pages);
-        if (lo < n_pages && lo < hi) {
-            uintptr_t pbeg = (uintptr_t)base + lo * PAGE_SZ;
-            uintptr_t pend = std::min((uintptr_t)base + hi * PAGE_SZ,
-                                      (uintptr_t)base + total_bytes);
-            int node = get_numa_node();
-            unsigned long mask = 1UL << node;
-            mbind((void *)pbeg, pend - pbeg, MPOL_BIND, &mask, 64, 0);
-            for (uintptr_t a = pbeg; a < pend; a += PAGE_SZ)
-                *(volatile char *)a = 0;
-        }
-    }
-}
-
-/* ═══ Cache flush ═══ */
-
-constexpr int64_t FLUSH_N = 1 << 28;   /* 1 GB — 4× per-CCX L3 on MI300A */
-static double *flush_buf;
-
-static void flush_init() {
-    size_t b = FLUSH_N * sizeof(double);
-    flush_buf = (double *)numa_alloc(b);
-    bind_and_touch(flush_buf, b);
-    #pragma omp parallel for schedule(static)
-    for (int64_t i = 0; i < FLUSH_N; i++) flush_buf[i] = 0.0;
-}
-static void flush_caches() {
-    #pragma omp parallel for schedule(static)
-    for (int64_t i = 0; i < FLUSH_N; i++) flush_buf[i] += 1.0;
-    #pragma omp parallel for schedule(static)
-    for (int64_t i = 0; i < FLUSH_N; i++) flush_buf[i] += 1.0;
-}
-static void flush_free() { numa_free(flush_buf, FLUSH_N * sizeof(double)); }
+/* ═══ Cache flush ═══
+ *
+ * Canonical Jacobi-2D cache flush shared across all experiments
+ * (see ../common/jacobi_flush.h). 8192x8192, 3 swept Jacobi sweeps,
+ * buffers allocated once at init and NUMA-spread via first-touch. */
+static void flush_init()    { flush_jacobi_init(); }
+static void flush_caches()  { flush_jacobi(); }
+static void flush_free()    {}
 
 /* ═══ Init helpers ═══ */
 
@@ -170,6 +127,90 @@ static void kern_aosoa(const AoSoA<P,VL> *__restrict__ in,
         }
 }
 
+/* ═══ Numerical verification (out-of-place) ═══
+ *
+ * The kernel contract is exact: out.re = in.re, out.im = -in.im. No
+ * floating-point rounding is introduced (only copy + unary negation),
+ * so we compare with tolerance 0. verify_* runs the kernel once on a
+ * freshly initialized buffer pair, then checks every element against
+ * the init-time formula and reports pass/fail. Called before each
+ * benchmark's timed loop. Returns true iff every element matches. */
+
+template<int P>
+static bool verify_aos(int64_t n) {
+    size_t bytes = n * sizeof(AoS<P>);
+    auto *in  = (AoS<P> *)numa_alloc(bytes); init_aos<P>(in, n);
+    auto *out = (AoS<P> *)numa_alloc(bytes); init_aos<P>(out, n);
+    kern_aos<P>(in, out, n);
+    long long mism = 0;
+    #pragma omp parallel for schedule(static) reduction(+:mism)
+    for (int64_t i = 0; i < n; i++)
+        for (int p = 0; p < P; p++) {
+            double er = out[i].c[p].re - in[i].c[p].re;
+            double ei = out[i].c[p].im - (-in[i].c[p].im);
+            if (er != 0.0 || ei != 0.0) mism++;
+        }
+    numa_free(in, bytes); numa_free(out, bytes);
+    if (mism) fprintf(stderr, "[verify][FAIL] AoS<P=%d>  mismatches=%lld\n", P, mism);
+    else      fprintf(stderr, "[verify][OK]   AoS<P=%d>\n", P);
+    return mism == 0;
+}
+
+template<int P>
+static bool verify_soa(int64_t n) {
+    /* Minimal allocation: one plain double[n] per stream, no mbind pad. */
+    double *re_in[P], *im_in[P], *re_out[P], *im_out[P];
+    for (int p = 0; p < P; p++) {
+        re_in[p]  = numa_alloc<double>(n);
+        im_in[p]  = numa_alloc<double>(n);
+        re_out[p] = numa_alloc<double>(n);
+        im_out[p] = numa_alloc<double>(n);
+        #pragma omp parallel for schedule(static)
+        for (int64_t i = 0; i < n; i++) {
+            re_in[p][i] = (double)((i * P + p) % 997) * 0.001;
+            im_in[p][i] = (double)((i * P + p) % 991) * 0.001;
+        }
+    }
+    kern_soa<P>(re_in, im_in, re_out, im_out, n);
+    long long mism = 0;
+    for (int p = 0; p < P; p++) {
+        #pragma omp parallel for schedule(static) reduction(+:mism)
+        for (int64_t i = 0; i < n; i++) {
+            if (re_out[p][i] != re_in[p][i])      mism++;
+            if (im_out[p][i] != -im_in[p][i])     mism++;
+        }
+    }
+    for (int p = 0; p < P; p++) {
+        numa_dealloc(re_in[p], n); numa_dealloc(im_in[p], n);
+        numa_dealloc(re_out[p], n); numa_dealloc(im_out[p], n);
+    }
+    if (mism) fprintf(stderr, "[verify][FAIL] SoA<P=%d>  mismatches=%lld\n", P, mism);
+    else      fprintf(stderr, "[verify][OK]   SoA<P=%d>\n", P);
+    return mism == 0;
+}
+
+template<int P, int VL>
+static bool verify_aosoa(int64_t n, const char *label) {
+    int64_t nblks = n / VL;
+    size_t bytes = nblks * sizeof(AoSoA<P,VL>);
+    auto *in  = (AoSoA<P,VL> *)numa_alloc(bytes); init_aosoa<P,VL>(in, n);
+    auto *out = (AoSoA<P,VL> *)numa_alloc(bytes); init_aosoa<P,VL>(out, n);
+    kern_aosoa<P,VL>(in, out, n);
+    long long mism = 0;
+    #pragma omp parallel for schedule(static) reduction(+:mism)
+    for (int64_t b = 0; b < nblks; b++)
+        for (int p = 0; p < P; p++)
+            for (int l = 0; l < VL; l++) {
+                double er = out[b].c[p].re[l] - in[b].c[p].re[l];
+                double ei = out[b].c[p].im[l] - (-in[b].c[p].im[l]);
+                if (er != 0.0 || ei != 0.0) mism++;
+            }
+    numa_free(in, bytes); numa_free(out, bytes);
+    if (mism) fprintf(stderr, "[verify][FAIL] %s<P=%d>  mismatches=%lld\n", label, P, mism);
+    else      fprintf(stderr, "[verify][OK]   %s<P=%d>\n", label, P);
+    return mism == 0;
+}
+
 /* ═══ Bench driver ═══ */
 
 static FILE *csv;
@@ -199,6 +240,7 @@ static double bw_oop(int P, int64_t n_base, double ms) {
 
 template<int P>
 static void bench_aos(int64_t n) {
+    verify_aos<P>(n < 1<<16 ? n : 1<<16);
     size_t bytes = n * sizeof(AoS<P>);
     auto *in  = (AoS<P> *)numa_alloc(bytes); init_aos<P>(in, n);
     auto *out = (AoS<P> *)numa_alloc(bytes); init_aos<P>(out, n);
@@ -208,6 +250,7 @@ static void bench_aos(int64_t n) {
 
 template<int P>
 static void bench_soa(int64_t n) {
+    verify_soa<P>(n < 1<<16 ? n : 1<<16);
     size_t bytes = n * sizeof(double);
     size_t pad   = (size_t)4 * P * 64;     /* offset budget: 4P arrays total */
     double *re_in[P], *im_in[P], *re_out[P], *im_out[P];
@@ -245,6 +288,9 @@ static void bench_soa(int64_t n) {
 
 template<int P, int VL>
 static void bench_aosoa(int64_t n, const char *label) {
+    int64_t nverif = n < 1<<16 ? n : 1<<16;
+    nverif = (nverif / VL) * VL;           /* align to VL for the block loop */
+    if (nverif > 0) verify_aosoa<P, VL>(nverif, label);
     int64_t nblks = n / VL;
     size_t bytes = nblks * sizeof(AoSoA<P,VL>);
     auto *in  = (AoSoA<P,VL> *)numa_alloc(bytes); init_aosoa<P,VL>(in, n);
@@ -275,7 +321,6 @@ static void run_all() {
 
 int main(int argc, char **argv) {
     const char *csv_path = (argc > 1) ? argv[1] : "results_cpu_oop.csv";
-    PAGE_SZ = sysconf(_SC_PAGESIZE);
     flush_init();
 
     csv = fopen(csv_path, "w");

@@ -27,8 +27,8 @@ DACE_BRANCH=f2dace/staging source ../common/activate.sh
 | T6.2 Access analysis | [`access_analysis/`](access_analysis/) | `python analyze_loopnests.py` |
 | T6.3 Per-loopnest sweep | [`loopnest_{1..6}/`](loopnest_1/) | `sbatch run_{daint,beverin}.sh` |
 | T6.4 Conflict resolution | [`conflict_resolution/`](conflict_resolution/) | `python resolve_conflicts.py` *(TODO)* |
-| T6.5 Full-module sweep | [`full_velocity_tendencies/`](full_velocity_tendencies/) | `sbatch run_{daint,beverin}.sh` *(TODO)* |
-| T6.6 Plots / Table IV | root | `python plot_paper.py` |
+| T6.5 Full-module sweep | [`full_velocity_tendencies/`](full_velocity_tendencies/) | `sbatch run_{daint,beverin}.sh` |
+| T6.6 Plots / Table IV | subfolders | [`loopnest_1/plot.py`](loopnest_1/plot.py) drives Fig. 12 / Tab. IV; [`full_velocity_tendencies/scripts/plotting/plot_stage5_8_combined.py`](full_velocity_tendencies/scripts/plotting/plot_stage5_8_combined.py) drives Fig. 13 |
 
 ## How to run any subtask
 
@@ -49,14 +49,23 @@ Each `run_*.sh` sources `../../common/activate.sh` then
 
 ## Status
 
-- ✅ `loopnest_1` (indirect stencil `z_v_grad_w`) — complete.
-- 🚧 `loopnest_{2..6}` — DaCe program stubs; C++/CUDA benchmarks TODO.
-- 🚧 `conflict_resolution` — script TODO.
-- 🚧 `full_velocity_tendencies` — lives in R2, currently a stub here.
+- ✅ `loopnest_1` (indirect stencil `z_v_grad_w`) — full C++ / CUDA / HIP
+  benchmark suite + analytic cost metrics.
+- ✅ `loopnest_{2..6}` — complete C++ / CUDA / HIP benchmarks and
+  matching `cost_metrics.cpp`. Classes: direct stencil partial-vert,
+  direct stencil full-vert, indirect stencil + CFL clip, horizontal-only
+  boundary, vertical-only level reduction.
+- 🚧 `conflict_resolution` — per-loopnest ranking aggregator is still a
+  TODO; layouts selected for the full-module sweep are hard-coded in
+  `full_velocity_tendencies/scripts/run_stage{4,8}_permutations.py`.
+- ✅ `full_velocity_tendencies` — stage4 / stage8 layout-permutation
+  sweep driver + baseline SDFGs + DaCe transformation utilities,
+  lifted from R2 (`spcl/icon-artifacts`, branch `f2dace/staging`) and
+  mirrored here for self-contained reproduction.
 
 ## Outputs
 
-- `loopnest_1/results/{daint,beverin}/z_v_grad_w_{cpu,gpu}.csv`
-  (Figure 12, Table IV row 1).
-- Once complete: `full_velocity_tendencies/results/{daint,beverin}/`
-  drives Figure 13.
+- `loopnest_{1..6}/results/{daint,beverin}/*.csv` — per-loopnest
+  timing data (Figure 12, Table IV).
+- `full_velocity_tendencies/results/{daint,beverin}/stage{4,8}/*.csv`
+  — layout-permutation sweep for Figure 13.
