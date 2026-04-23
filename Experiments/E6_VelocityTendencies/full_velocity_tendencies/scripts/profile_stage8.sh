@@ -7,7 +7,10 @@
 #SBATCH --output=stage8_out.txt
 #SBATCH --error=stage8_err.txt
 
-pyenv activate dace_py_12
+# Activate the shared spack-python venv + DaCe branch; then load the
+# daint compiler stack. TODO: VERSION — if common/activate.sh changes
+# its SC26_PYTHON_SPEC default, revisit any pinned interpreter here.
+source "$(dirname "${BASH_SOURCE[0]}")/../../../common/activate.sh"
 spack load gcc@14
 spack load cuda@12.9
 

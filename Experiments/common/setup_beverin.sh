@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Beverin (MI300A) platform env. Sourced after common/activate.sh.
-# Loads ROCm + GCC via spack; Python comes from the pyenv venv.
+# Loads ROCm + GCC via spack; Python comes from the spack-python venv
+# activated by ../common/activate.sh (manual VIRTUAL_ENV + PATH export).
 
 spack load gcc/ktd4slj  # 14.x for HIP host compiler
 
@@ -51,7 +52,7 @@ if spack find -l openblas@0.3.30 >/dev/null 2>&1; then
   export PATH=$OPENBLAS_HOME/bin:${PATH}
 fi
 
-# Make the pyenv Python headers visible to CuPy / JIT compilation.
+# Make the spack-python headers visible to CuPy / JIT compilation.
 _PY_INC="$(python -c 'import sysconfig; print(sysconfig.get_path("include"))')"
 export CFLAGS="-I${_PY_INC} ${CFLAGS}"
 export C_INCLUDE_PATH="${_PY_INC}:${C_INCLUDE_PATH:-}"

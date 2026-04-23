@@ -1,3 +1,18 @@
+# ⚠️ Legacy folder — use [`../latex/`](../latex/) instead
+
+> This `AD/` folder contains the upstream SC26 Reproducibility-Committee
+> template and an older 211-line copy of our AD/AE appendix. It is kept
+> for reference only.
+>
+> The **canonical** artifact description lives in
+> [`../latex/sc26_ad_ae_template.tex`](../latex/sc26_ad_ae_template.tex)
+> (337 lines, current). Build with `make -C ../latex`.
+>
+> Do not edit files in this folder — changes here will not propagate
+> to the submitted appendix.
+
+---
+
 # SC26 Guidelines for Paper Authors
 
 Clone this repository. Use the style and template in this directory. See the attached PDF as example.

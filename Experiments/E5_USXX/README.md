@@ -1,49 +1,45 @@
-# E5 — Quantum ESPRESSO `addusxx_g` (Figure 11, Listing 1)
+# E5 — QE `addusxx_g` (Figure 11, Listing 1)
 
-Composed layout transformations (unzip + permute + shuffle) applied
-to the `addusxx_g` kernel from Quantum ESPRESSO's HSE06 self-consistent
-calculation on a 10-atom BaTiO₃ unit cell.
+Composed unzip + permute + shuffle applied to Quantum ESPRESSO's
+`addusxx_g` kernel on a 10-atom BaTiO₃ HSE06 SCF calculation.
 
-## How to run
+## Run
 
 ```bash
-# 1. One-time (from repo root)
-bash ../common/setup.sh
-
-# 2. Fetch the serialized BaTiO3 data (~1 GB)
-bash download_data.sh
-
-# 3. Submit on your cluster
-sbatch run_daint.sh      # Daint.Alps   (Grace + Hopper)
-sbatch run_beverin.sh    # Beverin      (Zen4 + MI300A)
-
-# 4. Plot once both platforms finish
+bash ../common/setup.sh          # one-time per machine
+bash download_data.sh            # ≈ 1 GB BaTiO₃ state
+sbatch run_daint.sh              # or run_beverin.sh
 python plot_paper.py
 ```
-
-`run_*.sh` sources `../common/activate.sh` then
-`../common/setup_{daint,beverin}.sh`, builds the baseline and
-transformed kernel variants, runs them on the BaTiO₃ dataset, and
-writes CSVs under `results/{daint,beverin}/`.
 
 ## Files
 
 - `main_cpu.cpp` — CPU driver (AoS / SoA variants).
-- `main.cu` — CUDA GPU driver.
-- `main_hip.cpp` — HIP GPU driver.
-- `usxx_kernels*.{h,cu,cpp}` — baseline AoS and transformed SoA
-  kernel implementations (CPU / CUDA / HIP variants).
-- `data_loading.h` / `types.h` — shared data-format definitions.
-- `Makefile` — build rules consumed by `run_*.sh`.
-- `download_data.sh` — fetches `bin/` contents from ETH PolyBox.
-- `plot_paper.py` — produces Figure 11 from per-platform CSVs.
+- `main.cu` / `main_hip.cpp` — CUDA / HIP GPU drivers.
+- `usxx_kernels*.{h,cu,cpp}` — baseline AoS + transformed SoA kernels.
+- `data_loading.h`, `types.h` — shared data-format definitions.
+- `download_data.sh` — fetches `bin/` from ETH PolyBox.
+- `plot_paper.py` — Figure 11.
 
 ## Protocol
 
-100 repetitions after 5 warm-ups with a Jacobi cache flush. Bootstrap
-95% CIs of the median.
+100 reps after 5 warm-ups, Jacobi cache flush, bootstrap 95 % CI of
+the median.
 
 ## Outputs
 
 - `results/{daint,beverin}/addusxx_*.csv`.
 - `addusxx_sweep.pdf` (Figure 11).
+
+## Data loading
+
+- `download_data.sh` — ≈ 1 GB serialized BaTiO₃ state, outbound HTTPS
+  (ETH PolyBox); writes into `bin/`. Run from this folder.
+
+## Reviewer hint — `# TODO: VERSION`
+
+Inherits common pins (see
+[`../README.md`](../README.md#reviewer-hint----todo-version)).
+Experiment-specific: the dataset URL inside `download_data.sh` —
+override with `DATA_URL=<mirror> bash download_data.sh` if PolyBox
+moves.

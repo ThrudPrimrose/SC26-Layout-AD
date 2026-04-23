@@ -7,10 +7,12 @@ and the analytic cost-metric tables.
 
 ## Where to start
 
-1. **[`latex/`](latex/)** — the Artifact Description / Artifact
-   Evaluation appendix (`sc26_ad_ae_template.tex`). Build with
-   `make -C latex` to get `sc26_ad_ae_template.pdf`. Read this first
-   for contribution / experiment / time-budget context.
+1. **[`latex/`](latex/)** — the **canonical** Artifact Description /
+   Artifact Evaluation appendix (`sc26_ad_ae_template.tex`, 337 lines).
+   Build with `make -C latex` to get `sc26_ad_ae_template.pdf`. Read
+   this first for contribution / experiment / time-budget context.
+   (The sibling [`AD/`](AD/) folder is the upstream SC26 template and
+   an older 211-line copy — legacy only, do not edit.)
 
 2. **[`Experiments/README.md`](Experiments/README.md)** — the entry
    point for running any experiment. Has the cross-reference table
@@ -30,7 +32,12 @@ and the analytic cost-metric tables.
 ## Quick start (10-minute first experiment)
 
 ```bash
-# 1. One-time per machine (installs pyenv Python 3.13, DaCe yakup/dev, deps)
+# 1. One-time per machine. Spack-loads Python 3.13 + sqlite, creates
+#    common/venv (with a pip bootstrap workaround — see setup.sh
+#    header), clones DaCe yakup/dev, installs deps. Arch auto-detect:
+#    x86_64 (beverin, zen3)  -> python/asgm25z
+#    aarch64 (daint, nv_v2)  -> python/6kewgi6
+#    Override with SC26_PYTHON_SPEC=python/<hash> if needed.
 bash Experiments/common/setup.sh
 
 # 2. Pick a short experiment and submit
@@ -50,11 +57,12 @@ that the run scripts emit.
 ```
 SC26-Layout-AD/
 ├── README.md                 (this file)
-├── latex/                    (AD / AE appendix sources + built PDF)
-├── AD/                       (legacy template workspace; latex/ is canonical)
+├── latex/                    ** canonical AD/AE appendix sources + built PDF **
+├── AD/                       (legacy upstream SC26 template; do not edit)
 └── Experiments/
     ├── README.md             (experiment entry point + runtime table)
     ├── common/               (shared env + shared headers + plot util)
+    ├── E0_NUMA/              (NUMA-aware STREAM peak baseline; CPU + GPU)
     ├── E1_MatrixAdd/         (Figure 4)
     ├── E2_Conjugation/       (Figure 8)
     ├── E3_Transpose/         (Figure 9, Table III)
@@ -91,3 +99,28 @@ generalize to any cluster with comparable cache-line sizes
 
 See the Statistical Methodology block in
 `latex/sc26_ad_ae_template.tex` for the full description.
+
+## Reviewer hint — `# TODO: VERSION`
+
+Every version-sensitive pin in this artifact is tagged `# TODO: VERSION`
+in the corresponding script. Places to check / override first:
+
+- `../setup.sh` — `SPACK_*` short hashes (python, readline, sqlite, …).
+- [`Experiments/common/setup.sh`](Experiments/common/setup.sh) +
+  [`activate.sh`](Experiments/common/activate.sh) — arch-pinned
+  `SC26_PYTHON_SPEC` (`python/asgm25z` on zen3, `python/6kewgi6` on
+  neoverse_v2) and `sqlite/<hash>`. `DACE_BRANCH=yakup/dev`.
+- [`Experiments/common/setup_{daint,beverin}.sh`](Experiments/common/) —
+  GCC / ROCm / CUDA / OpenBLAS spack specs.
+- `Experiments/E{4,5,6}_*/download_data.sh` — upstream dataset URL.
+
+All scripts respect env-var overrides (`SC26_PYTHON_SPEC=...`,
+`DACE_BRANCH=...`, `DATA_URL=...`) where applicable. See
+[`Experiments/README.md`](Experiments/README.md) for the full table.
+
+> **Note on venv activation** — the spack-built CPython ships without
+> venv's script templates and without a bundled pip wheel, so
+> `common/setup.sh` creates the venv with `--without-pip`, bootstraps
+> pip via `get-pip.py`, and `common/activate.sh` activates it by
+> exporting `VIRTUAL_ENV` + `PATH` manually instead of `source
+> venv/bin/activate` (that file does not exist).
