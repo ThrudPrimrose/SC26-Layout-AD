@@ -29,7 +29,25 @@ FIG_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${FIG_DIR}/.." && pwd)"
 EXP_ROOT="${REPO_ROOT}/Experiments"
 
-RUNTIME_EXPS=(E1_MatrixAdd E2_Conjugation E3_Transpose E4_GAS E5_USXX)
+# Pin every figure to DejaVu Sans; avoids STIX / Computer Modern fallbacks
+# that flood the log with font-not-found warnings on stock environments.
+export MATPLOTLIBRC="${FIG_DIR}/matplotlibrc"
+
+# Paths are relative to Experiments/ so deeper experiments (e.g. E6
+# loopnest_N) slot in without special-casing.
+RUNTIME_EXPS=(
+  E1_MatrixAdd
+  E2_Conjugation
+  E3_Transpose
+  E4_GAS
+  E5_USXX
+  E6_VelocityTendencies/loopnest_1
+  E6_VelocityTendencies/loopnest_2
+  E6_VelocityTendencies/loopnest_3
+  E6_VelocityTendencies/loopnest_4
+  E6_VelocityTendencies/loopnest_5
+  E6_VelocityTendencies/loopnest_6
+)
 
 marker="$(mktemp /tmp/plot_results_marker.XXXXXX)"
 echo "[plot_results] figures will land in each Experiments/<exp>/results/"
@@ -37,7 +55,7 @@ for exp in "${RUNTIME_EXPS[@]}"; do
     exp_dir="${EXP_ROOT}/${exp}"
     script="${exp_dir}/plot_paper.py"
     if [[ ! -f "${script}" ]]; then
-        echo "  [skip] ${exp}: no plot_paper.py" >&2
+        echo "  [skip] ${exp}: no plot_paper.py"
         continue
     fi
     if [[ ! -d "${exp_dir}/results" ]] \

@@ -1,0 +1,15 @@
+## Repo-wide matplotlib defaults for SC26-Layout-AD plots.
+##
+## Loaded by plot_all.sh / plot_paper_snapshot.sh / plot_results.sh
+## via  export MATPLOTLIBRC=<path-to-this-file>.
+##
+## The point is to pin every figure to DejaVu Sans so we never silently
+## fall back at render time; neither the STIX math fonts nor the
+## Computer Modern (cm*) math fonts are installed uniformly across the
+## clusters / laptops reviewers use, and the warnings they produce
+## clutter every run log.
+
+font.family:       sans-serif
+font.sans-serif:   DejaVu Sans, Liberation Sans, Arial, Helvetica, sans-serif
+mathtext.fontset:  dejavusans
+text.usetex:       False

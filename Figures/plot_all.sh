@@ -38,6 +38,10 @@ REPO_ROOT="$(cd "${FIG_DIR}/.." && pwd)"
 EXP_ROOT="${REPO_ROOT}/Experiments"
 OUT_ROOT="${FIG_DIR}/GeneratedFigures"
 
+# Pin every figure to DejaVu Sans (matches the two runtime drivers, so
+# illustrative scripts also escape STIX / Computer Modern fallbacks).
+export MATPLOTLIBRC="${FIG_DIR}/matplotlibrc"
+
 # group -> space-separated list of python files (relative to the group dir).
 # unset first in case the script is sourced into an env where GROUPS is
 # already a plain indexed array (bash 5.x warns otherwise).
