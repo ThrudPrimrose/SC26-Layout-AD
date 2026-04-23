@@ -78,13 +78,17 @@ SC26-Layout-AD/
     ├── E3_Transpose/         (Figure 9, Table III)
     ├── E4_GAS/               (Figure 10; BaTiO₃ indirect-access data)
     ├── E5_USXX/              (Figure 11, Listing 1; QE addusxx_g kernel)
-    ├── E6_VelocityTendencies/(Figures 12–13, Table IV; ICON dycore)
-    │   ├── access_analysis/
-    │   ├── loopnest_{1..6}/
-    │   ├── conflict_resolution/
-    │   └── full_velocity_tendencies/
-    └── NumaStream/           (supplemental NUMA bandwidth sweep; E0_NUMA supersedes)
+    └── E6_VelocityTendencies/(Figures 12–13, Table IV; ICON dycore)
+        ├── access_analysis/
+        ├── loopnest_{1..6}/
+        ├── conflict_resolution/
+        └── full_velocity_tendencies/
 ```
+
+STREAM peak values for all per-experiment bandwidth normalizations live in
+[`Experiments/common/stream_peak.json`](Experiments/common/stream_peak.json),
+which `E0_NUMA/plot_paper.py` overwrites from measured CSVs when available
+and every other `plot_paper.py` reads via `plot_util.load_stream_peaks()`.
 
 ## Hardware targets
 

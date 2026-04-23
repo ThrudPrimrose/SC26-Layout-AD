@@ -21,7 +21,6 @@ fetch before the first submission.
 | [E4_GAS/](E4_GAS/)                 | Fig. 10             | C₂–C₄    | ≈ 60 min  | ≈ 200 MB BaTiO₃ — `bash E4_GAS/download_data.sh` | `results/{daint,beverin}/zaxpy_sweep_{small,1gb}{,_cpu}.csv` |
 | [E5_USXX/](E5_USXX/)               | Fig. 11, Lst. 1     | C₂–C₄    | ≈ 60 min  | ≈ 1 GB BaTiO₃ — `bash E5_USXX/download_data.sh`  | `results/{daint,beverin}/addusxx_{cpu,gpu}_sweep.csv` |
 | [E6_VelocityTendencies/](E6_VelocityTendencies/) | Fig. 12–13, Tab. IV | C₃, C₄ | ≈ 690 min (≈ 150 min loopnest 1 + 5 × 60 min loopnests 2–6 + 240 min full module) | ICON R02B05 — per-subtask `download_data.sh` / `scripts/download_nproma20480_data.sh` | see per-subtask READMEs |
-| [NumaStream/](NumaStream/)         | supplemental NUMA sweep  | baseline | ≈ 5 min | none                                        | `results/{daint,beverin}/numa_{cpu,gpu}.csv`  |
 
 The proof-illustration figures (Figures 2–3 in the main text) live in
 [`../Figures/`](../Figures/) — pure matplotlib scripts, no benchmark,
