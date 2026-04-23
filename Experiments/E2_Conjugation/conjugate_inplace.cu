@@ -64,16 +64,17 @@ static double bw_ip(int P, int64_t n, double ms) {
 
 #define GPU_BENCH(P_val, n_base, label, call) do { \
     for (int w = 0; w < 5; w++) { call; } \
-    GPU_CHECK(cudaDeviceSynchronize()); \
+    GPU_CHECK(gpuDeviceSynchronize()); \
     for (int r = 0; r < RUNS; r++) { \
-        cudaEvent_t a, b; GPU_CHECK(cudaEventCreate(&a)); GPU_CHECK(cudaEventCreate(&b)); \
-        GPU_CHECK(cudaEventRecord(a)); \
+        gpuEvent_t a, b; \
+        GPU_CHECK(gpuEventCreate(&a)); GPU_CHECK(gpuEventCreate(&b)); \
+        GPU_CHECK(gpuEventRecord(a)); \
         call; \
-        GPU_CHECK(cudaEventRecord(b)); GPU_CHECK(cudaEventSynchronize(b)); \
-        float ms; GPU_CHECK(cudaEventElapsedTime(&ms, a, b)); \
+        GPU_CHECK(gpuEventRecord(b)); GPU_CHECK(gpuEventSynchronize(b)); \
+        float ms; GPU_CHECK(gpuEventElapsedTime(&ms, a, b)); \
         fprintf(csv, "%d,%s,%d,%.6f,%.2f\n", \
                 P_val, label, r, (double)ms, bw_ip(P_val, n_base, ms)); \
-        GPU_CHECK(cudaEventDestroy(a)); GPU_CHECK(cudaEventDestroy(b)); \
+        GPU_CHECK(gpuEventDestroy(a)); GPU_CHECK(gpuEventDestroy(b)); \
     } \
     printf("  %-14s  (see csv)\n", label); \
 } while (0)
@@ -127,15 +128,15 @@ int main(int argc, char **argv) {
 
     size_t bytes = TOTAL_DOUBLES * sizeof(double);
     double *dbuf;
-    if (cudaMalloc(&dbuf, bytes) != cudaSuccess) {
-        printf("cudaMalloc failed\n"); return 1;
+    if (gpuMalloc(&dbuf, bytes) != gpuSuccess) {
+        printf("gpuMalloc failed\n"); return 1;
     }
 
     {
         double *h = (double *)malloc(bytes);
         for (int64_t i = 0; i < TOTAL_DOUBLES; i++)
             h[i] = (double)(i % 997) * 0.001;
-        CUDA_CHECK(cudaMemcpy(dbuf, h, bytes, cudaMemcpyHostToDevice));
+        GPU_CHECK(gpuMemcpy(dbuf, h, bytes, gpuMemcpyHostToDevice));
         free(h);
     }
 
@@ -147,7 +148,7 @@ int main(int argc, char **argv) {
     run_all<18>(dbuf);
     run_all<21>(dbuf);
 
-    CUDA_CHECK(cudaFree(dbuf));
+    GPU_CHECK(gpuFree(dbuf));
     fclose(csv);
     printf("\nwrote results_gpu_inplace.csv\n");
 }

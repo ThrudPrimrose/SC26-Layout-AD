@@ -14,9 +14,9 @@
 #include <algorithm>
 #include "../common/gpu_compat.cuh"    /* single CUDA/HIP shim */
 
-#define GPU(call) do { cudaError_t e = (call); if (e != cudaSuccess) { \
+#define GPU(call) do { gpuError_t e = (call); if (e != gpuSuccess) { \
     fprintf(stderr, "CUDA %s:%d: %s\n", __FILE__, __LINE__, \
-    cudaGetErrorString(e)); exit(1); } } while(0)
+    gpuGetErrorString(e)); exit(1); } } while(0)
 
 /* ═══════════════════════════════════════════════════════════════════════
  *  V0: Naive
@@ -428,16 +428,16 @@ int main(int argc, char** argv) {
     for (size_t i = 0; i < elems; i++) h_in[i] = (float)i / (float)N;
 
     float *d_in, *d_out;
-    GPU(cudaMalloc(&d_in,  bytes));
-    GPU(cudaMalloc(&d_out, bytes));
-    GPU(cudaMemcpy(d_in, h_in, bytes, cudaMemcpyHostToDevice));
+    GPU(gpuMalloc(&d_in,  bytes));
+    GPU(gpuMalloc(&d_out, bytes));
+    GPU(gpuMemcpy(d_in, h_in, bytes, gpuMemcpyHostToDevice));
 
     for (int i = 0; i < WARMUP; i++)
         dispatch(VAR, BX_, BY_, TX_, TY_, SB_, PAD_, grid, block, d_in, d_out, N);
-    GPU(cudaDeviceSynchronize());
+    GPU(gpuDeviceSynchronize());
 
     /* Verify */
-    GPU(cudaMemcpy(h_out, d_out, bytes, cudaMemcpyDeviceToHost));
+    GPU(gpuMemcpy(h_out, d_out, bytes, gpuMemcpyDeviceToHost));
     float maxerr = 0;
     for (int r = 0; r < N; r++)
         for (int c = 0; c < N; c++) {
@@ -448,17 +448,17 @@ int main(int argc, char** argv) {
     for (size_t i = 0; i < elems; i++) cksum += h_out[i];
 
     /* Timed runs */
-    cudaEvent_t t0, t1;
-    GPU(cudaEventCreate(&t0));
-    GPU(cudaEventCreate(&t1));
+    gpuEvent_t t0, t1;
+    GPU(gpuEventCreate(&t0));
+    GPU(gpuEventCreate(&t1));
     float* times_ms = (float*)malloc(REPS * sizeof(float));
 
     for (int i = 0; i < REPS; i++) {
-        GPU(cudaEventRecord(t0, 0));
+        GPU(gpuEventRecord(t0, 0));
         dispatch(VAR, BX_, BY_, TX_, TY_, SB_, PAD_, grid, block, d_in, d_out, N);
-        GPU(cudaEventRecord(t1, 0));
-        GPU(cudaEventSynchronize(t1));
-        GPU(cudaEventElapsedTime(&times_ms[i], t0, t1));
+        GPU(gpuEventRecord(t1, 0));
+        GPU(gpuEventSynchronize(t1));
+        GPU(gpuEventElapsedTime(&times_ms[i], t0, t1));
     }
 
     std::sort(times_ms, times_ms + REPS);
@@ -486,10 +486,10 @@ int main(int argc, char** argv) {
         fclose(f);
     }
 
-    GPU(cudaEventDestroy(t0));
-    GPU(cudaEventDestroy(t1));
-    GPU(cudaFree(d_in));
-    GPU(cudaFree(d_out));
+    GPU(gpuEventDestroy(t0));
+    GPU(gpuEventDestroy(t1));
+    GPU(gpuFree(d_in));
+    GPU(gpuFree(d_out));
     free(h_in); free(h_out); free(times_ms);
     return (maxerr == 0.0f) ? 0 : 1;
 }

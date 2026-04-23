@@ -16,12 +16,12 @@
 #include <ctime>
 #include <cassert>
 
-/* CUDA_CHECK is provided transitively by ../../common/gpu_compat.cuh.   */
+/* GPU_CHECK is provided transitively by ../../common/gpu_compat.cuh.   */
 #define CUDA_LAUNCH_CHECK() do {                                           \
-    cudaError_t e = cudaGetLastError();                                     \
-    if (e != cudaSuccess) {                                                \
+    gpuError_t e = gpuGetLastError();                                     \
+    if (e != gpuSuccess) {                                                \
         fprintf(stderr, "CUDA launch warn %s:%d: %s\n",                    \
-                __FILE__, __LINE__, cudaGetErrorString(e));                 \
+                __FILE__, __LINE__, gpuGetErrorString(e));                 \
         return false;                                                      \
     }                                                                      \
 } while(0)
@@ -562,48 +562,48 @@ static void run_variant_configs(
     double* d_vn_ie, double* d_inv_dual, double* d_w, int* d_cidx,
     double* d_z_vt_ie, double* d_inv_primal, double* d_tangent,
     double* d_z_w_v, int* d_vidx, double* d_out,
-    cudaEvent_t ev0, cudaEvent_t ev1, double* h_gpu_out)
+    gpuEvent_t ev0, gpuEvent_t ev1, double* h_gpu_out)
 {
     memset(h_ref,0,sz_e*sizeof(double));
     cpu_reference_v(V,h_ref,bd.h_vn_ie,bd.inv_dual,bd.h_w,bd.h_cidx,
         bd.h_z_vt_ie,bd.inv_primal,bd.tangent_o,bd.h_z_w_v,bd.h_vidx,
         N_e,N_c,N_v,nlev,nlev_end);
-    CUDA_CHECK(cudaMemcpy(d_vn_ie,bd.h_vn_ie,bd.sz_e*8,cudaMemcpyHostToDevice));
-    CUDA_CHECK(cudaMemcpy(d_w,bd.h_w,bd.sz_c*8,cudaMemcpyHostToDevice));
-    CUDA_CHECK(cudaMemcpy(d_z_vt_ie,bd.h_z_vt_ie,bd.sz_e*8,cudaMemcpyHostToDevice));
-    CUDA_CHECK(cudaMemcpy(d_z_w_v,bd.h_z_w_v,bd.sz_v*8,cudaMemcpyHostToDevice));
-    CUDA_CHECK(cudaMemcpy(d_cidx,bd.h_cidx,N_e*2*4,cudaMemcpyHostToDevice));
-    CUDA_CHECK(cudaMemcpy(d_vidx,bd.h_vidx,N_e*2*4,cudaMemcpyHostToDevice));
-    CUDA_CHECK(cudaMemcpy(d_inv_dual,bd.inv_dual,N_e*8,cudaMemcpyHostToDevice));
-    CUDA_CHECK(cudaMemcpy(d_inv_primal,bd.inv_primal,N_e*8,cudaMemcpyHostToDevice));
-    CUDA_CHECK(cudaMemcpy(d_tangent,bd.tangent_o,N_e*8,cudaMemcpyHostToDevice));
+    GPU_CHECK(gpuMemcpy(d_vn_ie,bd.h_vn_ie,bd.sz_e*8,gpuMemcpyHostToDevice));
+    GPU_CHECK(gpuMemcpy(d_w,bd.h_w,bd.sz_c*8,gpuMemcpyHostToDevice));
+    GPU_CHECK(gpuMemcpy(d_z_vt_ie,bd.h_z_vt_ie,bd.sz_e*8,gpuMemcpyHostToDevice));
+    GPU_CHECK(gpuMemcpy(d_z_w_v,bd.h_z_w_v,bd.sz_v*8,gpuMemcpyHostToDevice));
+    GPU_CHECK(gpuMemcpy(d_cidx,bd.h_cidx,N_e*2*4,gpuMemcpyHostToDevice));
+    GPU_CHECK(gpuMemcpy(d_vidx,bd.h_vidx,N_e*2*4,gpuMemcpyHostToDevice));
+    GPU_CHECK(gpuMemcpy(d_inv_dual,bd.inv_dual,N_e*8,gpuMemcpyHostToDevice));
+    GPU_CHECK(gpuMemcpy(d_inv_primal,bd.inv_primal,N_e*8,gpuMemcpyHostToDevice));
+    GPU_CHECK(gpuMemcpy(d_tangent,bd.tangent_o,N_e*8,gpuMemcpyHostToDevice));
     for (int ci=0;ci<N_GCFG;ci++){
-        CUDA_CHECK(cudaMemset(d_out,0,sz_e*8));
+        GPU_CHECK(gpuMemset(d_out,0,sz_e*8));
         bool launched=true;
         for(int r=0;r<WARMUP;r++){
             flush_jacobi_gpu();
             launched=launch_gpu_v(V,ci,d_out,d_vn_ie,d_inv_dual,d_w,d_cidx,
                 d_z_vt_ie,d_inv_primal,d_tangent,d_z_w_v,d_vidx,N_e,N_c,N_v,nlev,nlev_end);
             if(!launched)break;
-            CUDA_CHECK(cudaDeviceSynchronize());
+            GPU_CHECK(gpuDeviceSynchronize());
         }
         if(!launched){
             printf("SKIP: nlev=%d(%d) dist=%-12s V=%d cfg=%-14s\n",
                    nlev,nlev_end,dist_label,V,GCFG[ci].label); continue;
         }
-        CUDA_CHECK(cudaMemcpy(h_gpu_out,d_out,sz_e*8,cudaMemcpyDeviceToHost));
+        GPU_CHECK(gpuMemcpy(h_gpu_out,d_out,sz_e*8,gpuMemcpyDeviceToHost));
         int nf=0;double mr=0;size_t ff=0;
         bool ok=verify(h_gpu_out,h_ref,sz_e,1e-8,1e-12,&nf,&mr,&ff);
         if(!ok){ printf("FAIL: V=%d cfg=%-14s fails=%d max_rel=%.3e\n",V,GCFG[ci].label,nf,mr); continue; }
         else if(ci==0) printf("OK:   nlev=%d(%d) dist=%-12s V=%d mr=%.3e\n",nlev,nlev_end,dist_label,V,mr);
         for(int r=0;r<NRUNS;r++){
             flush_jacobi_gpu();
-            CUDA_CHECK(cudaEventRecord(ev0));
+            GPU_CHECK(gpuEventRecord(ev0));
             launch_gpu_v(V,ci,d_out,d_vn_ie,d_inv_dual,d_w,d_cidx,
                 d_z_vt_ie,d_inv_primal,d_tangent,d_z_w_v,d_vidx,N_e,N_c,N_v,nlev,nlev_end);
-            CUDA_CHECK(cudaEventRecord(ev1));
-            CUDA_CHECK(cudaEventSynchronize(ev1));
-            float ms=0; CUDA_CHECK(cudaEventElapsedTime(&ms,ev0,ev1));
+            GPU_CHECK(gpuEventRecord(ev1));
+            GPU_CHECK(gpuEventSynchronize(ev1));
+            float ms=0; GPU_CHECK(gpuEventElapsedTime(&ms,ev0,ev1));
             fprintf(fcsv,"gpu,%d,%d,%d,%d,%d,%s,%s,%d,%d,%d,%d,%d,%.6f\n",
                 V,nlev_end,N_e,N_c,N_v,dist_label,GCFG[ci].label,
                 GCFG[ci].tx,GCFG[ci].ty,GCFG[ci].bx,GCFG[ci].by,r,(double)ms);
@@ -621,40 +621,40 @@ static void run_v6_configs(
     double* d_vn_ie, double* d_inv_dual, double* d_w, int* d_cidx,
     double* d_z_vt_ie, double* d_inv_primal, double* d_tangent,
     double* d_z_w_v, int* d_vidx, double* d_out,
-    cudaEvent_t ev0, cudaEvent_t ev1, double* h_gpu_out)
+    gpuEvent_t ev0, gpuEvent_t ev1, double* h_gpu_out)
 {
     memset(h_ref,0,sz_e*sizeof(double));
     cpu_reference<4>(h_ref,bd.h_vn_ie,bd.inv_dual,bd.h_w,bd.h_cidx,
         bd.h_z_vt_ie,bd.inv_primal,bd.tangent_o,bd.h_z_w_v,bd.h_vidx,
         N_e,N_c,N_v,nlev,nlev_end);
-    CUDA_CHECK(cudaMemcpy(d_vn_ie,bd.h_vn_ie,bd.sz_e*8,cudaMemcpyHostToDevice));
-    CUDA_CHECK(cudaMemcpy(d_w,bd.h_w,bd.sz_c*8,cudaMemcpyHostToDevice));
-    CUDA_CHECK(cudaMemcpy(d_z_vt_ie,bd.h_z_vt_ie,bd.sz_e*8,cudaMemcpyHostToDevice));
-    CUDA_CHECK(cudaMemcpy(d_z_w_v,bd.h_z_w_v,bd.sz_v*8,cudaMemcpyHostToDevice));
-    CUDA_CHECK(cudaMemcpy(d_cidx,bd.h_cidx,N_e*2*4,cudaMemcpyHostToDevice));
-    CUDA_CHECK(cudaMemcpy(d_vidx,bd.h_vidx,N_e*2*4,cudaMemcpyHostToDevice));
-    CUDA_CHECK(cudaMemcpy(d_inv_dual,bd.inv_dual,N_e*8,cudaMemcpyHostToDevice));
-    CUDA_CHECK(cudaMemcpy(d_inv_primal,bd.inv_primal,N_e*8,cudaMemcpyHostToDevice));
-    CUDA_CHECK(cudaMemcpy(d_tangent,bd.tangent_o,N_e*8,cudaMemcpyHostToDevice));
+    GPU_CHECK(gpuMemcpy(d_vn_ie,bd.h_vn_ie,bd.sz_e*8,gpuMemcpyHostToDevice));
+    GPU_CHECK(gpuMemcpy(d_w,bd.h_w,bd.sz_c*8,gpuMemcpyHostToDevice));
+    GPU_CHECK(gpuMemcpy(d_z_vt_ie,bd.h_z_vt_ie,bd.sz_e*8,gpuMemcpyHostToDevice));
+    GPU_CHECK(gpuMemcpy(d_z_w_v,bd.h_z_w_v,bd.sz_v*8,gpuMemcpyHostToDevice));
+    GPU_CHECK(gpuMemcpy(d_cidx,bd.h_cidx,N_e*2*4,gpuMemcpyHostToDevice));
+    GPU_CHECK(gpuMemcpy(d_vidx,bd.h_vidx,N_e*2*4,gpuMemcpyHostToDevice));
+    GPU_CHECK(gpuMemcpy(d_inv_dual,bd.inv_dual,N_e*8,gpuMemcpyHostToDevice));
+    GPU_CHECK(gpuMemcpy(d_inv_primal,bd.inv_primal,N_e*8,gpuMemcpyHostToDevice));
+    GPU_CHECK(gpuMemcpy(d_tangent,bd.tangent_o,N_e*8,gpuMemcpyHostToDevice));
     for(int ci=0;ci<N_GCFG_V6;ci++){
-        CUDA_CHECK(cudaMemset(d_out,0,sz_e*8));
+        GPU_CHECK(gpuMemset(d_out,0,sz_e*8));
         bool launched=true;
         for(int r=0;r<WARMUP;r++){flush_jacobi_gpu();
             launched=launch_gpu_v6<4>(ci,d_out,d_vn_ie,d_inv_dual,d_w,d_cidx,
                 d_z_vt_ie,d_inv_primal,d_tangent,d_z_w_v,d_vidx,N_e,N_c,N_v,nlev,nlev_end,nlev_padded);
-            if(!launched)break; CUDA_CHECK(cudaDeviceSynchronize());}
+            if(!launched)break; GPU_CHECK(gpuDeviceSynchronize());}
         if(!launched){printf("SKIP: V=6 cfg=%s\n",GCFG_V6[ci].label);continue;}
-        CUDA_CHECK(cudaMemcpy(h_gpu_out,d_out,sz_e*8,cudaMemcpyDeviceToHost));
+        GPU_CHECK(gpuMemcpy(h_gpu_out,d_out,sz_e*8,gpuMemcpyDeviceToHost));
         int nf=0;double mr=0;size_t ff=0;
         bool ok=verify(h_gpu_out,h_ref,sz_e,1e-8,1e-12,&nf,&mr,&ff);
         if(!ok){printf("FAIL: V=6 cfg=%s fails=%d mr=%.3e\n",GCFG_V6[ci].label,nf,mr);continue;}
         else if(ci==0) printf("OK:   V=6 dist=%-12s mr=%.3e\n",dist_label,mr);
         for(int r=0;r<NRUNS;r++){
-            flush_jacobi_gpu(); CUDA_CHECK(cudaEventRecord(ev0));
+            flush_jacobi_gpu(); GPU_CHECK(gpuEventRecord(ev0));
             launch_gpu_v6<4>(ci,d_out,d_vn_ie,d_inv_dual,d_w,d_cidx,
                 d_z_vt_ie,d_inv_primal,d_tangent,d_z_w_v,d_vidx,N_e,N_c,N_v,nlev,nlev_end,nlev_padded);
-            CUDA_CHECK(cudaEventRecord(ev1)); CUDA_CHECK(cudaEventSynchronize(ev1));
-            float ms=0; CUDA_CHECK(cudaEventElapsedTime(&ms,ev0,ev1));
+            GPU_CHECK(gpuEventRecord(ev1)); GPU_CHECK(gpuEventSynchronize(ev1));
+            float ms=0; GPU_CHECK(gpuEventElapsedTime(&ms,ev0,ev1));
             fprintf(fcsv,"gpu,6,%d,%d,%d,%d,%s,%s,1,1,%d,1,%d,%.6f\n",
                 nlev_end,N_e,N_c,N_v,dist_label,GCFG_V6[ci].label,(int)GCFG_V6[ci].bx,r,(double)ms);
             flush_jacobi_gpu();
@@ -671,40 +671,40 @@ static void run_v7_configs(
     double* d_vn_ie, double* d_inv_dual, double* d_w, int* d_cidx,
     double* d_z_vt_ie, double* d_inv_primal, double* d_tangent,
     double* d_z_w_v, int* d_vidx, double* d_out,
-    cudaEvent_t ev0, cudaEvent_t ev1, double* h_gpu_out)
+    gpuEvent_t ev0, gpuEvent_t ev1, double* h_gpu_out)
 {
     memset(h_ref,0,sz_e*sizeof(double));
     cpu_reference<4>(h_ref,bd.h_vn_ie,bd.inv_dual,bd.h_w,bd.h_cidx,
         bd.h_z_vt_ie,bd.inv_primal,bd.tangent_o,bd.h_z_w_v,bd.h_vidx,
         N_e,N_c,N_v,nlev,nlev);
-    CUDA_CHECK(cudaMemcpy(d_vn_ie,bd.h_vn_ie,bd.sz_e*8,cudaMemcpyHostToDevice));
-    CUDA_CHECK(cudaMemcpy(d_w,bd.h_w,bd.sz_c*8,cudaMemcpyHostToDevice));
-    CUDA_CHECK(cudaMemcpy(d_z_vt_ie,bd.h_z_vt_ie,bd.sz_e*8,cudaMemcpyHostToDevice));
-    CUDA_CHECK(cudaMemcpy(d_z_w_v,bd.h_z_w_v,bd.sz_v*8,cudaMemcpyHostToDevice));
-    CUDA_CHECK(cudaMemcpy(d_cidx,bd.h_cidx,N_e*2*4,cudaMemcpyHostToDevice));
-    CUDA_CHECK(cudaMemcpy(d_vidx,bd.h_vidx,N_e*2*4,cudaMemcpyHostToDevice));
-    CUDA_CHECK(cudaMemcpy(d_inv_dual,bd.inv_dual,N_e*8,cudaMemcpyHostToDevice));
-    CUDA_CHECK(cudaMemcpy(d_inv_primal,bd.inv_primal,N_e*8,cudaMemcpyHostToDevice));
-    CUDA_CHECK(cudaMemcpy(d_tangent,bd.tangent_o,N_e*8,cudaMemcpyHostToDevice));
+    GPU_CHECK(gpuMemcpy(d_vn_ie,bd.h_vn_ie,bd.sz_e*8,gpuMemcpyHostToDevice));
+    GPU_CHECK(gpuMemcpy(d_w,bd.h_w,bd.sz_c*8,gpuMemcpyHostToDevice));
+    GPU_CHECK(gpuMemcpy(d_z_vt_ie,bd.h_z_vt_ie,bd.sz_e*8,gpuMemcpyHostToDevice));
+    GPU_CHECK(gpuMemcpy(d_z_w_v,bd.h_z_w_v,bd.sz_v*8,gpuMemcpyHostToDevice));
+    GPU_CHECK(gpuMemcpy(d_cidx,bd.h_cidx,N_e*2*4,gpuMemcpyHostToDevice));
+    GPU_CHECK(gpuMemcpy(d_vidx,bd.h_vidx,N_e*2*4,gpuMemcpyHostToDevice));
+    GPU_CHECK(gpuMemcpy(d_inv_dual,bd.inv_dual,N_e*8,gpuMemcpyHostToDevice));
+    GPU_CHECK(gpuMemcpy(d_inv_primal,bd.inv_primal,N_e*8,gpuMemcpyHostToDevice));
+    GPU_CHECK(gpuMemcpy(d_tangent,bd.tangent_o,N_e*8,gpuMemcpyHostToDevice));
     for(int ci=0;ci<N_GCFG_V7;ci++){
-        CUDA_CHECK(cudaMemset(d_out,0,sz_e*8));
+        GPU_CHECK(gpuMemset(d_out,0,sz_e*8));
         bool launched=true;
         for(int r=0;r<WARMUP;r++){flush_jacobi_gpu();
             launched=launch_gpu_v7<4>(ci,d_out,d_vn_ie,d_inv_dual,d_w,d_cidx,
                 d_z_vt_ie,d_inv_primal,d_tangent,d_z_w_v,d_vidx,N_e,N_c,N_v,nlev);
-            if(!launched)break; CUDA_CHECK(cudaDeviceSynchronize());}
+            if(!launched)break; GPU_CHECK(gpuDeviceSynchronize());}
         if(!launched){printf("SKIP: V=7 cfg=%s\n",GCFG_V7[ci].label);continue;}
-        CUDA_CHECK(cudaMemcpy(h_gpu_out,d_out,sz_e*8,cudaMemcpyDeviceToHost));
+        GPU_CHECK(gpuMemcpy(h_gpu_out,d_out,sz_e*8,gpuMemcpyDeviceToHost));
         int nf=0;double mr=0;size_t ff=0;
         bool ok=verify(h_gpu_out,h_ref,sz_e,1e-8,1e-12,&nf,&mr,&ff);
         if(!ok){printf("FAIL: V=7 cfg=%s fails=%d mr=%.3e\n",GCFG_V7[ci].label,nf,mr);continue;}
         else if(ci==0) printf("OK:   V=7 dist=%-12s mr=%.3e\n",dist_label,mr);
         for(int r=0;r<NRUNS;r++){
-            flush_jacobi_gpu(); CUDA_CHECK(cudaEventRecord(ev0));
+            flush_jacobi_gpu(); GPU_CHECK(gpuEventRecord(ev0));
             launch_gpu_v7<4>(ci,d_out,d_vn_ie,d_inv_dual,d_w,d_cidx,
                 d_z_vt_ie,d_inv_primal,d_tangent,d_z_w_v,d_vidx,N_e,N_c,N_v,nlev);
-            CUDA_CHECK(cudaEventRecord(ev1)); CUDA_CHECK(cudaEventSynchronize(ev1));
-            float ms=0; CUDA_CHECK(cudaEventElapsedTime(&ms,ev0,ev1));
+            GPU_CHECK(gpuEventRecord(ev1)); GPU_CHECK(gpuEventSynchronize(ev1));
+            float ms=0; GPU_CHECK(gpuEventElapsedTime(&ms,ev0,ev1));
             fprintf(fcsv,"gpu,7,%d,%d,%d,%d,%s,%s,%d,1,%d,1,%d,%.6f\n",
                 nlev,N_e,N_c,N_v,dist_label,GCFG_V7[ci].label,
                 GCFG_V7[ci].tx,(int)GCFG_V7[ci].bx,r,(double)ms);
@@ -726,43 +726,43 @@ static void run_tiled_configs(
     double* d_vn_ie, double* d_inv_dual, double* d_w, int* d_cidx,
     double* d_z_vt_ie, double* d_inv_primal, double* d_tangent,
     double* d_z_w_v, int* d_vidx, double* d_out,
-    cudaEvent_t ev0, cudaEvent_t ev1, double* h_gpu_out)
+    gpuEvent_t ev0, gpuEvent_t ev1, double* h_gpu_out)
 {
     memset(h_ref,0,sz_e*sizeof(double));
     cpu_reference_tiled(STX,STY,h_ref,bd.h_vn_ie,bd.inv_dual,bd.h_w,bd.h_cidx,
         bd.h_z_vt_ie,bd.inv_primal,bd.tangent_o,bd.h_z_w_v,bd.h_vidx,
         N_e,N_c,N_v,nlev,nlev_end);
-    CUDA_CHECK(cudaMemcpy(d_vn_ie,bd.h_vn_ie,bd.sz_e*8,cudaMemcpyHostToDevice));
-    CUDA_CHECK(cudaMemcpy(d_w,bd.h_w,bd.sz_c*8,cudaMemcpyHostToDevice));
-    CUDA_CHECK(cudaMemcpy(d_z_vt_ie,bd.h_z_vt_ie,bd.sz_e*8,cudaMemcpyHostToDevice));
-    CUDA_CHECK(cudaMemcpy(d_z_w_v,bd.h_z_w_v,bd.sz_v*8,cudaMemcpyHostToDevice));
-    CUDA_CHECK(cudaMemcpy(d_cidx,bd.h_cidx,N_e*2*4,cudaMemcpyHostToDevice));
-    CUDA_CHECK(cudaMemcpy(d_vidx,bd.h_vidx,N_e*2*4,cudaMemcpyHostToDevice));
-    CUDA_CHECK(cudaMemcpy(d_inv_dual,bd.inv_dual,N_e*8,cudaMemcpyHostToDevice));
-    CUDA_CHECK(cudaMemcpy(d_inv_primal,bd.inv_primal,N_e*8,cudaMemcpyHostToDevice));
-    CUDA_CHECK(cudaMemcpy(d_tangent,bd.tangent_o,N_e*8,cudaMemcpyHostToDevice));
+    GPU_CHECK(gpuMemcpy(d_vn_ie,bd.h_vn_ie,bd.sz_e*8,gpuMemcpyHostToDevice));
+    GPU_CHECK(gpuMemcpy(d_w,bd.h_w,bd.sz_c*8,gpuMemcpyHostToDevice));
+    GPU_CHECK(gpuMemcpy(d_z_vt_ie,bd.h_z_vt_ie,bd.sz_e*8,gpuMemcpyHostToDevice));
+    GPU_CHECK(gpuMemcpy(d_z_w_v,bd.h_z_w_v,bd.sz_v*8,gpuMemcpyHostToDevice));
+    GPU_CHECK(gpuMemcpy(d_cidx,bd.h_cidx,N_e*2*4,gpuMemcpyHostToDevice));
+    GPU_CHECK(gpuMemcpy(d_vidx,bd.h_vidx,N_e*2*4,gpuMemcpyHostToDevice));
+    GPU_CHECK(gpuMemcpy(d_inv_dual,bd.inv_dual,N_e*8,gpuMemcpyHostToDevice));
+    GPU_CHECK(gpuMemcpy(d_inv_primal,bd.inv_primal,N_e*8,gpuMemcpyHostToDevice));
+    GPU_CHECK(gpuMemcpy(d_tangent,bd.tangent_o,N_e*8,gpuMemcpyHostToDevice));
     for (int ci=cfg_begin; ci<cfg_end; ci++) {
         if (GCFG_TILED[ci].stx != STX || GCFG_TILED[ci].sty != STY) continue;
-        CUDA_CHECK(cudaMemset(d_out,0,sz_e*8));
+        GPU_CHECK(gpuMemset(d_out,0,sz_e*8));
         bool launched=true;
         for (int r=0;r<WARMUP;r++) {
             flush_jacobi_gpu();
             launched=launch_gpu_tiled(ci,d_out,d_vn_ie,d_inv_dual,d_w,d_cidx,
                 d_z_vt_ie,d_inv_primal,d_tangent,d_z_w_v,d_vidx,N_e,N_c,N_v,nlev,nlev_end);
-            if(!launched) break; CUDA_CHECK(cudaDeviceSynchronize());
+            if(!launched) break; GPU_CHECK(gpuDeviceSynchronize());
         }
         if(!launched){ printf("SKIP: tiled cfg=%s\n",GCFG_TILED[ci].label); continue; }
-        CUDA_CHECK(cudaMemcpy(h_gpu_out,d_out,sz_e*8,cudaMemcpyDeviceToHost));
+        GPU_CHECK(gpuMemcpy(h_gpu_out,d_out,sz_e*8,gpuMemcpyDeviceToHost));
         int nf=0; double mr=0; size_t ff=0;
         bool ok=verify(h_gpu_out,h_ref,sz_e,1e-8,1e-12,&nf,&mr,&ff);
         if(!ok){ printf("FAIL: tiled cfg=%s fails=%d mr=%.3e\n",GCFG_TILED[ci].label,nf,mr); continue; }
         else    printf("OK:   tiled cfg=%-18s dist=%-12s mr=%.3e\n",GCFG_TILED[ci].label,dist_label,mr);
         for (int r=0;r<NRUNS;r++) {
-            flush_jacobi_gpu(); CUDA_CHECK(cudaEventRecord(ev0));
+            flush_jacobi_gpu(); GPU_CHECK(gpuEventRecord(ev0));
             launch_gpu_tiled(ci,d_out,d_vn_ie,d_inv_dual,d_w,d_cidx,
                 d_z_vt_ie,d_inv_primal,d_tangent,d_z_w_v,d_vidx,N_e,N_c,N_v,nlev,nlev_end);
-            CUDA_CHECK(cudaEventRecord(ev1)); CUDA_CHECK(cudaEventSynchronize(ev1));
-            float ms=0; CUDA_CHECK(cudaEventElapsedTime(&ms,ev0,ev1));
+            GPU_CHECK(gpuEventRecord(ev1)); GPU_CHECK(gpuEventSynchronize(ev1));
+            float ms=0; GPU_CHECK(gpuEventElapsedTime(&ms,ev0,ev1));
             /* reuse TX/TY columns for storage tile dims (STX/STY). */
             fprintf(fcsv,"gpu,0,%d,%d,%d,%d,%s,%s,%d,%d,%d,%d,%d,%.6f\n",
                 nlev_end,N_e,N_c,N_v,dist_label,GCFG_TILED[ci].label,
@@ -788,12 +788,12 @@ static void run_dist_block(
         bd.inv_dual[je]=icon_inv_dual[je]; bd.inv_primal[je]=icon_inv_primal[je]; bd.tangent_o[je]=icon_tangent[je];}
     double* h_ref=new double[bd.sz_e]; double* h_gpu_out=new double[bd.sz_e];
     double *d_vn,*d_w,*d_vt,*d_zw,*d_out,*d_id,*d_ip,*d_tg; int *d_ci,*d_vi;
-    CUDA_CHECK(cudaMalloc(&d_vn,bd.sz_e*8)); CUDA_CHECK(cudaMalloc(&d_w,bd.sz_c*8));
-    CUDA_CHECK(cudaMalloc(&d_vt,bd.sz_e*8)); CUDA_CHECK(cudaMalloc(&d_zw,bd.sz_v*8));
-    CUDA_CHECK(cudaMalloc(&d_out,bd.sz_e*8));
-    CUDA_CHECK(cudaMalloc(&d_id,N_e*8)); CUDA_CHECK(cudaMalloc(&d_ip,N_e*8)); CUDA_CHECK(cudaMalloc(&d_tg,N_e*8));
-    CUDA_CHECK(cudaMalloc(&d_ci,N_e*2*4)); CUDA_CHECK(cudaMalloc(&d_vi,N_e*2*4));
-    cudaEvent_t ev0,ev1; CUDA_CHECK(cudaEventCreate(&ev0)); CUDA_CHECK(cudaEventCreate(&ev1));
+    GPU_CHECK(gpuMalloc(&d_vn,bd.sz_e*8)); GPU_CHECK(gpuMalloc(&d_w,bd.sz_c*8));
+    GPU_CHECK(gpuMalloc(&d_vt,bd.sz_e*8)); GPU_CHECK(gpuMalloc(&d_zw,bd.sz_v*8));
+    GPU_CHECK(gpuMalloc(&d_out,bd.sz_e*8));
+    GPU_CHECK(gpuMalloc(&d_id,N_e*8)); GPU_CHECK(gpuMalloc(&d_ip,N_e*8)); GPU_CHECK(gpuMalloc(&d_tg,N_e*8));
+    GPU_CHECK(gpuMalloc(&d_ci,N_e*2*4)); GPU_CHECK(gpuMalloc(&d_vi,N_e*2*4));
+    gpuEvent_t ev0,ev1; GPU_CHECK(gpuEventCreate(&ev0)); GPU_CHECK(gpuEventCreate(&ev1));
     for(int V=V_start;V<=V_end;V++){
         if(V==2) continue;
         bd.set_variant(kern_v(V),cell_logical,vert_logical);
@@ -801,9 +801,9 @@ static void run_dist_block(
             h_ref,bd,bd.sz_e,d_vn,d_id,d_w,d_ci,d_vt,d_ip,d_tg,d_zw,d_vi,d_out,ev0,ev1,h_gpu_out);
         fflush(fcsv);
     }
-    CUDA_CHECK(cudaFree(d_vn));CUDA_CHECK(cudaFree(d_w));CUDA_CHECK(cudaFree(d_vt));CUDA_CHECK(cudaFree(d_zw));CUDA_CHECK(cudaFree(d_out));
-    CUDA_CHECK(cudaFree(d_id));CUDA_CHECK(cudaFree(d_ip));CUDA_CHECK(cudaFree(d_tg));CUDA_CHECK(cudaFree(d_ci));CUDA_CHECK(cudaFree(d_vi));
-    CUDA_CHECK(cudaEventDestroy(ev0)); CUDA_CHECK(cudaEventDestroy(ev1));
+    GPU_CHECK(gpuFree(d_vn));GPU_CHECK(gpuFree(d_w));GPU_CHECK(gpuFree(d_vt));GPU_CHECK(gpuFree(d_zw));GPU_CHECK(gpuFree(d_out));
+    GPU_CHECK(gpuFree(d_id));GPU_CHECK(gpuFree(d_ip));GPU_CHECK(gpuFree(d_tg));GPU_CHECK(gpuFree(d_ci));GPU_CHECK(gpuFree(d_vi));
+    GPU_CHECK(gpuEventDestroy(ev0)); GPU_CHECK(gpuEventDestroy(ev1));
     delete[]h_ref; delete[]h_gpu_out; bd.free_all();
 }
 
@@ -818,18 +818,18 @@ static void run_dist_block_v6(
     bd.set_variant(4,cell_logical,vert_logical);
     double* h_ref=new double[bd.sz_e]; double* h_gpu_out=new double[bd.sz_e];
     double *d_vn,*d_w,*d_vt,*d_zw,*d_out,*d_id,*d_ip,*d_tg; int *d_ci,*d_vi;
-    CUDA_CHECK(cudaMalloc(&d_vn,bd.sz_e*8)); CUDA_CHECK(cudaMalloc(&d_w,bd.sz_c*8));
-    CUDA_CHECK(cudaMalloc(&d_vt,bd.sz_e*8)); CUDA_CHECK(cudaMalloc(&d_zw,bd.sz_v*8));
-    CUDA_CHECK(cudaMalloc(&d_out,bd.sz_e*8));
-    CUDA_CHECK(cudaMalloc(&d_id,N_e*8)); CUDA_CHECK(cudaMalloc(&d_ip,N_e*8)); CUDA_CHECK(cudaMalloc(&d_tg,N_e*8));
-    CUDA_CHECK(cudaMalloc(&d_ci,N_e*2*4)); CUDA_CHECK(cudaMalloc(&d_vi,N_e*2*4));
-    cudaEvent_t ev0,ev1; CUDA_CHECK(cudaEventCreate(&ev0)); CUDA_CHECK(cudaEventCreate(&ev1));
+    GPU_CHECK(gpuMalloc(&d_vn,bd.sz_e*8)); GPU_CHECK(gpuMalloc(&d_w,bd.sz_c*8));
+    GPU_CHECK(gpuMalloc(&d_vt,bd.sz_e*8)); GPU_CHECK(gpuMalloc(&d_zw,bd.sz_v*8));
+    GPU_CHECK(gpuMalloc(&d_out,bd.sz_e*8));
+    GPU_CHECK(gpuMalloc(&d_id,N_e*8)); GPU_CHECK(gpuMalloc(&d_ip,N_e*8)); GPU_CHECK(gpuMalloc(&d_tg,N_e*8));
+    GPU_CHECK(gpuMalloc(&d_ci,N_e*2*4)); GPU_CHECK(gpuMalloc(&d_vi,N_e*2*4));
+    gpuEvent_t ev0,ev1; GPU_CHECK(gpuEventCreate(&ev0)); GPU_CHECK(gpuEventCreate(&ev1));
     run_v6_configs(fcsv,N_e,N_c,N_v,nlev,nlev_end,nlev_padded,dist_label,
         h_ref,bd,bd.sz_e,d_vn,d_id,d_w,d_ci,d_vt,d_ip,d_tg,d_zw,d_vi,d_out,ev0,ev1,h_gpu_out);
     fflush(fcsv);
-    CUDA_CHECK(cudaFree(d_vn));CUDA_CHECK(cudaFree(d_w));CUDA_CHECK(cudaFree(d_vt));CUDA_CHECK(cudaFree(d_zw));CUDA_CHECK(cudaFree(d_out));
-    CUDA_CHECK(cudaFree(d_id));CUDA_CHECK(cudaFree(d_ip));CUDA_CHECK(cudaFree(d_tg));CUDA_CHECK(cudaFree(d_ci));CUDA_CHECK(cudaFree(d_vi));
-    CUDA_CHECK(cudaEventDestroy(ev0)); CUDA_CHECK(cudaEventDestroy(ev1));
+    GPU_CHECK(gpuFree(d_vn));GPU_CHECK(gpuFree(d_w));GPU_CHECK(gpuFree(d_vt));GPU_CHECK(gpuFree(d_zw));GPU_CHECK(gpuFree(d_out));
+    GPU_CHECK(gpuFree(d_id));GPU_CHECK(gpuFree(d_ip));GPU_CHECK(gpuFree(d_tg));GPU_CHECK(gpuFree(d_ci));GPU_CHECK(gpuFree(d_vi));
+    GPU_CHECK(gpuEventDestroy(ev0)); GPU_CHECK(gpuEventDestroy(ev1));
     delete[]h_ref; delete[]h_gpu_out; bd.free_all();
 }
 
@@ -844,18 +844,18 @@ static void run_dist_block_v7(
     bd.set_variant(4,cell_logical,vert_logical);
     double* h_ref=new double[bd.sz_e]; double* h_gpu_out=new double[bd.sz_e];
     double *d_vn,*d_w,*d_vt,*d_zw,*d_out,*d_id,*d_ip,*d_tg; int *d_ci,*d_vi;
-    CUDA_CHECK(cudaMalloc(&d_vn,bd.sz_e*8)); CUDA_CHECK(cudaMalloc(&d_w,bd.sz_c*8));
-    CUDA_CHECK(cudaMalloc(&d_vt,bd.sz_e*8)); CUDA_CHECK(cudaMalloc(&d_zw,bd.sz_v*8));
-    CUDA_CHECK(cudaMalloc(&d_out,bd.sz_e*8));
-    CUDA_CHECK(cudaMalloc(&d_id,N_e*8)); CUDA_CHECK(cudaMalloc(&d_ip,N_e*8)); CUDA_CHECK(cudaMalloc(&d_tg,N_e*8));
-    CUDA_CHECK(cudaMalloc(&d_ci,N_e*2*4)); CUDA_CHECK(cudaMalloc(&d_vi,N_e*2*4));
-    cudaEvent_t ev0,ev1; CUDA_CHECK(cudaEventCreate(&ev0)); CUDA_CHECK(cudaEventCreate(&ev1));
+    GPU_CHECK(gpuMalloc(&d_vn,bd.sz_e*8)); GPU_CHECK(gpuMalloc(&d_w,bd.sz_c*8));
+    GPU_CHECK(gpuMalloc(&d_vt,bd.sz_e*8)); GPU_CHECK(gpuMalloc(&d_zw,bd.sz_v*8));
+    GPU_CHECK(gpuMalloc(&d_out,bd.sz_e*8));
+    GPU_CHECK(gpuMalloc(&d_id,N_e*8)); GPU_CHECK(gpuMalloc(&d_ip,N_e*8)); GPU_CHECK(gpuMalloc(&d_tg,N_e*8));
+    GPU_CHECK(gpuMalloc(&d_ci,N_e*2*4)); GPU_CHECK(gpuMalloc(&d_vi,N_e*2*4));
+    gpuEvent_t ev0,ev1; GPU_CHECK(gpuEventCreate(&ev0)); GPU_CHECK(gpuEventCreate(&ev1));
     run_v7_configs(fcsv,N_e,N_c,N_v,nlev,dist_label,
         h_ref,bd,bd.sz_e,d_vn,d_id,d_w,d_ci,d_vt,d_ip,d_tg,d_zw,d_vi,d_out,ev0,ev1,h_gpu_out);
     fflush(fcsv);
-    CUDA_CHECK(cudaFree(d_vn));CUDA_CHECK(cudaFree(d_w));CUDA_CHECK(cudaFree(d_vt));CUDA_CHECK(cudaFree(d_zw));CUDA_CHECK(cudaFree(d_out));
-    CUDA_CHECK(cudaFree(d_id));CUDA_CHECK(cudaFree(d_ip));CUDA_CHECK(cudaFree(d_tg));CUDA_CHECK(cudaFree(d_ci));CUDA_CHECK(cudaFree(d_vi));
-    CUDA_CHECK(cudaEventDestroy(ev0)); CUDA_CHECK(cudaEventDestroy(ev1));
+    GPU_CHECK(gpuFree(d_vn));GPU_CHECK(gpuFree(d_w));GPU_CHECK(gpuFree(d_vt));GPU_CHECK(gpuFree(d_zw));GPU_CHECK(gpuFree(d_out));
+    GPU_CHECK(gpuFree(d_id));GPU_CHECK(gpuFree(d_ip));GPU_CHECK(gpuFree(d_tg));GPU_CHECK(gpuFree(d_ci));GPU_CHECK(gpuFree(d_vi));
+    GPU_CHECK(gpuEventDestroy(ev0)); GPU_CHECK(gpuEventDestroy(ev1));
     delete[]h_ref; delete[]h_gpu_out; bd.free_all();
 }
 
@@ -868,13 +868,13 @@ static void run_dist_block_tiled(
     double* h_gpu_out=new double[(size_t)N_e*nlev];
     double *d_vn,*d_w,*d_vt,*d_zw,*d_out,*d_id,*d_ip,*d_tg; int *d_ci,*d_vi;
     size_t sz_e=(size_t)N_e*nlev, sz_c=(size_t)N_c*nlev, sz_v=(size_t)N_v*nlev;
-    CUDA_CHECK(cudaMalloc(&d_vn,sz_e*8)); CUDA_CHECK(cudaMalloc(&d_w,sz_c*8));
-    CUDA_CHECK(cudaMalloc(&d_vt,sz_e*8)); CUDA_CHECK(cudaMalloc(&d_zw,sz_v*8));
-    CUDA_CHECK(cudaMalloc(&d_out,sz_e*8));
-    CUDA_CHECK(cudaMalloc(&d_id,N_e*8)); CUDA_CHECK(cudaMalloc(&d_ip,N_e*8));
-    CUDA_CHECK(cudaMalloc(&d_tg,N_e*8));
-    CUDA_CHECK(cudaMalloc(&d_ci,N_e*2*4)); CUDA_CHECK(cudaMalloc(&d_vi,N_e*2*4));
-    cudaEvent_t ev0,ev1; CUDA_CHECK(cudaEventCreate(&ev0)); CUDA_CHECK(cudaEventCreate(&ev1));
+    GPU_CHECK(gpuMalloc(&d_vn,sz_e*8)); GPU_CHECK(gpuMalloc(&d_w,sz_c*8));
+    GPU_CHECK(gpuMalloc(&d_vt,sz_e*8)); GPU_CHECK(gpuMalloc(&d_zw,sz_v*8));
+    GPU_CHECK(gpuMalloc(&d_out,sz_e*8));
+    GPU_CHECK(gpuMalloc(&d_id,N_e*8)); GPU_CHECK(gpuMalloc(&d_ip,N_e*8));
+    GPU_CHECK(gpuMalloc(&d_tg,N_e*8));
+    GPU_CHECK(gpuMalloc(&d_ci,N_e*2*4)); GPU_CHECK(gpuMalloc(&d_vi,N_e*2*4));
+    gpuEvent_t ev0,ev1; GPU_CHECK(gpuEventCreate(&ev0)); GPU_CHECK(gpuEventCreate(&ev1));
     /* Re-alloc BenchData per (STX,STY) because layout is different. */
     for (int tx_i=0; tx_i<N_TILE_X; tx_i++) {
         int STX = TILE_X_VALUES[tx_i];
@@ -900,9 +900,9 @@ static void run_dist_block_tiled(
             bd.free_all();
         }
     }
-    CUDA_CHECK(cudaFree(d_vn));CUDA_CHECK(cudaFree(d_w));CUDA_CHECK(cudaFree(d_vt));CUDA_CHECK(cudaFree(d_zw));CUDA_CHECK(cudaFree(d_out));
-    CUDA_CHECK(cudaFree(d_id));CUDA_CHECK(cudaFree(d_ip));CUDA_CHECK(cudaFree(d_tg));CUDA_CHECK(cudaFree(d_ci));CUDA_CHECK(cudaFree(d_vi));
-    CUDA_CHECK(cudaEventDestroy(ev0)); CUDA_CHECK(cudaEventDestroy(ev1));
+    GPU_CHECK(gpuFree(d_vn));GPU_CHECK(gpuFree(d_w));GPU_CHECK(gpuFree(d_vt));GPU_CHECK(gpuFree(d_zw));GPU_CHECK(gpuFree(d_out));
+    GPU_CHECK(gpuFree(d_id));GPU_CHECK(gpuFree(d_ip));GPU_CHECK(gpuFree(d_tg));GPU_CHECK(gpuFree(d_ci));GPU_CHECK(gpuFree(d_vi));
+    GPU_CHECK(gpuEventDestroy(ev0)); GPU_CHECK(gpuEventDestroy(ev1));
     delete[]h_ref; delete[]h_gpu_out;
 }
 
@@ -933,7 +933,7 @@ int main(int argc, char* argv[]) {
     int* cell_logical=new int[N_e*2];
     int* vert_logical=new int[N_e*2];
 
-    cudaDeviceProp prop; CUDA_CHECK(cudaGetDeviceProperties(&prop,0));
+    gpuDeviceProp prop; GPU_CHECK(gpuGetDeviceProperties(&prop,0));
     printf("GPU: %s  SM=%d  Configs: V1-V5=%d V6=%d V7=%d\n",
            prop.name,prop.multiProcessorCount,N_GCFG,N_GCFG_V6,N_GCFG_V7);
     /* All random draws go through common/prng.h with SC26_SEED=42. */

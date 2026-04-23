@@ -76,17 +76,17 @@ static double bw_oop(int P, int64_t n, double ms) {
 
 #define GPU_BENCH(P_val, n_base, label, call) do { \
     for (int w = 0; w < 5; w++) { call; } \
-    CUDA_CHECK(cudaDeviceSynchronize()); \
+    GPU_CHECK(gpuDeviceSynchronize()); \
     for (int r = 0; r < RUNS; r++) { \
-        cudaEvent_t a, b; \
-        CUDA_CHECK(cudaEventCreate(&a)); CUDA_CHECK(cudaEventCreate(&b)); \
-        CUDA_CHECK(cudaEventRecord(a)); \
+        gpuEvent_t a, b; \
+        GPU_CHECK(gpuEventCreate(&a)); GPU_CHECK(gpuEventCreate(&b)); \
+        GPU_CHECK(gpuEventRecord(a)); \
         call; \
-        CUDA_CHECK(cudaEventRecord(b)); CUDA_CHECK(cudaEventSynchronize(b)); \
-        float ms; CUDA_CHECK(cudaEventElapsedTime(&ms, a, b)); \
+        GPU_CHECK(gpuEventRecord(b)); GPU_CHECK(gpuEventSynchronize(b)); \
+        float ms; GPU_CHECK(gpuEventElapsedTime(&ms, a, b)); \
         fprintf(csv, "%d,%s,%d,%.6f,%.2f\n", \
                 P_val, label, r, (double)ms, bw_oop(P_val, n_base, ms)); \
-        CUDA_CHECK(cudaEventDestroy(a)); CUDA_CHECK(cudaEventDestroy(b)); \
+        GPU_CHECK(gpuEventDestroy(a)); GPU_CHECK(gpuEventDestroy(b)); \
     } \
     printf("  %-14s  (see csv)\n", label); \
 } while (0)
@@ -140,16 +140,16 @@ int main(int argc, char **argv) {
 
     size_t bytes = TOTAL_DOUBLES * sizeof(double);
     double *di, *dout;
-    if (cudaMalloc(&di, bytes) != cudaSuccess ||
-        cudaMalloc(&dout, bytes) != cudaSuccess) {
-        printf("cudaMalloc failed\n"); return 1;
+    if (gpuMalloc(&di, bytes) != gpuSuccess ||
+        gpuMalloc(&dout, bytes) != gpuSuccess) {
+        printf("gpuMalloc failed\n"); return 1;
     }
 
     {
         double *h = (double *)malloc(bytes);
         for (int64_t i = 0; i < TOTAL_DOUBLES; i++)
             h[i] = (double)(i % 997) * 0.001;
-        CUDA_CHECK(cudaMemcpy(di, h, bytes, cudaMemcpyHostToDevice));
+        GPU_CHECK(gpuMemcpy(di, h, bytes, gpuMemcpyHostToDevice));
         free(h);
     }
 
@@ -161,7 +161,7 @@ int main(int argc, char **argv) {
     run_all<18>(di, dout);
     run_all<21>(di, dout);
 
-    CUDA_CHECK(cudaFree(di)); CUDA_CHECK(cudaFree(dout));
+    GPU_CHECK(gpuFree(di)); GPU_CHECK(gpuFree(dout));
     fclose(csv);
     printf("\nwrote results_gpu_oop.csv\n");
 }
