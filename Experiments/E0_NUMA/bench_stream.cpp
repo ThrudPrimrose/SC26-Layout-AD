@@ -1,38 +1,41 @@
 /*
- * bench_stream.cpp -- NUMA-aware CPU STREAM sweep (scale-add RMW) on an
- * N x N fp32 matrix. Kernel:  A[y,x] = s * A[y,x] + B[y,x]
+ * bench_stream.cpp -- CPU STREAM sweep (scale-add RMW) with explicit
+ * NUMA setup variants. fp32 matrix N1d x N1d; kernel is
+ *     A[y,x] = s * A[y,x] + B[y,x]
  * Traffic: 2 loads + 1 store per fp32 = 12 bytes per element.
  *
- * Modelled after E1_MatrixAdd/bench_cpu.cpp: uses the shared
- * ../common/numa_util.h allocators, the canonical cache-flush kernel
- * from ../common/jacobi_flush.h, NREP=100/NWARMUP=5, and writes one
- * CSV row per repetition for violin plots.
+ * The experiment is structured as setup x kernel x flush:
  *
- * NUMA model:
- *   The matrix is first-touched as a 2x2 grid of quadrants (one per
- *   NUMA domain on beverin: 4 domains x 24 Zen4 cores = 96 threads ->
- *   24 threads per quadrant). OMP_PLACES in common/setup_beverin.sh
- *   pins each group to NUMA-local cores.
+ *   setup:    ft_flat       -- plain 1D first-touch via omp for schedule(static).
+ *                              Pages land on whatever NUMA node the first-
+ *                              touching thread is bound to. Hugepage-clean
+ *                              because each thread writes a contiguous
+ *                              elements stripe = contiguous page range.
+ *             bind_stripe_4 -- explicit mbind into 4 row-stripes (pages
+ *                              0..N/4-1 -> node 0, ... ). Uses MPOL_MF_MOVE
+ *                              so pages placed by a previous setup are
+ *                              migrated; this is the canonical NUMA-tiling
+ *                              the paper refers to.
+ *             interleave    -- MPOL_INTERLEAVE across all nodes (page-
+ *                              cyclic). Kept as a comparison point.
  *
- * Variants benchmarked:
- *   - 1d_rows_static       : OMP for over outer rows, schedule(static)
- *   - 1d_collapse_static   : OMP for collapse(2) over (y,x), static
- *   - 1d_flat_static       : flat 1D partition among threads
- *   - 1d_rows_dynamic      : rows, schedule(dynamic, large chunk)
- *   - 2x2_numa_tiled       : each thread stays inside its NUMA quadrant,
- *                            sweep inner tile (TILE_Y, TILE_X)
+ *   kernel:   1d_rows_static        -- omp for schedule(static) over rows
+ *             1d_rows_dynamic       -- omp for schedule(dynamic) over rows
+ *             1d_flat_static        -- manual flat 1D element partition
+ *                                      (matches common/bench_stream.cpp)
+ *             4_stripe_aware        -- manual partition in which thread
+ *                                      tid = g*24 + l handles the l-th
+ *                                      sub-slice of the g-th NUMA stripe.
+ *                                      Aligned with bind_stripe_4.
  *
- * Every variant is run twice -- once with a canonical 8192^2 Jacobi
- * cache flush between reps (flush=yes) and once without (flush=no).
- * The "no flush" pass matches the old common/bench_stream.cpp
- * methodology and reports the real achievable peak on a warm cache;
- * the "yes flush" pass matches the cold-cache methodology used by
- * every E1-E6 bench. Headline statistic is the arithmetic *mean*
- * across the NREP reps (not the median), because for NUMA we care
- * about the achievable peak rather than a robust central estimate.
+ *   flush:    yes / no
+ *
+ * After each setup variant is applied, numa_report_distribution() is
+ * called on both A and B so the actual page placement can be verified
+ * from the run log -- no guessing about whether mbind did what we asked.
  *
  * Output CSV (one row per repetition):
- *   variant,TILE_Y,TILE_X,N,rep,threads,time_s,bw_gbs,checksum,status,flush
+ *   setup,variant,N,rep,threads,time_s,bw_gbs,checksum,status,flush
  *
  * Usage: bench_stream <csv_file> [N1d=16384] [nthreads=0=env]
  */
@@ -58,39 +61,42 @@ static inline double elapsed_sec(Clock::time_point t0, Clock::time_point t1) {
     return std::chrono::duration<double>(t1 - t0).count();
 }
 
-/* ── 2x2 NUMA first-touch ─────────────────────────────────────────────
- * P threads split into 4 groups of P/4 (one per NUMA quadrant). Each
- * group row-partitions its quadrant among its threads so every page
- * is first-touched by a NUMA-local thread.
+/* ── setup helpers ─────────────────────────────────────────────────────
+ *
+ * Each setup modifies the page-placement policy of an already-allocated
+ * buffer and re-touches every page to realize it. Because numa_util's
+ * bind_and_touch / interleave_and_touch pass MPOL_MF_MOVE, the buffers
+ * can be reused across setups without a munmap / re-mmap.
+ *
+ * ft_flat populates A/B via plain omp for schedule(static), which lands
+ * each page on whichever NUMA node the thread doing the first write was
+ * bound to. With OMP_PLACES={0}:24:1, {24}:24:1, ... this produces a
+ * nearly-uniform 4-node distribution, with only thread-boundary pages
+ * potentially landing off-target.
  */
-static void first_touch_2x2(float *__restrict__ a, size_t N1d, float val) {
-    #pragma omp parallel
-    {
-        int tid = omp_get_thread_num();
-        int P   = omp_get_num_threads();
-        int Pq  = P / 4;
-        int q   = tid / Pq;
-        int lid = tid % Pq;
-        int qy  = q / 2;
-        int qx  = q % 2;
-
-        size_t H   = N1d / 2;
-        size_t y0  = (size_t)qy * H;
-        size_t x0  = (size_t)qx * H;
-        size_t y1  = y0 + H;
-        size_t x1  = x0 + H;
-
-        size_t rows_per = H / Pq;
-        size_t ly0 = y0 + (size_t)lid * rows_per;
-        size_t ly1 = (lid == Pq - 1) ? y1 : ly0 + rows_per;
-
-        for (size_t y = ly0; y < ly1; y++)
-            for (size_t x = x0; x < x1; x++)
-                a[y * N1d + x] = val;
-    }
+static void setup_ft_flat(float *__restrict__ A, float *__restrict__ B,
+                          size_t N, float va, float vb) {
+    #pragma omp parallel for schedule(static)
+    for (size_t i = 0; i < N; ++i) { A[i] = va; B[i] = vb; }
 }
 
-/* ── kernels ──────────────────────────────────────────────────────── */
+static void setup_bind_stripe_4(float *__restrict__ A, float *__restrict__ B,
+                                size_t N, float va, float vb) {
+    bind_and_touch(A, N * sizeof(float));
+    bind_and_touch(B, N * sizeof(float));
+    #pragma omp parallel for schedule(static)
+    for (size_t i = 0; i < N; ++i) { A[i] = va; B[i] = vb; }
+}
+
+static void setup_interleave(float *__restrict__ A, float *__restrict__ B,
+                             size_t N, float va, float vb) {
+    interleave_and_touch(A, N * sizeof(float));
+    interleave_and_touch(B, N * sizeof(float));
+    #pragma omp parallel for schedule(static)
+    for (size_t i = 0; i < N; ++i) { A[i] = va; B[i] = vb; }
+}
+
+/* ── kernels ────────────────────────────────────────────────────────── */
 
 static void k_1d_rows_static(float *__restrict__ A, const float *__restrict__ B,
                              size_t N1d) {
@@ -103,32 +109,6 @@ static void k_1d_rows_static(float *__restrict__ A, const float *__restrict__ B,
             size_t i = row + x;
             A[i] = s * A[i] + B[i];
         }
-    }
-}
-
-static void k_1d_collapse_static(float *__restrict__ A, const float *__restrict__ B,
-                                 size_t N1d) {
-    const float s = 1.0001f;
-    #pragma omp parallel for collapse(2) schedule(static)
-    for (size_t y = 0; y < N1d; y++)
-        for (size_t x = 0; x < N1d; x++) {
-            size_t i = y * N1d + x;
-            A[i] = s * A[i] + B[i];
-        }
-}
-
-static void k_1d_flat_static(float *__restrict__ A, const float *__restrict__ B,
-                             size_t N1d) {
-    const float s = 1.0001f;
-    size_t N = N1d * N1d;
-    #pragma omp parallel
-    {
-        int tid = omp_get_thread_num();
-        int P   = omp_get_num_threads();
-        size_t lo = (size_t)N * tid / P;
-        size_t hi = (size_t)N * (tid + 1) / P;
-        #pragma omp simd
-        for (size_t i = lo; i < hi; i++) A[i] = s * A[i] + B[i];
     }
 }
 
@@ -150,56 +130,54 @@ static void k_1d_rows_dynamic(float *__restrict__ A, const float *__restrict__ B
     }
 }
 
-/*
- * 2x2 NUMA-aware tiled kernel with inner cache-blocking.
- * Each thread stays inside the quadrant it first-touched, then sweeps
- * its row-slice of the quadrant in TILE_Y x TILE_X tiles.
- */
-static void k_2x2_numa_tiled(float *__restrict__ A, const float *__restrict__ B,
-                             size_t N1d, size_t TILE_Y, size_t TILE_X) {
+static void k_1d_flat_static(float *__restrict__ A, const float *__restrict__ B,
+                             size_t N1d) {
     const float s = 1.0001f;
+    size_t N = N1d * N1d;
     #pragma omp parallel
     {
         int tid = omp_get_thread_num();
         int P   = omp_get_num_threads();
-        int Pq  = P / 4;
-        int q   = tid / Pq;
-        int lid = tid % Pq;
-        int qy  = q / 2;
-        int qx  = q % 2;
+        size_t lo = (size_t)N * tid / P;
+        size_t hi = (size_t)N * (tid + 1) / P;
+        #pragma omp simd
+        for (size_t i = lo; i < hi; i++) A[i] = s * A[i] + B[i];
+    }
+}
 
-        size_t H   = N1d / 2;
-        size_t y0  = (size_t)qy * H;
-        size_t x0  = (size_t)qx * H;
-        size_t y1  = y0 + H;
-        size_t x1  = x0 + H;
-
-        size_t rows_per = H / Pq;
-        size_t ly0 = y0 + (size_t)lid * rows_per;
-        size_t ly1 = (lid == Pq - 1) ? y1 : ly0 + rows_per;
-
-        for (size_t ty = ly0; ty < ly1; ty += TILE_Y) {
-            size_t tyhi = std::min(ty + TILE_Y, ly1);
-            for (size_t tx = x0; tx < x1; tx += TILE_X) {
-                size_t txhi = std::min(tx + TILE_X, x1);
-                for (size_t y = ty; y < tyhi; y++) {
-                    size_t row = y * N1d;
-                    #pragma omp simd
-                    for (size_t x = tx; x < txhi; x++) {
-                        size_t i = row + x;
-                        A[i] = s * A[i] + B[i];
-                    }
-                }
-            }
-        }
+/*
+ * 4-stripe NUMA-aware partition: with OMP_PLACES arranged as four
+ * 24-thread groups each pinned to one NUMA node, thread tid splits into
+ *     group g = tid / 24
+ *     local l = tid % 24
+ * and handles the l-th sub-slice of the g-th N/4-element stripe. This
+ * aligns exactly with bind_stripe_4 (both use N/4-byte NUMA stripes),
+ * so every load and store is NUMA-local.
+ */
+static void k_4_stripe_aware(float *__restrict__ A, const float *__restrict__ B,
+                             size_t N1d) {
+    const float s = 1.0001f;
+    const size_t N = N1d * N1d;
+    #pragma omp parallel
+    {
+        int tid = omp_get_thread_num();
+        int P   = omp_get_num_threads();
+        int Pq  = P / 4;                   /* threads per NUMA group   */
+        int g   = tid / Pq;                /* NUMA group id 0..3       */
+        int l   = tid % Pq;                /* local thread in group    */
+        size_t stripe_N = N / 4;
+        size_t base = (size_t)g * stripe_N;
+        size_t lo = base + (size_t)l * stripe_N / (size_t)Pq;
+        size_t hi = base + (size_t)(l + 1) * stripe_N / (size_t)Pq;
+        #pragma omp simd
+        for (size_t i = lo; i < hi; i++) A[i] = s * A[i] + B[i];
     }
 }
 
 /* ── harness ──────────────────────────────────────────────────────── */
 
 struct IterRecord {
-    std::string variant;
-    size_t TILE_Y, TILE_X;
+    std::string setup, variant;
     int rep, nthreads;
     double time_s, bw_gbs;
     double checksum;
@@ -216,30 +194,31 @@ static double reduce_sum(const float *__restrict__ A, size_t N) {
     return cs;
 }
 
-/* Run NWARMUP + NREP iterations of `run()`. When use_flush is true we
- * call flush_jacobi() between every iteration (cold-cache peak). When
- * false, no flush is issued and successive reps see warm caches -- this
- * matches the old common/bench_stream.cpp "peak" methodology.
- * `run()` applies the scale-add in-place to A. Stores per-rep records
- * in g_records; the headline print is the arithmetic mean across reps. */
-template <typename Run>
-static void bench_variant(const char *variant, size_t TY, size_t TX,
-                          Run &&run, float *A, float *B,
-                          size_t N1d, int nthreads,
-                          double ref_checksum_after_one,
-                          bool use_flush) {
+/* Run NWARMUP + NREP iterations of `run()` and record per-rep BW. When
+ * use_flush is true, a canonical 8192^2 Jacobi flush runs between every
+ * rep; otherwise the caches and prefetchers carry over. `reinit` is
+ * called once before the correctness check so A/B are in a known state.
+ * The correctness check uses the analytic invariant:
+ *     A[i] = s*1.0 + 2.0  = 3.0001 for every i after one RMW pass. */
+template <typename ReinitFn, typename RunFn>
+static void bench_variant(const char *setup, const char *variant,
+                          ReinitFn &&reinit, RunFn &&run,
+                          float *A, float *B, size_t N1d, int nthreads,
+                          double ref_checksum_after_one, bool use_flush) {
     const size_t N = N1d * N1d;
 
-    /* correctness: re-init A (and B for symmetry) then run once. */
-    first_touch_2x2(A, N1d, 1.0f);
-    first_touch_2x2(B, N1d, 2.0f);
+    /* correctness: re-init A and B, run once, reduce A. */
+    reinit();
     run();
     double cs = reduce_sum(A, N);
-    bool ok = std::fabs(cs - ref_checksum_after_one) <= 1e-3 * std::fabs(ref_checksum_after_one);
+    bool ok = std::fabs(cs - ref_checksum_after_one)
+              <= 1e-3 * std::fabs(ref_checksum_after_one);
     const char *status = ok ? "PASS" : "FAIL";
     if (!ok) {
-        fprintf(stderr, "  [%s TY=%zu TX=%zu flush=%s] CHECKSUM MISMATCH: got %.6e exp %.6e\n",
-                variant, TY, TX, use_flush ? "yes" : "no", cs, ref_checksum_after_one);
+        fprintf(stderr,
+                "  [%s/%s flush=%s] CHECKSUM MISMATCH: got %.6e exp %.6e\n",
+                setup, variant, use_flush ? "yes" : "no",
+                cs, ref_checksum_after_one);
     }
 
     /* warmups */
@@ -250,7 +229,7 @@ static void bench_variant(const char *variant, size_t TY, size_t TX,
 
     /* timed reps. Re-init not needed for bandwidth: the RMW moves the
      * same bytes regardless of A's value. */
-    const double data_bytes = 3.0 * (double)N * sizeof(float); /* 2 loads + 1 store */
+    const double data_bytes = 3.0 * (double)N * sizeof(float);
     for (int r = 0; r < NREP; r++) {
         if (use_flush) flush_jacobi();
         auto t0 = Clock::now();
@@ -258,19 +237,20 @@ static void bench_variant(const char *variant, size_t TY, size_t TX,
         auto t1 = Clock::now();
         double dt = elapsed_sec(t0, t1);
         double bw = data_bytes / dt / 1e9;
-        g_records.push_back({variant, TY, TX, r, nthreads, dt, bw, cs, status, use_flush});
+        g_records.push_back({setup, variant, r, nthreads, dt, bw, cs,
+                             status, use_flush});
     }
 
-    /* brief stdout summary (mean + range) */
+    /* brief stdout summary (min = peak, mean, max) */
     std::vector<double> bws;
     for (int i = (int)g_records.size() - NREP; i < (int)g_records.size(); i++)
         bws.push_back(g_records[i].bw_gbs);
     double sum = 0.0; for (double b : bws) sum += b;
     double mean = sum / (double)NREP;
     std::sort(bws.begin(), bws.end());
-    printf("  %-22s TY=%-5zu TX=%-5zu flush=%-3s mean %7.1f GB/s  [%7.1f .. %7.1f]  %s\n",
-           variant, TY, TX, use_flush ? "yes" : "no",
-           mean, bws.front(), bws.back(), status);
+    printf("  %-14s %-18s flush=%-3s  min %7.1f  mean %7.1f  max %7.1f GB/s  %s\n",
+           setup, variant, use_flush ? "yes" : "no",
+           bws.front(), mean, bws.back(), status);
 }
 
 int main(int argc, char **argv) {
@@ -290,11 +270,7 @@ int main(int argc, char **argv) {
 
     if (nthreads % 4 != 0) {
         fprintf(stderr, "[bench_stream cpu] WARNING: nthreads=%d not a multiple of 4; "
-                        "2x2 NUMA split will have uneven groups.\n", nthreads);
-    }
-    if (N1d % 2 != 0) {
-        fprintf(stderr, "[bench_stream cpu] ERROR: N1d=%zu must be even.\n", N1d);
-        return 1;
+                        "4_stripe_aware kernel will have uneven groups.\n", nthreads);
     }
 
     const size_t N     = N1d * N1d;
@@ -303,60 +279,84 @@ int main(int argc, char **argv) {
     printf("NUMA STREAM peak (E0)\n");
     printf("  N1d=%zu  N=%zu  (%.2f GiB/buf)  threads=%d  NUMA nodes=%d\n",
            N1d, N, bytes / (double)(1UL << 30), nthreads, numa_num_nodes());
-    printf("  reps=%d  warmup=%d  stat=arithmetic mean\n", NREP, NWARMUP);
-    printf("  two passes: flush=yes (cold cache, flush_jacobi between reps)\n");
-    printf("              flush=no  (warm cache, legacy peak methodology)\n\n");
+    printf("  reps=%d  warmup=%d  headline stat=peak (min time -> max BW)\n",
+           NREP, NWARMUP);
 
-    /* ── allocate + NUMA first-touch (2x2 quadrants) ─────────────────── */
     float *A = numa_alloc<float>(N);
     float *B = numa_alloc<float>(N);
-    first_touch_2x2(A, N1d, 1.0f);
-    first_touch_2x2(B, N1d, 2.0f);
 
-    /* ── reference checksum: run scale-add once, reduce A ────────────── */
-    /* A was just first-touched to 1.0f, so one RMW gives:
-     *   A[i] = 1.0001 * 1.0 + 2.0 = 3.0001 for every i.
-     * That's our analytic expected value independent of the variant. */
+    /* A first-touched to 1.0 and B to 2.0 => one RMW gives A[i]=3.0001   */
+    /* independent of variant, which makes the reference checksum cheap. */
+    const float  VA     = 1.0f, VB = 2.0f;
     const double ref_cs = 3.0001 * (double)N;
 
-    const size_t TILE_Ys[] = {16, 32, 64, 128, 256, 512};
-    const size_t TILE_Xs[] = {64, 128, 256, 512, 1024, 2048, 4096, 8192};
+    /* Kernel table */
+    struct KernelEntry {
+        const char *name;
+        void (*fn)(float *, const float *, size_t);
+    };
+    const KernelEntry kernels[] = {
+        { "1d_rows_static",   k_1d_rows_static   },
+        { "1d_rows_dynamic",  k_1d_rows_dynamic  },
+        { "1d_flat_static",   k_1d_flat_static   },
+        { "4_stripe_aware",   k_4_stripe_aware   },
+    };
+    const int NK = (int)(sizeof(kernels) / sizeof(kernels[0]));
 
-    for (bool use_flush : { true, false }) {
-        printf("\n######## flush=%s ########\n", use_flush ? "yes" : "no");
+    /* Setup table */
+    struct SetupEntry {
+        const char *name;
+        void (*apply)(float *, float *, size_t, float, float);
+    };
+    const SetupEntry setups[] = {
+        { "ft_flat",       setup_ft_flat       },
+        { "bind_stripe_4", setup_bind_stripe_4 },
+        { "interleave",    setup_interleave    },
+    };
+    const int NS = (int)(sizeof(setups) / sizeof(setups[0]));
 
-        /* ── 1D baselines ─────────────────────────────────────────────── */
-        printf("=== 1D default schedules ===\n");
-        bench_variant("1d_rows_static",     0, 0,
-                      [&]{ k_1d_rows_static(A, B, N1d); },
-                      A, B, N1d, nthreads, ref_cs, use_flush);
-        bench_variant("1d_collapse_static", 0, 0,
-                      [&]{ k_1d_collapse_static(A, B, N1d); },
-                      A, B, N1d, nthreads, ref_cs, use_flush);
-        bench_variant("1d_flat_static",     0, 0,
-                      [&]{ k_1d_flat_static(A, B, N1d); },
-                      A, B, N1d, nthreads, ref_cs, use_flush);
-        bench_variant("1d_rows_dynamic",    0, 0,
-                      [&]{ k_1d_rows_dynamic(A, B, N1d); },
-                      A, B, N1d, nthreads, ref_cs, use_flush);
+    for (int si = 0; si < NS; si++) {
+        const char *setup_name = setups[si].name;
+        printf("\n######## setup=%s ########\n", setup_name);
 
-        /* ── 2x2 NUMA-aware tiled sweep ──────────────────────────────── */
-        printf("\n=== 2x2 NUMA tiled (inner TILE_Y x TILE_X sweep) ===\n");
-        for (size_t TY : TILE_Ys)
-            for (size_t TX : TILE_Xs) {
-                bench_variant("2x2_numa_tiled", TY, TX,
-                              [&]{ k_2x2_numa_tiled(A, B, N1d, TY, TX); },
-                              A, B, N1d, nthreads, ref_cs, use_flush);
+        /* Apply the NUMA placement policy and touch every page. */
+        setups[si].apply(A, B, N, VA, VB);
+
+        /* Dump the actual page distribution so a reviewer can see which
+         * nodes the pages landed on without guessing.               */
+        char lblA[64], lblB[64];
+        std::snprintf(lblA, sizeof(lblA), "%s A", setup_name);
+        std::snprintf(lblB, sizeof(lblB), "%s B", setup_name);
+        numa_report_distribution(A, bytes, lblA);
+        numa_report_distribution(B, bytes, lblB);
+
+        for (int ki = 0; ki < NK; ki++) {
+            auto kfn = kernels[ki].fn;
+            const char *kname = kernels[ki].name;
+            auto reinit = [&]{
+                /* Re-set A and B to canonical values under the current
+                 * placement policy. Uses the same schedule as ft_flat
+                 * for simplicity; this does not change page placement
+                 * (pages are already bound), only the values.        */
+                #pragma omp parallel for schedule(static)
+                for (size_t i = 0; i < N; ++i) { A[i] = VA; B[i] = VB; }
+            };
+            auto run = [&]{ kfn(A, B, N1d); };
+
+            for (bool fl : { true, false }) {
+                bench_variant(setup_name, kname, reinit, run,
+                              A, B, N1d, nthreads, ref_cs, fl);
             }
+        }
     }
 
-    /* ── write per-iteration CSV ──────────────────────────────────────── */
+    /* ── write per-iteration CSV ──────────────────────────────────── */
     FILE *fp = fopen(csv_path, "w");
     if (!fp) { perror(csv_path); return 1; }
-    fprintf(fp, "variant,TILE_Y,TILE_X,N,rep,threads,time_s,bw_gbs,checksum,status,flush\n");
+    fprintf(fp, "setup,variant,N,rep,threads,time_s,bw_gbs,checksum,status,flush\n");
     for (const auto &r : g_records)
-        fprintf(fp, "%s,%zu,%zu,%zu,%d,%d,%.9f,%.3f,%.6e,%s,%s\n",
-                r.variant.c_str(), r.TILE_Y, r.TILE_X, N,
+        fprintf(fp, "%s,%s,%zu,%d,%d,%.9f,%.3f,%.6e,%s,%s\n",
+                r.setup.c_str(), r.variant.c_str(), N,
                 r.rep, r.nthreads, r.time_s, r.bw_gbs, r.checksum, r.status,
                 r.flush ? "yes" : "no");
     fclose(fp);

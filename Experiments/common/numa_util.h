@@ -51,6 +51,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <vector>
 #include <sys/mman.h>
 #include <sys/syscall.h>
 #include <unistd.h>
@@ -67,9 +68,25 @@
   #ifndef MPOL_BIND
     #define MPOL_BIND 2
   #endif
+  #ifndef MPOL_INTERLEAVE
+    #define MPOL_INTERLEAVE 3
+  #endif
+  #ifndef MPOL_MF_MOVE
+    #define MPOL_MF_MOVE 2
+  #endif
   static inline long mbind(void*, unsigned long, int, const unsigned long*, unsigned long, unsigned) {
     return 0;  /* stub: no-op when numaif.h is unavailable */
   }
+  static inline long move_pages(int, unsigned long, void**, const int*, int*, int) {
+    return -1;
+  }
+#endif
+
+/* Linux syscall wrapper for move_pages(). We query per-page status by
+ * passing nodes=NULL; the kernel then fills status[i] with the node
+ * currently hosting pages[i], or a negative error code. */
+#ifndef NUMA_UTIL_HAS_MOVE_PAGES
+#define NUMA_UTIL_HAS_MOVE_PAGES NUMA_UTIL_HAS_NUMAIF
 #endif
 
 /* ------------------------------------------------------------------ */
@@ -171,8 +188,16 @@ static inline void first_touch_copy(T* __restrict__ dst,
 /* ------------------------------------------------------------------ */
 /* Partition [base, base+total_bytes) into D contiguous chunks aligned
  * to page boundaries and mbind each chunk to its own NUMA node. Then
- * first-touch every page to realize the binding. Safe to call even
- * when libnuma / numaif.h is unavailable (mbind becomes a no-op). */
+ * first-touch every page to realize the binding.
+ *
+ * MPOL_MF_MOVE is passed so that pages that were already faulted on a
+ * different node (e.g. from an earlier setup variant) are migrated to
+ * the requested node rather than left in place. This makes the call
+ * idempotent: the resulting distribution is always 0,1,2,...,D-1 for
+ * the four contiguous stripes, regardless of the buffer's prior state.
+ *
+ * Safe to call even when libnuma / numaif.h is unavailable (mbind
+ * becomes a no-op; distribution reverts to the kernel's default). */
 static inline void bind_and_touch(void* base, size_t total_bytes) {
   if (!base || !total_bytes) return;
   const size_t ps = numa_page_size();
@@ -187,7 +212,7 @@ static inline void bind_and_touch(void* base, size_t total_bytes) {
     if (phi <= plo) continue;
     unsigned long mask = 1UL << d;
     mbind(reinterpret_cast<char*>(base) + plo, phi - plo, MPOL_BIND,
-          &mask, 64, 0);
+          &mask, 64, MPOL_MF_MOVE);
   }
 
   /* First-touch one byte per page. The parallel_for distributes page
@@ -198,4 +223,76 @@ static inline void bind_and_touch(void* base, size_t total_bytes) {
     volatile char* p = reinterpret_cast<volatile char*>(base) + i;
     *p = 0;
   }
+}
+
+/* Apply MPOL_INTERLEAVE across all D NUMA nodes with MPOL_MF_MOVE so any
+ * previously-placed pages are re-distributed round-robin. Then touch
+ * every page to realize the new placement. */
+static inline void interleave_and_touch(void* base, size_t total_bytes) {
+  if (!base || !total_bytes) return;
+  const size_t ps = numa_page_size();
+  const int D = numa_num_nodes();
+  unsigned long mask = 0;
+  for (int d = 0; d < D; ++d) mask |= (1UL << d);
+  const size_t total_pages = (total_bytes + ps - 1) / ps;
+  mbind(base, total_pages * ps, MPOL_INTERLEAVE, &mask, 64, MPOL_MF_MOVE);
+  #pragma omp parallel for schedule(static)
+  for (size_t i = 0; i < total_bytes; i += ps) {
+    volatile char* p = reinterpret_cast<volatile char*>(base) + i;
+    *p = 0;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/*  Page-placement introspection                                       */
+/* ------------------------------------------------------------------ */
+/* Query the actual NUMA node hosting each page of [base, base+bytes).
+ * Returns a vector of length ceil(bytes / page_size); each entry is
+ * the kernel-reported node id, or a negative value if move_pages()
+ * could not resolve that page (e.g. not yet faulted in). */
+static inline std::vector<int> numa_page_nodes(const void* base, size_t bytes) {
+  const size_t ps = numa_page_size();
+  const size_t npages = (bytes + ps - 1) / ps;
+  std::vector<int> status(npages, -1);
+#if NUMA_UTIL_HAS_MOVE_PAGES
+  std::vector<void*> addrs(npages);
+  for (size_t i = 0; i < npages; ++i) {
+    addrs[i] = reinterpret_cast<void*>(
+                 reinterpret_cast<uintptr_t>(base) + i * ps);
+  }
+  /* pid=0 means the calling process; nodes=NULL means "query status"  */
+  /* rather than "migrate". flags=0 is required for the query form.    */
+  long rc = move_pages(0, (unsigned long)npages,
+                       addrs.data(), nullptr, status.data(), 0);
+  (void)rc;
+#else
+  (void)base;
+#endif
+  return status;
+}
+
+/* Human-readable summary of numa_page_nodes(). Prints one line per NUMA
+ * node with both absolute page count and percentage of the buffer.
+ * Useful to verify that a bind_and_touch / interleave_and_touch actually
+ * did what we asked for. */
+static inline void numa_report_distribution(const void* base, size_t bytes,
+                                            const char* label = nullptr) {
+  auto st = numa_page_nodes(base, bytes);
+  const size_t ps = numa_page_size();
+  const int D = numa_num_nodes();
+  std::vector<size_t> hist((size_t)(D + 1), 0);   /* last slot = unplaced */
+  for (int n : st) {
+    if (n >= 0 && n < D) hist[(size_t)n]++;
+    else                 hist[(size_t)D]++;
+  }
+  const size_t total = st.size();
+  const double mib = (double)total * (double)ps / (1024.0 * 1024.0);
+  std::printf("[numa] %s  %zu pages  %.1f MiB (ps=%zu KiB)\n",
+              label ? label : "distribution", total, mib, ps / 1024);
+  for (int d = 0; d < D; ++d) {
+    double pct = total ? 100.0 * (double)hist[(size_t)d] / (double)total : 0.0;
+    std::printf("  node %d : %8zu pages (%5.1f%%)\n", d, hist[(size_t)d], pct);
+  }
+  if (hist[(size_t)D])
+    std::printf("  unplaced: %8zu pages\n", hist[(size_t)D]);
 }
