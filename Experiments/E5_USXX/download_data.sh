@@ -18,8 +18,8 @@ cd "$(dirname "${BASH_SOURCE[0]}")"
 
 # TODO(AD reviewers): once the artifact is archived on Zenodo, replace
 # this direct PolyBox link with the Zenodo DOI mirror.
-URL="${USXX_DATA_URL:-https://polybox.ethz.ch/index.php/s/4VyOdA5CnURnjUV/download/addusxx_g_bin_data.zip}"
-ZIP="addusxx_g_bin_data.zip"
+URL="${USXX_DATA_URL:-https://polybox.ethz.ch/index.php/s/sBgGF5y4D2nbk25/download/bin_data_addusxx.tar.gz}"
+ZIP="addusxx_g_bin_data.tar.gz"
 
 if [[ -d bin && -n "$(ls -A bin 2>/dev/null)" ]]; then
   echo "[E5 download] bin/ already populated -- skip."
@@ -30,12 +30,12 @@ echo "[E5 download] fetching $URL"
 wget --no-verbose --show-progress -O "$ZIP" "$URL"
 
 echo "[E5 download] unpacking $ZIP"
-unzip -q -o "$ZIP"
+tar -xzf "$ZIP"
 rm -f "$ZIP"
 
-if [[ ! -d bin ]]; then
-  echo "[E5 download] ERROR: expected ./bin/ directory not found after unzip" >&2
+if [[ ! -d bin_data_addusxx ]]; then
+  echo "[E5 download] ERROR: expected ./bin_data_addusxx/ directory not found after unzip" >&2
   exit 1
 fi
 
-echo "[E5 download] done -- $(ls bin | wc -l) files under bin/"
+echo "[E5 download] done -- $(ls bin_data_addusxx | wc -l) files under bin_data_addusxx/"

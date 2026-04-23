@@ -1,116 +1,343 @@
 /*
- * bench_stream.cpp -- NUMA-aware CPU STREAM peak (scale-add RMW).
+ * bench_stream.cpp -- NUMA-aware CPU STREAM sweep (scale-add RMW) on an
+ * N x N fp32 matrix. Kernel:  A[y,x] = s * A[y,x] + B[y,x]
+ * Traffic: 2 loads + 1 store per fp32 = 12 bytes per element.
  *
- * Kernel:  A[i] = s * A[i] + B[i]
- * Traffic: 2 loads + 1 store per fp32 element (12 bytes per element).
+ * Modelled after E1_MatrixAdd/bench_cpu.cpp: uses the shared
+ * ../common/numa_util.h allocators, the canonical cache-flush kernel
+ * from ../common/jacobi_flush.h, NREP=100/NWARMUP=5, and writes one
+ * CSV row per repetition for violin plots.
  *
- * Buffers are 2D square (N x N, fp32) and use:
- *   - mmap(MAP_ANONYMOUS | MAP_NORESERVE) so pages are unfaulted
- *   - madvise(MADV_HUGEPAGE) so the kernel backs with transparent hugepages
- *   - first-touch block initialization under the active OMP binding so pages
- *     land on the NUMA node of the thread that owns the row range
+ * NUMA model:
+ *   The matrix is first-touched as a 2x2 grid of quadrants (one per
+ *   NUMA domain on beverin: 4 domains x 24 Zen4 cores = 96 threads ->
+ *   24 threads per quadrant). OMP_PLACES in common/setup_beverin.sh
+ *   pins each group to NUMA-local cores.
  *
- * Output CSV (single row, overwrites file each run):
- *   device,bw_gbs,bw_tbs,N,bytes_per_iter,reps,threads
+ * Variants benchmarked:
+ *   - 1d_rows_static       : OMP for over outer rows, schedule(static)
+ *   - 1d_collapse_static   : OMP for collapse(2) over (y,x), static
+ *   - 1d_flat_static       : flat 1D partition among threads
+ *   - 1d_rows_dynamic      : rows, schedule(dynamic, large chunk)
+ *   - 2x2_numa_tiled       : each thread stays inside its NUMA quadrant,
+ *                            sweep inner tile (TILE_Y, TILE_X)
  *
- * Usage: bench_stream [out.csv=stream_peak_cpu.csv] [N=16384] [reps=50]
+ * Output CSV (one row per repetition):
+ *   variant,TILE_Y,TILE_X,N,rep,threads,time_s,bw_gbs,checksum,status
+ *
+ * Usage: bench_stream <csv_file> [N1d=16384] [nthreads=0=env]
  */
 
 #include <cstdio>
 #include <cstdlib>
 #include <cstdint>
-#include <cstring>
-#include <sys/mman.h>
-#include <unistd.h>
+#include <cmath>
+#include <chrono>
+#include <vector>
+#include <string>
+#include <algorithm>
+
 #include <omp.h>
 
-static float *alloc_huge(size_t bytes) {
-    void *p = mmap(nullptr, bytes, PROT_READ | PROT_WRITE,
-                   MAP_PRIVATE | MAP_ANONYMOUS | MAP_NORESERVE, -1, 0);
-    if (p == MAP_FAILED) { perror("mmap"); exit(1); }
-    madvise(p, bytes, MADV_HUGEPAGE);
-    return (float *)p;
+#include "../common/jacobi_flush.h"  /* also transitively pulls numa_util.h */
+
+#define NREP    100
+#define NWARMUP 5
+
+using Clock = std::chrono::high_resolution_clock;
+static inline double elapsed_sec(Clock::time_point t0, Clock::time_point t1) {
+    return std::chrono::duration<double>(t1 - t0).count();
 }
 
-static void first_touch(float *__restrict__ a, size_t N, float val) {
+/* ── 2x2 NUMA first-touch ─────────────────────────────────────────────
+ * P threads split into 4 groups of P/4 (one per NUMA quadrant). Each
+ * group row-partitions its quadrant among its threads so every page
+ * is first-touched by a NUMA-local thread.
+ */
+static void first_touch_2x2(float *__restrict__ a, size_t N1d, float val) {
     #pragma omp parallel
     {
         int tid = omp_get_thread_num();
-        int nth = omp_get_num_threads();
-        size_t lo = (size_t)N * tid / nth;
-        size_t hi = (size_t)N * (tid + 1) / nth;
-        for (size_t i = lo; i < hi; i++) a[i] = val;
+        int P   = omp_get_num_threads();
+        int Pq  = P / 4;
+        int q   = tid / Pq;
+        int lid = tid % Pq;
+        int qy  = q / 2;
+        int qx  = q % 2;
+
+        size_t H   = N1d / 2;
+        size_t y0  = (size_t)qy * H;
+        size_t x0  = (size_t)qx * H;
+        size_t y1  = y0 + H;
+        size_t x1  = x0 + H;
+
+        size_t rows_per = H / Pq;
+        size_t ly0 = y0 + (size_t)lid * rows_per;
+        size_t ly1 = (lid == Pq - 1) ? y1 : ly0 + rows_per;
+
+        for (size_t y = ly0; y < ly1; y++)
+            for (size_t x = x0; x < x1; x++)
+                a[y * N1d + x] = val;
     }
 }
 
-static double run_scale_add(float *__restrict__ A, const float *__restrict__ B, size_t N, int reps) {
+/* ── kernels ──────────────────────────────────────────────────────── */
+
+static void k_1d_rows_static(float *__restrict__ A, const float *__restrict__ B,
+                             size_t N1d) {
     const float s = 1.0001f;
-    /* warmup */
+    #pragma omp parallel for schedule(static)
+    for (size_t y = 0; y < N1d; y++) {
+        size_t row = y * N1d;
+        #pragma omp simd
+        for (size_t x = 0; x < N1d; x++) {
+            size_t i = row + x;
+            A[i] = s * A[i] + B[i];
+        }
+    }
+}
+
+static void k_1d_collapse_static(float *__restrict__ A, const float *__restrict__ B,
+                                 size_t N1d) {
+    const float s = 1.0001f;
+    #pragma omp parallel for collapse(2) schedule(static)
+    for (size_t y = 0; y < N1d; y++)
+        for (size_t x = 0; x < N1d; x++) {
+            size_t i = y * N1d + x;
+            A[i] = s * A[i] + B[i];
+        }
+}
+
+static void k_1d_flat_static(float *__restrict__ A, const float *__restrict__ B,
+                             size_t N1d) {
+    const float s = 1.0001f;
+    size_t N = N1d * N1d;
     #pragma omp parallel
     {
         int tid = omp_get_thread_num();
-        int nth = omp_get_num_threads();
-        size_t lo = (size_t)N * tid / nth;
-        size_t hi = (size_t)N * (tid + 1) / nth;
+        int P   = omp_get_num_threads();
+        size_t lo = (size_t)N * tid / P;
+        size_t hi = (size_t)N * (tid + 1) / P;
+        #pragma omp simd
         for (size_t i = lo; i < hi; i++) A[i] = s * A[i] + B[i];
     }
-    double best = 1e30;
-    for (int r = 0; r < reps; r++) {
-        double t0 = 0, t1 = 0;
-        #pragma omp parallel
-        {
-            #pragma omp barrier
-            #pragma omp master
-            t0 = omp_get_wtime();
-            #pragma omp barrier
+}
 
-            int tid = omp_get_thread_num();
-            int nth = omp_get_num_threads();
-            size_t lo = (size_t)N * tid / nth;
-            size_t hi = (size_t)N * (tid + 1) / nth;
-            for (size_t i = lo; i < hi; i++) A[i] = s * A[i] + B[i];
-
-            #pragma omp barrier
-            #pragma omp master
-            t1 = omp_get_wtime();
+static void k_1d_rows_dynamic(float *__restrict__ A, const float *__restrict__ B,
+                              size_t N1d) {
+    const float s = 1.0001f;
+    const size_t chunk = std::max<size_t>(1, N1d / (size_t)(4 * omp_get_max_threads()));
+    #pragma omp parallel for schedule(dynamic, 1) firstprivate(chunk)
+    for (size_t cy = 0; cy < N1d; cy += chunk) {
+        size_t cyhi = std::min(cy + chunk, N1d);
+        for (size_t y = cy; y < cyhi; y++) {
+            size_t row = y * N1d;
+            #pragma omp simd
+            for (size_t x = 0; x < N1d; x++) {
+                size_t i = row + x;
+                A[i] = s * A[i] + B[i];
+            }
         }
-        double dt = t1 - t0;
-        if (dt < best) best = dt;
     }
-    /* 2 loads + 1 store = 3 * sizeof(float) bytes per element */
-    return 3.0 * (double)N * sizeof(float) / best;  /* bytes / s */
+}
+
+/*
+ * 2x2 NUMA-aware tiled kernel with inner cache-blocking.
+ * Each thread stays inside the quadrant it first-touched, then sweeps
+ * its row-slice of the quadrant in TILE_Y x TILE_X tiles.
+ */
+static void k_2x2_numa_tiled(float *__restrict__ A, const float *__restrict__ B,
+                             size_t N1d, size_t TILE_Y, size_t TILE_X) {
+    const float s = 1.0001f;
+    #pragma omp parallel
+    {
+        int tid = omp_get_thread_num();
+        int P   = omp_get_num_threads();
+        int Pq  = P / 4;
+        int q   = tid / Pq;
+        int lid = tid % Pq;
+        int qy  = q / 2;
+        int qx  = q % 2;
+
+        size_t H   = N1d / 2;
+        size_t y0  = (size_t)qy * H;
+        size_t x0  = (size_t)qx * H;
+        size_t y1  = y0 + H;
+        size_t x1  = x0 + H;
+
+        size_t rows_per = H / Pq;
+        size_t ly0 = y0 + (size_t)lid * rows_per;
+        size_t ly1 = (lid == Pq - 1) ? y1 : ly0 + rows_per;
+
+        for (size_t ty = ly0; ty < ly1; ty += TILE_Y) {
+            size_t tyhi = std::min(ty + TILE_Y, ly1);
+            for (size_t tx = x0; tx < x1; tx += TILE_X) {
+                size_t txhi = std::min(tx + TILE_X, x1);
+                for (size_t y = ty; y < tyhi; y++) {
+                    size_t row = y * N1d;
+                    #pragma omp simd
+                    for (size_t x = tx; x < txhi; x++) {
+                        size_t i = row + x;
+                        A[i] = s * A[i] + B[i];
+                    }
+                }
+            }
+        }
+    }
+}
+
+/* ── harness ──────────────────────────────────────────────────────── */
+
+struct IterRecord {
+    std::string variant;
+    size_t TILE_Y, TILE_X;
+    int rep, nthreads;
+    double time_s, bw_gbs;
+    double checksum;
+    const char *status;
+};
+
+static std::vector<IterRecord> g_records;
+
+static double reduce_sum(const float *__restrict__ A, size_t N) {
+    double cs = 0.0;
+    #pragma omp parallel for reduction(+:cs) schedule(static)
+    for (size_t i = 0; i < N; i++) cs += (double)A[i];
+    return cs;
+}
+
+/* Run NWARMUP + NREP iterations of `run()`, with a cache flush between
+ * every iteration. `run()` applies the scale-add in-place to A. Stores
+ * per-rep records in g_records. */
+template <typename Run>
+static void bench_variant(const char *variant, size_t TY, size_t TX,
+                          Run &&run, float *A, float *B,
+                          size_t N1d, int nthreads,
+                          double ref_checksum_after_one) {
+    const size_t N = N1d * N1d;
+
+    /* correctness: re-init A (and B for symmetry) then run once. */
+    first_touch_2x2(A, N1d, 1.0f);
+    first_touch_2x2(B, N1d, 2.0f);
+    run();
+    double cs = reduce_sum(A, N);
+    bool ok = std::fabs(cs - ref_checksum_after_one) <= 1e-3 * std::fabs(ref_checksum_after_one);
+    const char *status = ok ? "PASS" : "FAIL";
+    if (!ok) {
+        fprintf(stderr, "  [%s TY=%zu TX=%zu] CHECKSUM MISMATCH: got %.6e exp %.6e\n",
+                variant, TY, TX, cs, ref_checksum_after_one);
+    }
+
+    /* warmups */
+    for (int w = 0; w < NWARMUP; w++) {
+        flush_jacobi();
+        run();
+    }
+
+    /* timed reps (flush between every one). Re-init not needed for
+     * bandwidth: the RMW moves the same bytes regardless of A's value. */
+    const double data_bytes = 3.0 * (double)N * sizeof(float); /* 2 loads + 1 store */
+    for (int r = 0; r < NREP; r++) {
+        flush_jacobi();
+        auto t0 = Clock::now();
+        run();
+        auto t1 = Clock::now();
+        double dt = elapsed_sec(t0, t1);
+        double bw = data_bytes / dt / 1e9;
+        g_records.push_back({variant, TY, TX, r, nthreads, dt, bw, cs, status});
+    }
+
+    /* brief stdout summary (median + range) */
+    std::vector<double> bws;
+    for (int i = (int)g_records.size() - NREP; i < (int)g_records.size(); i++)
+        bws.push_back(g_records[i].bw_gbs);
+    std::sort(bws.begin(), bws.end());
+    printf("  %-22s TY=%-5zu TX=%-5zu  median %7.1f GB/s  [%7.1f .. %7.1f]  %s\n",
+           variant, TY, TX, bws[NREP/2], bws[0], bws[NREP-1], status);
 }
 
 int main(int argc, char **argv) {
-    const char *out   = (argc > 1) ? argv[1] : "stream_peak_cpu.csv";
-    size_t       N1d  = (argc > 2) ? (size_t)atoll(argv[2]) : 16384;  /* square edge */
-    int          reps = (argc > 3) ? atoi(argv[3]) : 50;
+    if (argc < 2) {
+        fprintf(stderr,
+                "Usage: %s <csv_file> [N1d=16384] [nthreads=0=env]\n", argv[0]);
+        return 1;
+    }
+    const char *csv_path = argv[1];
+    size_t N1d          = (argc > 2) ? (size_t)atoll(argv[2]) : 16384;
+    int    req_threads  = (argc > 3) ? atoi(argv[3])          : 0;
+    if (req_threads > 0) omp_set_num_threads(req_threads);
 
-    size_t N     = N1d * N1d;
-    size_t bytes = N * sizeof(float);
-    int    P     = omp_get_max_threads();
+    int nthreads = 0;
+    #pragma omp parallel
+    { nthreads = omp_get_num_threads(); }
 
-    fprintf(stderr, "[bench_stream cpu] N=%zux%zu (%.2f GiB per buffer), threads=%d, reps=%d\n",
-            N1d, N1d, bytes / (double)(1UL << 30), P, reps);
+    if (nthreads % 4 != 0) {
+        fprintf(stderr, "[bench_stream cpu] WARNING: nthreads=%d not a multiple of 4; "
+                        "2x2 NUMA split will have uneven groups.\n", nthreads);
+    }
+    if (N1d % 2 != 0) {
+        fprintf(stderr, "[bench_stream cpu] ERROR: N1d=%zu must be even.\n", N1d);
+        return 1;
+    }
 
-    float *A = alloc_huge(bytes);
-    float *B = alloc_huge(bytes);
-    first_touch(A, N, 1.0f);
-    first_touch(B, N, 2.0f);
+    const size_t N     = N1d * N1d;
+    const size_t bytes = N * sizeof(float);
 
-    double bw_bps = run_scale_add(A, B, N, reps);
-    double bw_gbs = bw_bps * 1e-9;
-    double bw_tbs = bw_bps * 1e-12;
-    fprintf(stderr, "[bench_stream cpu] peak = %.2f GB/s (%.3f TB/s)\n", bw_gbs, bw_tbs);
+    printf("NUMA STREAM peak (E0)\n");
+    printf("  N1d=%zu  N=%zu  (%.2f GiB/buf)  threads=%d  NUMA nodes=%d\n",
+           N1d, N, bytes / (double)(1UL << 30), nthreads, numa_num_nodes());
+    printf("  reps=%d  warmup=%d  cache flush: flush_jacobi()\n\n", NREP, NWARMUP);
 
-    FILE *f = fopen(out, "w");
-    if (!f) { perror("fopen"); return 1; }
-    fprintf(f, "device,bw_gbs,bw_tbs,N,bytes_per_iter,reps,threads\n");
-    fprintf(f, "cpu,%.4f,%.6f,%zu,%zu,%d,%d\n",
-            bw_gbs, bw_tbs, N, (size_t)(3 * bytes), reps, P);
-    fclose(f);
+    /* ── allocate + NUMA first-touch (2x2 quadrants) ─────────────────── */
+    float *A = numa_alloc<float>(N);
+    float *B = numa_alloc<float>(N);
+    first_touch_2x2(A, N1d, 1.0f);
+    first_touch_2x2(B, N1d, 2.0f);
 
-    munmap(A, bytes);
-    munmap(B, bytes);
+    /* ── reference checksum: run scale-add once, reduce A ────────────── */
+    /* A was just first-touched to 1.0f, so one RMW gives:
+     *   A[i] = 1.0001 * 1.0 + 2.0 = 3.0001 for every i.
+     * That's our analytic expected value independent of the variant. */
+    const double ref_cs = 3.0001 * (double)N;
+
+    /* ── 1D baselines ─────────────────────────────────────────────────── */
+    printf("=== 1D default schedules ===\n");
+    bench_variant("1d_rows_static",     0, 0,
+                  [&]{ k_1d_rows_static(A, B, N1d); },
+                  A, B, N1d, nthreads, ref_cs);
+    bench_variant("1d_collapse_static", 0, 0,
+                  [&]{ k_1d_collapse_static(A, B, N1d); },
+                  A, B, N1d, nthreads, ref_cs);
+    bench_variant("1d_flat_static",     0, 0,
+                  [&]{ k_1d_flat_static(A, B, N1d); },
+                  A, B, N1d, nthreads, ref_cs);
+    bench_variant("1d_rows_dynamic",    0, 0,
+                  [&]{ k_1d_rows_dynamic(A, B, N1d); },
+                  A, B, N1d, nthreads, ref_cs);
+
+    /* ── 2x2 NUMA-aware tiled sweep ───────────────────────────────────── */
+    printf("\n=== 2x2 NUMA tiled (inner TILE_Y x TILE_X sweep) ===\n");
+    const size_t TILE_Ys[] = {16, 32, 64, 128, 256, 512};
+    const size_t TILE_Xs[] = {64, 128, 256, 512, 1024, 2048, 4096, 8192};
+    for (size_t TY : TILE_Ys)
+        for (size_t TX : TILE_Xs) {
+            bench_variant("2x2_numa_tiled", TY, TX,
+                          [&]{ k_2x2_numa_tiled(A, B, N1d, TY, TX); },
+                          A, B, N1d, nthreads, ref_cs);
+        }
+
+    /* ── write per-iteration CSV ──────────────────────────────────────── */
+    FILE *fp = fopen(csv_path, "w");
+    if (!fp) { perror(csv_path); return 1; }
+    fprintf(fp, "variant,TILE_Y,TILE_X,N,rep,threads,time_s,bw_gbs,checksum,status\n");
+    for (const auto &r : g_records)
+        fprintf(fp, "%s,%zu,%zu,%zu,%d,%d,%.9f,%.3f,%.6e,%s\n",
+                r.variant.c_str(), r.TILE_Y, r.TILE_X, N,
+                r.rep, r.nthreads, r.time_s, r.bw_gbs, r.checksum, r.status);
+    fclose(fp);
+    printf("\nWrote %zu records to %s\n", g_records.size(), csv_path);
+
+    numa_dealloc(A, N);
+    numa_dealloc(B, N);
     return 0;
 }
