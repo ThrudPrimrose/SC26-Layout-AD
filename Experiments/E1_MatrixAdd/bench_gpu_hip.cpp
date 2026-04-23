@@ -326,6 +326,8 @@ struct KernelConfig {
     int         tile_rows;
     int         tile_cols;
     size_t      smem_bytes;
+    const void* kernel_fn;       /* kernel fn ptr for hipFuncSetAttribute; */
+                                 /* nullptr for kernels with 0 dynamic smem */
     bool        uses_B_rm;       /* true = uses row-major B (control) */
 };
 
@@ -344,7 +346,7 @@ void reg_direct() {
     g_configs.push_back({name,
         [blk, grd](const double* A, const double* B, double* C) {
             kernel_direct<BX, BY, TX, TY><<<grd, blk>>>(A, B, C);
-        }, TR, TC, 0, false});
+        }, TR, TC, 0, nullptr, false});
 }
 
 template<int BX, int BY, int TX, int TY>
@@ -359,7 +361,7 @@ void reg_direct_T() {
     g_configs.push_back({name,
         [blk, grd](const double* A, const double* B, double* C) {
             kernel_direct_T<BX, BY, TX, TY><<<grd, blk>>>(A, B, C);
-        }, TR, TC, 0, false});
+        }, TR, TC, 0, nullptr, false});
 }
 
 template<int BX, int BY, int TX, int TY>
@@ -373,10 +375,12 @@ void reg_tiled() {
     snprintf(name, sizeof(name),
              "tiled+smem    BX=%-3d BY=%-3d TX=%-2d TY=%-2d  tile=%dx%d",
              BX, BY, TX, TY, TR, TC);
+    const void* kfn = reinterpret_cast<const void*>(
+        &kernel_tiled<BX, BY, TX, TY>);
     g_configs.push_back({name,
         [blk, grd, smem](const double* A, const double* B, double* C) {
             kernel_tiled<BX, BY, TX, TY><<<grd, blk, smem>>>(A, B, C);
-        }, TR, TC, smem, false});
+        }, TR, TC, smem, kfn, false});
 }
 
 template<int BX, int BY, int TX, int TY>
@@ -391,7 +395,7 @@ void reg_control() {
     g_configs.push_back({name,
         [blk, grd](const double* A, const double* B_rm, double* C) {
             kernel_control<BX, BY, TX, TY><<<grd, blk>>>(A, B_rm, C);
-        }, TR, TC, 0, true});
+        }, TR, TC, 0, nullptr, true});
 }
 
 /* ================================================================
@@ -475,14 +479,32 @@ static Result run_bench(const KernelConfig& cfg,
     const double* dB = cfg.uses_B_rm ? dB_rm : dB_cm;
     double expected_cs = cfg.uses_B_rm ? ref_cs_rm : ref_cs;
 
-    /* check smem limit */
-    if (cfg.smem_bytes > 0) {
+    /* check smem limit against the opt-in cap (MI300A: 64 KiB hard LDS; */
+    /* on Hopper via HIP this field would also report 227 KiB) and opt  */
+    /* the kernel in via hipFuncSetAttribute if the requested size      */
+    /* exceeds the default cap. Only then do we genuinely skip.          */
+    if (cfg.smem_bytes > 0 && cfg.kernel_fn) {
         hipDeviceProp_t prop;
         CUDA_CHECK(hipGetDeviceProperties(&prop, 0));
-        if (cfg.smem_bytes > (size_t)prop.sharedMemPerBlock) {
-            printf("  %-62s  SKIP (smem %zu > %d)\n",
-                   cfg.name.c_str(), cfg.smem_bytes, prop.sharedMemPerBlock);
+        const size_t hw_limit = prop.sharedMemPerBlockOptin > 0
+                                  ? (size_t)prop.sharedMemPerBlockOptin
+                                  : (size_t)prop.sharedMemPerBlock;
+        if (cfg.smem_bytes > hw_limit) {
+            printf("  %-62s  SKIP (smem %zu > %zu hw limit)\n",
+                   cfg.name.c_str(), cfg.smem_bytes, hw_limit);
             return {cfg.name, 0, 0, false};
+        }
+        if (cfg.smem_bytes > (size_t)prop.sharedMemPerBlock) {
+            hipError_t e = hipFuncSetAttribute(
+                cfg.kernel_fn,
+                hipFuncAttributeMaxDynamicSharedMemorySize,
+                (int)cfg.smem_bytes);
+            if (e != hipSuccess) {
+                printf("  %-62s  SKIP (smem opt-in failed at %zu B: %s)\n",
+                       cfg.name.c_str(), cfg.smem_bytes,
+                       hipGetErrorString(e));
+                return {cfg.name, 0, 0, false};
+            }
         }
     }
 

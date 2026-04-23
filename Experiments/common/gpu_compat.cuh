@@ -80,6 +80,10 @@
   #define gpuGetLastError          hipGetLastError
   #define gpuGetErrorString        hipGetErrorString
 
+  /* ---- kernel attribute opt-in (dynamic shared memory, etc.) ---- */
+  #define gpuFuncSetAttribute                         hipFuncSetAttribute
+  #define gpuFuncAttributeMaxDynamicSharedMemorySize  hipFuncAttributeMaxDynamicSharedMemorySize
+
   static constexpr gpuError_t gpuSuccess = hipSuccess;
 
   /* ---- cuda* aliases so legacy bench code written against CUDA
@@ -111,6 +115,8 @@
   #define cudaGetDeviceProperties    hipGetDeviceProperties
   #define cudaGetLastError           hipGetLastError
   #define cudaGetErrorString         hipGetErrorString
+  #define cudaFuncSetAttribute                         hipFuncSetAttribute
+  #define cudaFuncAttributeMaxDynamicSharedMemorySize  hipFuncAttributeMaxDynamicSharedMemorySize
   using cudaError_t                = hipError_t;
   using cudaEvent_t                = hipEvent_t;
   using cudaStream_t               = hipStream_t;
@@ -167,6 +173,10 @@
   #define gpuGetDeviceProperties   cudaGetDeviceProperties
   #define gpuGetLastError          cudaGetLastError
   #define gpuGetErrorString        cudaGetErrorString
+
+  /* ---- kernel attribute opt-in (dynamic shared memory, etc.) ---- */
+  #define gpuFuncSetAttribute                         cudaFuncSetAttribute
+  #define gpuFuncAttributeMaxDynamicSharedMemorySize  cudaFuncAttributeMaxDynamicSharedMemorySize
 
   static constexpr gpuError_t gpuSuccess = cudaSuccess;
 
@@ -228,4 +238,52 @@ static inline bool gpu_launch_valid(unsigned gx, unsigned gy, unsigned gz,
 }
 static inline bool gpu_launch_valid(dim3 grid, dim3 block) {
   return gpu_launch_valid(grid.x, grid.y, grid.z, block.x, block.y, block.z);
+}
+
+/* ------------------------------------------------------------------ */
+/*  Dynamic shared memory: maximum per block with opt-in.              */
+/*                                                                     */
+/*  The default per-block limit reported as `sharedMemPerBlock` is a   */
+/*  historical 48 KiB on NVIDIA; the real hardware maximum for dynamic */
+/*  shared memory is in `sharedMemPerBlockOptin` (CUDA >= 11, HIP >=   */
+/*  ROCm 5.0). Using the optin limit gives us:                         */
+/*    H100 / H200 : 227 KiB   (vs 48 KiB default)                      */
+/*    A100        : 163 KiB   (vs 48 KiB default)                      */
+/*    MI300A      :  64 KiB   (hard LDS cap; optin == default)         */
+/*                                                                     */
+/*  Kernels that want more than `sharedMemPerBlock` must additionally  */
+/*  call cudaFuncSetAttribute(kernel,                                  */
+/*      cudaFuncAttributeMaxDynamicSharedMemorySize, bytes) before the */
+/*  first launch. See gpu_opt_in_max_dynamic_smem() below.             */
+/* ------------------------------------------------------------------ */
+static inline size_t gpu_max_dynamic_smem_per_block(const gpuDeviceProp& p) {
+#if defined(__HIPCC__) || defined(__HIP__) \
+    || defined(__HIP_PLATFORM_AMD__) || defined(HIP_PLATFORM_AMD)
+  /* hipDeviceProp_t has sharedMemPerBlockOptin from ROCm 5.0; guard  */
+  /* against older runtimes via the preprocessor-detectable version. */
+  #if defined(HIP_VERSION) && (HIP_VERSION >= 50000000)
+    return p.sharedMemPerBlockOptin > 0
+             ? (size_t)p.sharedMemPerBlockOptin
+             : (size_t)p.sharedMemPerBlock;
+  #else
+    return (size_t)p.sharedMemPerBlock;
+  #endif
+#else
+  return p.sharedMemPerBlockOptin > 0
+           ? (size_t)p.sharedMemPerBlockOptin
+           : (size_t)p.sharedMemPerBlock;
+#endif
+}
+
+/* If `smem_bytes` exceeds the default cap, opt the kernel in to the    */
+/* larger dynamic-smem attribute. Calling this when smem_bytes fits in  */
+/* the default cap is a cheap no-op. `kernel_fn` is the kernel's        */
+/* function pointer cast to `const void*`. Returns true on success.     */
+static inline bool gpu_opt_in_max_dynamic_smem(const void* kernel_fn,
+                                               size_t smem_bytes,
+                                               const gpuDeviceProp& p) {
+  if (smem_bytes <= (size_t)p.sharedMemPerBlock) return true;
+  gpuError_t e = gpuFuncSetAttribute(
+      kernel_fn, gpuFuncAttributeMaxDynamicSharedMemorySize, (int)smem_bytes);
+  return (e == gpuSuccess);
 }
