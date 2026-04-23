@@ -278,7 +278,7 @@ Experiment~E6 follows a multi-stage pipeline that mirrors the paper's optimizati
 \item[$T_{6.2}$] \textbf{Access analysis:} \texttt{access\_analysis/analyze\_access.py} (plus \texttt{select\_loopnests.py}, \texttt{jaccard.py}, \texttt{coaccess.py}) canonicalizes the 25~loop nests into 6~pattern classes, groups the 50~arrays into 7~layout-equivalent groups, and computes $\mu$/$\Delta$ for each candidate layout per group.
 Outputs the candidate configuration file \texttt{layout\_candidates.json}.
 
-\item[$T_{6.3}$] \textbf{Per-loopnest evaluation:} each \texttt{loopnest\_\{1..6\}/} folder is a full bench\-mark suite (\texttt{bench\_cpu.cpp}, \texttt{bench\_gpu.cu}, \texttt{bench\_gpu\_hip.cpp}, \texttt{cost\_metrics.cpp}) that sweeps V1--V4 dimension orderings, 1D blocking, and (where meaningful) 2D tiling.
+\item[$T_{6.3}$] \textbf{Per-loopnest evaluation:} each \texttt{loopnest\_\{1..6\}/} folder is a full benchmark suite that sweeps V1--V4 dimension orderings, 1D blocking, and (where meaningful) 2D tiling.
 Each folder's \texttt{run\_\{daint,beverin\}.sh} compiles, runs, and writes CSVs to \texttt{results/\{daint,beverin\}/}; the per-folder \texttt{README.md} explains the Fortran reference nest and the mapping between the code's macros and the nest class.
 
 \item[$T_{6.4}$] \textbf{Conflict resolution:} the per-loopnest rankings from $T_{6.3}$ are combined offline by weighting each loopnest by its call frequency (Config~A: 1/6, Config~B: 5/6); the resulting cross-product of locally-optimal layouts is documented in \texttt{conflict\_resolution/README.md} and committed as the \texttt{selected\_layouts.json} consumed by $T_{6.5}$.
