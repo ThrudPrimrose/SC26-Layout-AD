@@ -64,7 +64,6 @@ static double bw_ip(int P, int64_t n, double ms) {
 
 #define GPU_BENCH(P_val, n_base, label, call) do { \
     for (int w = 0; w < 5; w++) { call; } \
-<<<<<<< HEAD
     GPU_CHECK(cudaDeviceSynchronize()); \
     for (int r = 0; r < RUNS; r++) { \
         cudaEvent_t a, b; GPU_CHECK(cudaEventCreate(&a)); GPU_CHECK(cudaEventCreate(&b)); \
@@ -75,19 +74,6 @@ static double bw_ip(int P, int64_t n, double ms) {
         fprintf(csv, "%d,%s,%d,%.6f,%.2f\n", \
                 P_val, label, r, (double)ms, bw_ip(P_val, n_base, ms)); \
         GPU_CHECK(cudaEventDestroy(a)); GPU_CHECK(cudaEventDestroy(b)); \
-=======
-    CUDA_CHECK(cudaDeviceSynchronize()); \
-    for (int r = 0; r < RUNS; r++) { \
-        cudaEvent_t a, b; \
-        CUDA_CHECK(cudaEventCreate(&a)); CUDA_CHECK(cudaEventCreate(&b)); \
-        CUDA_CHECK(cudaEventRecord(a)); \
-        call; \
-        CUDA_CHECK(cudaEventRecord(b)); CUDA_CHECK(cudaEventSynchronize(b)); \
-        float ms; CUDA_CHECK(cudaEventElapsedTime(&ms, a, b)); \
-        fprintf(csv, "%d,%s,%d,%.6f,%.2f\n", \
-                P_val, label, r, (double)ms, bw_ip(P_val, n_base, ms)); \
-        CUDA_CHECK(cudaEventDestroy(a)); CUDA_CHECK(cudaEventDestroy(b)); \
->>>>>>> 95250d4251e7bb74adb0a28585ec2dd8a6910103
     } \
     printf("  %-14s  (see csv)\n", label); \
 } while (0)
