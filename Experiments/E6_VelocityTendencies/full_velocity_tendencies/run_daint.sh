@@ -2,7 +2,7 @@
 #SBATCH --job-name=E6FVT_daint
 #SBATCH --nodes=1
 #SBATCH --partition=normal
-#SBATCH --time=18:00:00
+#SBATCH --time=04:30:00
 #SBATCH --account=g177-1
 #SBATCH --ntasks=1
 #SBATCH --gpus-per-task=1
