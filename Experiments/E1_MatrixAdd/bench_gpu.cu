@@ -409,6 +409,37 @@ void register_configs() {
     reg_direct<  32,  8,  2,  2>();   /* tile 16×64   — 2×2 work */
     reg_direct<  32,  4,  4,  4>();   /* tile 16×128  — 4×4 work */
     reg_direct<  32,  8,  4,  4>();   /* tile 32×128  — big tile */
+    /* -- extended sweep: fill BX/BY grid --                         */
+    reg_direct<  32,  2,  1,  1>();   /* tile  2×32                   */
+    reg_direct<  32,  4,  1,  1>();   /* tile  4×32                   */
+    reg_direct<  32, 16,  1,  1>();   /* tile 16×32                   */
+    reg_direct<  32, 32,  1,  1>();   /* tile 32×32                   */
+    reg_direct<  32,  8,  1,  2>();   /* tile 16×32                   */
+    reg_direct<  32,  8,  1,  4>();   /* tile 32×32                   */
+    reg_direct<  32,  8,  4,  1>();   /* tile  8×128                  */
+    /* -- wavefront-aligned for MI300A (BX=64) --                    */
+    reg_direct<  64,  1,  1,  1>();   /* tile  1×64   — wavefront     */
+    reg_direct<  64,  1,  2,  1>();   /* tile  1×128                  */
+    reg_direct<  64,  1,  4,  1>();   /* tile  1×256                  */
+    reg_direct<  64,  2,  1,  1>();   /* tile  2×64                   */
+    reg_direct<  64,  4,  1,  1>();   /* tile  4×64                   */
+    reg_direct<  64,  4,  2,  2>();   /* tile  8×128                  */
+    reg_direct<  64,  8,  1,  1>();   /* tile  8×64                   */
+    reg_direct<  64,  8,  2,  1>();   /* tile  8×128                  */
+    reg_direct<  64,  8,  2,  2>();   /* tile 16×128                  */
+    reg_direct<  64, 16,  1,  1>();   /* tile 16×64                   */
+    reg_direct<  64,  4,  4,  4>();   /* tile 16×256                  */
+    /* -- wider blocks (2+ wavefronts / wider coalesced row) --      */
+    reg_direct< 128,  2,  1,  1>();   /* tile  2×128                  */
+    reg_direct< 128,  4,  1,  1>();   /* tile  4×128                  */
+    reg_direct< 128,  4,  2,  2>();   /* tile  8×256                  */
+    reg_direct< 128,  8,  1,  1>();   /* tile  8×128                  */
+    reg_direct< 128,  8,  2,  2>();   /* tile 16×256                  */
+    reg_direct< 256,  2,  1,  1>();   /* tile  2×256                  */
+    reg_direct< 256,  4,  1,  1>();   /* tile  4×256                  */
+    reg_direct< 512,  1,  1,  1>();   /* tile  1×512                  */
+    reg_direct< 512,  2,  1,  1>();   /* tile  2×512                  */
+    reg_direct<1024,  1,  1,  1>();   /* tile  1×1024  (max 1D block) */
 
     /* ==== direct_T: threadIdx.x → i  (B coalesced, A,C strided) ==== */
     reg_direct_T<  32,  1,  1,  1>();
@@ -416,24 +447,96 @@ void register_configs() {
     reg_direct_T<  16, 16,  1,  1>();
     reg_direct_T<  32,  8,  1,  1>();
     reg_direct_T<  32,  8,  2,  2>();
+    /* -- extended sweep --                                           */
+    reg_direct_T<  32,  4,  1,  1>();
+    reg_direct_T<  32, 16,  1,  1>();
+    reg_direct_T<  32, 32,  1,  1>();
+    reg_direct_T<  16, 16,  2,  2>();
+    reg_direct_T<  16, 16,  4,  1>();
+    reg_direct_T<  16, 16,  1,  4>();
+    /* -- wavefront-aligned (BX=64 here → 64 consecutive i) --       */
+    reg_direct_T<  64,  1,  1,  1>();
+    reg_direct_T<  64,  4,  1,  1>();
+    reg_direct_T<  64,  4,  2,  2>();
+    reg_direct_T<  64,  8,  1,  1>();
+    reg_direct_T<  64,  8,  2,  2>();
+    reg_direct_T<  64, 16,  1,  1>();
+    reg_direct_T< 128,  4,  1,  1>();
+    reg_direct_T< 128,  8,  1,  1>();
+    reg_direct_T<  32,  8,  4,  1>();
+    reg_direct_T<  32,  8,  1,  4>();
 
-    /* ==== tiled + shared memory (all coalesced) ==== */
-    reg_tiled<  16, 16,  1,  1>();   /* tile 16×16   */
-    reg_tiled<  16, 16,  2,  2>();   /* tile 32×32   */
-    reg_tiled<  32,  1,  1, 32>();   /* tile 32×32   (1D block) */
-    reg_tiled<  32,  8,  1,  1>();   /* tile  8×32   */
-    reg_tiled<  32,  8,  2,  2>();   /* tile 16×64   */
-    reg_tiled<  32,  8,  2,  4>();   /* tile 32×64   */
-    reg_tiled<  32,  4,  2,  8>();   /* tile 32×64   (narrow block) */
-    reg_tiled<  32,  8,  4,  4>();   /* tile 32×128  */
-    reg_tiled<  16, 16,  4,  4>();   /* tile 64×64   */
-    reg_tiled<  32,  8,  4,  8>();   /* tile 64×128  */
-    reg_tiled<  32,  8,  8,  8>();   /* tile 64×256  */
-    reg_tiled<  32,  4,  8, 16>();   /* tile 64×256  (narrow block) */
+    /* ==== tiled + shared memory (all coalesced) ====
+     * Rule of thumb: smem = 3 * TR * (TC+1) * 8 bytes.
+     * MI300A LDS = 64 KiB  →  TR * (TC+1) ≤ 2730 fits without opt-in.
+     * H100/H200 via cudaFuncAttributeMaxDynamicSharedMemorySize
+     * allow up to ~227 KiB per block; those configs still run there. */
+    reg_tiled<  16, 16,  1,  1>();   /* tile 16×16                    */
+    reg_tiled<  16, 16,  2,  2>();   /* tile 32×32                    */
+    reg_tiled<  32,  1,  1, 32>();   /* tile 32×32   (1D block)       */
+    reg_tiled<  32,  8,  1,  1>();   /* tile  8×32                    */
+    reg_tiled<  32,  8,  2,  2>();   /* tile 16×64                    */
+    reg_tiled<  32,  8,  2,  4>();   /* tile 32×64                    */
+    reg_tiled<  32,  4,  2,  8>();   /* tile 32×64   (narrow block)   */
+    reg_tiled<  32,  8,  4,  4>();   /* tile 32×128                   */
+    reg_tiled<  16, 16,  4,  4>();   /* tile 64×64                    */
+    reg_tiled<  32,  8,  4,  8>();   /* tile 64×128                   */
+    reg_tiled<  32,  8,  8,  8>();   /* tile 64×256                   */
+    reg_tiled<  32,  4,  8, 16>();   /* tile 64×256  (narrow block)   */
+    /* -- extended sweep: fill BX/BY grid --                         */
+    reg_tiled<  32,  2,  1,  1>();   /* tile  2×32                    */
+    reg_tiled<  32,  4,  1,  1>();   /* tile  4×32                    */
+    reg_tiled<  32,  4,  2,  2>();   /* tile  8×64                    */
+    reg_tiled<  32, 16,  1,  1>();   /* tile 16×32                    */
+    reg_tiled<  32, 32,  1,  1>();   /* tile 32×32  (square block)    */
+    reg_tiled<  16, 16,  2,  1>();   /* tile 16×32                    */
+    reg_tiled<  16, 16,  1,  2>();   /* tile 32×16                    */
+    reg_tiled<  32,  8,  1,  2>();   /* tile 16×32                    */
+    reg_tiled<  32,  8,  1,  4>();   /* tile 32×32                    */
+    reg_tiled<  32,  8,  4,  1>();   /* tile  8×128                   */
+    /* -- wavefront-aligned (BX=64) — key for MI300A peak --         */
+    reg_tiled<  64,  2,  1,  1>();   /* tile  2×64                    */
+    reg_tiled<  64,  4,  1,  1>();   /* tile  4×64                    */
+    reg_tiled<  64,  4,  1,  2>();   /* tile  8×64                    */
+    reg_tiled<  64,  4,  2,  1>();   /* tile  4×128                   */
+    reg_tiled<  64,  4,  2,  2>();   /* tile  8×128                   */
+    reg_tiled<  64,  4,  2,  4>();   /* tile 16×128                   */
+    reg_tiled<  64,  8,  1,  1>();   /* tile  8×64                    */
+    reg_tiled<  64,  8,  1,  2>();   /* tile 16×64                    */
+    reg_tiled<  64,  8,  2,  1>();   /* tile  8×128                   */
+    reg_tiled<  64,  8,  2,  2>();   /* tile 16×128                   */
+    reg_tiled<  64, 16,  1,  1>();   /* tile 16×64                    */
+    reg_tiled<  64, 16,  2,  1>();   /* tile 16×128                   */
+    /* -- wider blocks --                                             */
+    reg_tiled< 128,  2,  1,  1>();   /* tile  2×128                   */
+    reg_tiled< 128,  2,  2,  2>();   /* tile  4×256                   */
+    reg_tiled< 128,  4,  1,  1>();   /* tile  4×128                   */
+    reg_tiled< 128,  4,  1,  2>();   /* tile  8×128                   */
+    reg_tiled< 128,  4,  2,  2>();   /* tile  8×256                   */
+    reg_tiled< 128,  8,  1,  1>();   /* tile  8×128                   */
+    reg_tiled< 256,  2,  1,  1>();   /* tile  2×256                   */
+    reg_tiled< 256,  4,  1,  1>();   /* tile  4×256                   */
 
-    /* ==== all row-major control (peak) ==== */
+    /* ==== all row-major control (peak) — broaden so the reported ==
+     *      peak doesn't hinge on a single (BX,BY) shape. */
     reg_control<  32,  8,  1,  1>();
     reg_control<  32,  8,  4,  4>();
+    reg_control<  16, 16,  1,  1>();
+    reg_control<  32, 32,  1,  1>();
+    reg_control<  32,  8,  2,  2>();
+    reg_control<  32,  4,  1,  1>();
+    reg_control<  32,  4,  2,  2>();
+    reg_control<  64,  1,  1,  1>();
+    reg_control<  64,  4,  1,  1>();
+    reg_control<  64,  4,  2,  2>();
+    reg_control<  64,  8,  1,  1>();
+    reg_control<  64,  8,  2,  2>();
+    reg_control<  64, 16,  1,  1>();
+    reg_control< 128,  4,  1,  1>();
+    reg_control< 128,  4,  2,  2>();
+    reg_control< 128,  8,  1,  1>();
+    reg_control< 256,  2,  1,  1>();
+    reg_control< 256,  4,  1,  1>();
 }
 
 

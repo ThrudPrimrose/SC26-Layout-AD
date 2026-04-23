@@ -73,7 +73,11 @@ E6 & $C_3$, $C_4$         & Figs.~12--13, Tab.~IV & R1, R2 \\
 \end{center}
 
 All experiments depend on R3 (DaCe): E1--E5 and E6 single-loopnest benchmarks (loopnests~1--6) use branch \texttt{yakup/dev}; E6's full-module evaluation uses branch \texttt{f2dace/staging}.
-Contribution~$C_1$ is a pen-and-paper proof with no computational artifact; the illustrative quotient-graph figures (Figures~2--3) are produced by pure-matplotlib helper scripts in the \texttt{Figures/} folder of~R1 (regenerate with \texttt{bash Figures/plot\_all.sh}; outputs land under \texttt{Figures/GeneratedFigures/}).
+Contribution~$C_1$ is a pen-and-paper proof with no computational artifact; the illustrative quotient-graph figures (Figures~2--3) are produced by pure-matplotlib helper scripts in the \texttt{Figures/} folder of~R1.
+The same driver \texttt{bash Figures/plot\_all.sh} is also the single entry point for the paper's runtime figures (Figures~4, 8--11): it invokes each \texttt{Experiments/<exp>/plot\_paper.py} twice -- once from \texttt{PaperSnapshot/<exp>/} (the frozen, paper-canonical CSVs committed alongside the artifact), gathered into \texttt{Figures/GeneratedFigures/Runtime/}, and once from \texttt{Experiments/<exp>/} (the fresh local reproduction), gathered into \texttt{Figures/GeneratedFigures/Runtime/new/}.
+Reviewers comparing these two flat folders side-by-side can see at a glance whether their reproduction matches the submitted figures.
+A reviewer who only wants the runtime figures can pass the subset name:
+\texttt{bash Figures/plot\_all.sh Runtime}; \texttt{bash Figures/plot\_all.sh Peaks} refreshes the canonical \texttt{Experiments/common/stream\_peak.json} (STREAM peak values consumed by every per-experiment plot for bandwidth normalization).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Artifact Identification}

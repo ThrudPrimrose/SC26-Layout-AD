@@ -26,6 +26,30 @@ The proof-illustration figures (Figures 2–3 in the main text) live in
 [`../Figures/`](../Figures/) — pure matplotlib scripts, no benchmark,
 and no submission to SLURM. Regenerate with `bash ../Figures/plot_all.sh`.
 
+`plot_all.sh` is also the single entry point for the paper's **runtime
+figures** (Figures 4, 8–11). Each experiment's `plot_paper.py` is run
+twice:
+
+1. Against the **paper-canonical** CSVs archived under
+   [`../PaperSnapshot/<exp>/results/`](../PaperSnapshot/) — outputs land
+   flat in
+   [`../Figures/GeneratedFigures/Runtime/`](../Figures/GeneratedFigures/Runtime/).
+2. Against the **fresh local reproduction** in this repo's
+   `Experiments/<exp>/results/` — outputs land flat in
+   [`../Figures/GeneratedFigures/Runtime/new/`](../Figures/GeneratedFigures/Runtime/).
+
+Reviewers comparing the two folders side-by-side can see at a glance
+whether their reproduction matches the submitted paper. An empty
+`PaperSnapshot/<exp>/results/` causes only the new-reproduction step to
+run for that experiment, so the script never fails on a fresh clone.
+
+To regenerate a subset, pass group names:
+
+```bash
+bash ../Figures/plot_all.sh Peaks     # refresh common/stream_peak.json
+bash ../Figures/plot_all.sh Runtime   # re-plot Figures 4, 8–11 only
+```
+
 ## How to run any experiment
 
 Every experiment uses the same three-step flow.
