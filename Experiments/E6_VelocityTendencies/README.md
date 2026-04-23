@@ -34,7 +34,7 @@ DACE_BRANCH=f2dace/staging source ../../common/activate.sh
 
 ## Status
 
-- ✅ `loopnest_{1..6}` — C++ / CUDA / HIP benchmarks + `cost_metrics.cpp`.
+- ✅ `loopnest_{1..6}` — CPU + GPU benchmarks (single-source CUDA/HIP via `common/gpu_compat.cuh`) + `cost_metrics.cpp`.
 - 🚧 `conflict_resolution` — aggregator TODO; layouts are currently
   hard-coded in `full_velocity_tendencies/scripts/run_stage{4,8}_permutations.py`.
 - ✅ `full_velocity_tendencies` — stage4 / stage8 permutation sweep,

@@ -16,7 +16,7 @@ python plot_paper.py
 ## Files
 
 - `zaxpy.cpp` — CPU (OpenMP).
-- `zaxpy.cu` / `zaxpy_hip.cpp` — CUDA / HIP GPU.
+- `zaxpy.cu` — GPU benchmark (CUDA and HIP; `zaxpy_hip.cpp` is a thin shim, see [../README.md](../README.md#single-source-cudahip-pattern)).
 - `zaxpy_indirect_sweep/` — pre-materialised index distributions.
 - `download_data.sh` — fetches BaTiO₃ indices if missing.
 - `plot_paper.py` — Figure 10.

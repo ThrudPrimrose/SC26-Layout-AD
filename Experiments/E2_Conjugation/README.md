@@ -13,9 +13,8 @@ python plot_paper.py
 
 ## Files
 
-- `conjugate_inplace.{cpp,cu,_hip.cpp}` — primary in-place kernels
-  (AoS / SoA / AoSoA-16).
-- `conjugate.{cpp,cu,_hip.cpp}` — out-of-place variants for comparison.
+- `conjugate_inplace.{cpp,cu}` — primary in-place kernels (AoS / SoA / AoSoA-16); `conjugate_inplace_hip.cpp` is a thin shim.
+- `conjugate.{cpp,cu}` — out-of-place variants for comparison; `conjugate_hip.cpp` is a thin shim.
 - `plot_paper.py` — Figure 8.
 
 ## Protocol

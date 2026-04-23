@@ -35,7 +35,7 @@ sbatch run_beverin.sh
 
 ## Files
 
-- `bench_cpu.cpp` / `bench_gpu.cu` / `bench_gpu_hip.cpp` — drivers
+- `bench_cpu.cpp` / `bench_gpu.cu` — CPU + GPU drivers (`bench_gpu_hip.cpp` is a thin shim); drivers
   sweeping V1–V4 layouts, B ∈ {8,16,32,64,128}, (TX,TY) ∈ {8,16,32,64}².
 - `bench_common.h` — shared layout indexers, NUMA-aware allocator, and
   per-1D-array NUMA redistribute.

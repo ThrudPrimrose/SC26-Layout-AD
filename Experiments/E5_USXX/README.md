@@ -15,7 +15,7 @@ python plot_paper.py
 ## Files
 
 - `main_cpu.cpp` — CPU driver (AoS / SoA variants).
-- `main.cu` / `main_hip.cpp` — CUDA / HIP GPU drivers.
+- `main.cu` — GPU driver (CUDA and HIP; `main_hip.cpp` is a thin shim, see [../README.md](../README.md#single-source-cudahip-pattern)).
 - `usxx_kernels*.{h,cu,cpp}` — baseline AoS + transformed SoA kernels.
 - `data_loading.h`, `types.h` — shared data-format definitions.
 - `download_data.sh` — fetches `bin/` from ETH PolyBox.

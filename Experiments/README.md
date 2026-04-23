@@ -171,6 +171,17 @@ allocations.
   via RPATH, not loaded separately).
 - Python deps: numpy, scipy, matplotlib, pandas (installed by setup.sh)
 
+## Single-source CUDA/HIP pattern
+
+Every GPU benchmark has a canonical `.cu` file plus a matching
+`*_hip.cpp` file. The `.cu` is the single source of truth — it calls
+`gpu*` (e.g. `gpuMalloc`, `gpuMemcpy`, `gpuDeviceSynchronize`) which
+`common/gpu_compat.cuh` dispatches to `cuda*` under nvcc and `hip*`
+under `hipcc -x hip`. The `*_hip.cpp` file is a 7-line shim that just
+`#include`s its `.cu` companion so hipcc has a recognisable
+translation-unit extension. **Do not edit the `_hip.cpp` shims; edit
+the `.cu`.**
+
 ## Expected time budget
 
 ~22 hr per cluster end-to-end: ≈ 2 min for E0 (NUMA baseline) + 90 +

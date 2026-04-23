@@ -45,8 +45,12 @@ constexpr int STEPS = 3;
 constexpr int BX = 16;
 constexpr int BY = 16;
 
-__global__ inline void _step(const double *__restrict__ A,
-                             double *__restrict__ B) {
+/* `inline` on `__global__` triggers [-Wcuda-compat] in clang-hip and is
+ * ignored anyway. Each benchmark links exactly one TU that includes
+ * this header (the bench_*.cu per experiment), so a bare __global__
+ * has no ODR / multiple-definition risk. */
+__global__ void _step(const double *__restrict__ A,
+                      double *__restrict__ B) {
   int i = blockIdx.y * BY + threadIdx.y;
   int j = blockIdx.x * BX + threadIdx.x;
   if (i > 0 && i < N - 1 && j > 0 && j < N - 1) {
@@ -55,7 +59,7 @@ __global__ inline void _step(const double *__restrict__ A,
   }
 }
 
-__global__ inline void _init(double *__restrict__ buf) {
+__global__ void _init(double *__restrict__ buf) {
   size_t idx = (size_t)blockIdx.x * blockDim.x + threadIdx.x;
   size_t stride = (size_t)gridDim.x * blockDim.x;
   size_t total = (size_t)N * (size_t)N;

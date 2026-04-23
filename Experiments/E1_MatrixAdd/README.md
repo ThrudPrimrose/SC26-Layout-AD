@@ -16,7 +16,7 @@ python plot_paper.py --add-peak
 - `bench_cpu.cpp` — NUMA-aware OpenMP CPU (variants: `row_major`,
   `col_major`, `tiled_T`, `all_rowmajor`; blocked: `blk_all_rm`,
   `blk_conflict`).
-- `bench_gpu.cu` / `bench_gpu_hip.cpp` — CUDA / HIP GPU benchmarks.
+- `bench_gpu.cu` — GPU benchmark (CUDA and HIP; `bench_gpu_hip.cpp` is a thin shim, see [../README.md](../README.md#single-source-cudahip-pattern)).
 - `plot_paper.py` — Figure 4.
 
 ## Protocol

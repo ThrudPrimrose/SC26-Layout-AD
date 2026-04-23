@@ -30,7 +30,7 @@ to `results/{daint,beverin}/`.
 
 ## Files
 
-- `bench_cpu.cpp` / `bench_gpu.cu` / `bench_gpu_hip.cpp` — benchmark
+- `bench_cpu.cpp` / `bench_gpu.cu` — CPU + GPU benchmark sources (`bench_gpu_hip.cpp` is a thin shim); benchmark
   drivers under each layout candidate.
 - `bench_common.h` — shared indirection + data-loading helpers.
 - `icon_data_loader.h` — reads serialized R02B05 tables.
