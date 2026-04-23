@@ -174,3 +174,46 @@ def fig_output_path(experiment_dir_path, stem, ext="pdf"):
     """
     import os
     return os.path.join(experiment_dir_path, f"{stem}.{ext}")
+
+
+# ── Canonical STREAM peak table ──────────────────────────────────────────────
+# Every per-experiment plot that normalizes bandwidth ("% of STREAM Triad
+# peak") reads these numbers. The backing file is Experiments/common/
+# stream_peak.json, which E0_NUMA/plot_paper.py overwrites with measured
+# peaks when the bench has been run. The JSON schema is:
+#
+#   { "peaks_tbs":       {<label>: <TB/s>, ...},
+#     "platform_labels": {<platform>: {"cpu": <label>, "gpu": <label>}} }
+#
+# Labels match the strings the existing per-experiment plot scripts already
+# use (e.g. "MI300A Zen CPU", "GH200 Grace CPU"), so swapping in
+# `STREAM_PEAK = load_stream_peaks()` is a drop-in replacement for the
+# hardcoded dicts in E2/E4/loopnest_1/etc.
+
+def _stream_peak_json_path():
+    import os
+    return os.path.join(os.path.dirname(__file__), "stream_peak.json")
+
+
+def load_stream_peaks():
+    """Return {<label>: <peak_TB/s>} from common/stream_peak.json.
+
+    This is the flat dict that every per-experiment plot_paper.py can use as
+    a drop-in for its local `STREAM_PEAK = {...}` hardcode. Raises if the
+    file is missing or malformed -- callers should treat this as an
+    invariant of the repo.
+    """
+    import json
+    with open(_stream_peak_json_path()) as f:
+        data = json.load(f)
+    return dict(data["peaks_tbs"])
+
+
+def stream_peak_platform_labels():
+    """Return {<platform>: {"cpu": <label>, "gpu": <label>}} -- the mapping
+    from results-directory name (beverin / daint) to the per-device label
+    used as a key in load_stream_peaks()."""
+    import json
+    with open(_stream_peak_json_path()) as f:
+        data = json.load(f)
+    return dict(data["platform_labels"])

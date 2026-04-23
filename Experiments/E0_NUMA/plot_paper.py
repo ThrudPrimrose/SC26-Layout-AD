@@ -1,90 +1,105 @@
 #!/usr/bin/env python
-"""E0 -- pretty-print NUMA STREAM peaks for the paper's Hardware table.
+"""E0 -- refresh the canonical STREAM peak JSON from measured CSVs.
 
-Per-rep CSVs from bench_stream / bench_stream_gpu are grouped by
-(device, setup, kernel, flush) and aggregated by the *minimum* time
-(equivalently the *maximum* bandwidth) across reps. This is the "peak"
-methodology the paper's Hardware table and the legacy
-common/bench_stream.cpp both report.
+Reads the per-rep CSVs written by E0_NUMA/bench_stream{,_gpu} at
+    results/{daint,beverin}/stream_peak_{cpu,gpu}.csv
+and, for every (platform, device) pair where we actually have data,
+**overwrites** the corresponding entry in ../common/stream_peak.json.
+Entries without matching CSV data are left untouched, so missing a
+platform never clobbers the hardcoded fallback.
 
-CPU CSV schema (from E0_NUMA/bench_stream.cpp):
-    setup,variant,N,rep,threads,time_s,bw_gbs,checksum,status,flush
-GPU CSV schema (from E0_NUMA/bench_stream_gpu.cu):
-    kernel,BX,BY,TX,TY,N,rep,time_ms,bw_gbs,checksum,status,flush
+Peak = max(bw_gbs) across every row in the CSV = min-time across reps,
+setups, kernels, and flush modes. That matches the legacy
+common/bench_stream.cpp peak methodology (min-of-time) and the numbers
+quoted in the paper's Hardware table.
+
+Also prints a markdown summary to stdout for quick inspection.
+
+Downstream plot scripts load the JSON via:
+
+    from plot_util import load_stream_peaks
+    STREAM_PEAK = load_stream_peaks()
+
+so the same values that flow from this script reach every figure.
 """
 from __future__ import annotations
 
 import csv
+import json
 from pathlib import Path
-from collections import defaultdict
 
-ROOT = Path(__file__).resolve().parent
-PLATFORMS = ("daint", "beverin")
-
-
-def peak_bw_by_group(path: Path,
-                     group_keys: tuple[str, ...]) -> dict[tuple, float]:
-    """Return {(group_key..., flush): peak bw_gbs} from a per-rep CSV.
-
-    Peak = max(bw_gbs) across reps = 1 / min(time) * bytes. Per the paper's
-    Hardware table methodology.
-    """
-    if not path.exists():
-        return {}
-    best: dict[tuple, float] = defaultdict(lambda: 0.0)
-    with path.open() as f:
-        for row in csv.DictReader(f):
-            key = tuple(row[k] for k in group_keys) + (row["flush"],)
-            bw = float(row["bw_gbs"])
-            if bw > best[key]:
-                best[key] = bw
-    return dict(best)
+ROOT       = Path(__file__).resolve().parent
+COMMON_DIR = ROOT.parent / "common"
+JSON_PATH  = COMMON_DIR / "stream_peak.json"
+PLATFORMS  = ("daint", "beverin")
 
 
-def best_across_configs(groups: dict[tuple, float],
-                        flush: str) -> tuple[tuple | None, float]:
-    """Pick the highest-bw config for a given flush state."""
-    best_key, best_bw = None, 0.0
-    for key, bw in groups.items():
-        if key[-1] != flush:
-            continue
-        if bw > best_bw:
-            best_key, best_bw = key, bw
-    return best_key, best_bw
-
-
-def fmt(gbs: float) -> str:
-    if gbs <= 0:
-        return "—"
-    return f"{gbs / 1000.0:.3f} TB/s ({gbs:.1f} GB/s)"
-
-
-def describe(key: tuple | None, keynames: tuple[str, ...]) -> str:
-    if key is None:
-        return "—"
-    # drop trailing flush flag
-    return ", ".join(f"{n}={v}" for n, v in zip(keynames, key[:-1]))
+def measured_peak_tbs(csv_path: Path) -> float:
+    """Peak bandwidth (TB/s) across every row of a per-rep CSV. Returns 0.0
+    if the file is missing, empty, or lacks a `bw_gbs` column."""
+    if not csv_path.exists():
+        return 0.0
+    best = 0.0
+    with csv_path.open() as f:
+        reader = csv.DictReader(f)
+        if "bw_gbs" not in (reader.fieldnames or ()):
+            return 0.0
+        for row in reader:
+            try:
+                v = float(row["bw_gbs"])
+            except (TypeError, ValueError):
+                continue
+            if v > best:
+                best = v
+    return best / 1000.0
 
 
 def main():
-    cpu_keys = ("setup", "variant")
-    gpu_keys = ("kernel",)
-    print("# E0 NUMA STREAM peaks (peak = min-time across reps)")
+    with JSON_PATH.open() as f:
+        doc = json.load(f)
+    peaks  = doc["peaks_tbs"]
+    labels = doc["platform_labels"]
+
+    # {platform -> {device -> (label, measured_tbs, json_tbs_before)}}
+    results: dict[str, dict[str, tuple[str, float, float]]] = {}
+    for platform in PLATFORMS:
+        by_device: dict[str, tuple[str, float, float]] = {}
+        for device, fname in (("cpu", "stream_peak_cpu.csv"),
+                              ("gpu", "stream_peak_gpu.csv")):
+            label    = labels[platform][device]
+            measured = measured_peak_tbs(ROOT / "results" / platform / fname)
+            prior    = float(peaks.get(label, 0.0))
+            by_device[device] = (label, measured, prior)
+            if measured > 0.0:
+                peaks[label] = round(measured, 4)
+        results[platform] = by_device
+
+    # Persist. Write only when something measured updated the table, to
+    # avoid spurious diffs in `git status` when the script runs on a
+    # machine without any CSVs.
+    any_measured = any(m > 0.0 for plat in results.values()
+                                for (_, m, _) in plat.values())
+    if any_measured:
+        JSON_PATH.write_text(json.dumps(doc, indent=2) + "\n")
+
+    # Human summary.
+    print(f"# STREAM peaks (source: {JSON_PATH.relative_to(COMMON_DIR.parent)})")
     print()
-    for p in PLATFORMS:
-        print(f"## {p}")
-        print()
-        cpu = peak_bw_by_group(ROOT / "results" / p / "stream_peak_cpu.csv", cpu_keys)
-        gpu = peak_bw_by_group(ROOT / "results" / p / "stream_peak_gpu.csv", gpu_keys)
-        print("| Device | flush | Peak | Best config |")
-        print("|---|---|---|---|")
-        for flush in ("yes", "no"):
-            k, bw = best_across_configs(cpu, flush)
-            print(f"| CPU | {flush} | {fmt(bw)} | {describe(k, cpu_keys)} |")
-        for flush in ("yes", "no"):
-            k, bw = best_across_configs(gpu, flush)
-            print(f"| GPU | {flush} | {fmt(bw)} | {describe(k, gpu_keys)} |")
-        print()
+    print("| Platform | Device | Label | JSON (TB/s) | Measured (TB/s) | Source |")
+    print("|---|---|---|---|---|---|")
+    for platform in PLATFORMS:
+        for device in ("cpu", "gpu"):
+            label, measured, prior = results[platform][device]
+            src = "measured" if measured > 0 else "fallback"
+            measured_s = f"{measured:.3f}" if measured > 0 else "—"
+            final = peaks[label]
+            print(f"| {platform} | {device.upper()} | {label} | "
+                  f"{final:.3f} | {measured_s} | {src} |")
+    print()
+    if any_measured:
+        print(f"wrote {JSON_PATH}")
+    else:
+        print("no measured data found; JSON left unchanged")
 
 
 if __name__ == "__main__":
