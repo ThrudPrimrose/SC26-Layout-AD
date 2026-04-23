@@ -37,9 +37,10 @@ Experiments/E4_GAS/zaxpy_cpu
 Experiments/E4_GAS/zaxpy_gpu
 Experiments/E5_USXX/addusxx_cpu
 Experiments/E5_USXX/addusxx_gpu
-Experiments/E3_Transpose/transpose_*.exe
-Experiments/E3_Transpose/transpose_cpu_bin
-Experiments/E3_Transpose/transpose_gpu_bin
+Experiments/E3_Transpose/transpose_cpu
+Experiments/E3_Transpose/transpose_gpu
+Experiments/E3_Transpose/transpose_hptt
+Experiments/E3_Transpose/transpose_lib
 
 # ---- Per-experiment results directories (CSV output of runs) ---------------
 Experiments/*/results/
