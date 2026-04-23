@@ -173,7 +173,14 @@ def compile_lib(force=False):
         cmd = f"nvcc -O3 -std=c++17 -arch=native -o {BINARY_LIB} transpose_cutensor.cu -lcutensor"
         lib = "cuTENSOR"
     else:
-        cmd = (f"hipcc {AMD_FLAGS} "
+        # hipTensor on beverin is a manual install under $SCRATCH/{include,lib}.
+        # Honour the env if the user has set HIPTENSOR_ROOT; otherwise fall
+        # back to $SCRATCH so setup_beverin.sh's wiring works even if hipcc's
+        # header / lib search doesn't pick up the env CPATH / LIBRARY_PATH.
+        ht_root = (os.environ.get("HIPTENSOR_ROOT")
+                   or os.environ.get("SCRATCH", ""))
+        ht_flags = f"-I{ht_root}/include -L{ht_root}/lib -Wl,-rpath,{ht_root}/lib" if ht_root else ""
+        cmd = (f"hipcc {AMD_FLAGS} {ht_flags} "
                f"-o {BINARY_LIB} transpose_hiptensor.cpp -lhiptensor")
         lib = "hipTensor"
 

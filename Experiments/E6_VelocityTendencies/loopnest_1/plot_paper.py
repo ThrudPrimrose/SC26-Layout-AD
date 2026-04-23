@@ -30,10 +30,17 @@ CPU_AMD_CSV = f"results/beverin/{KERNEL}_cpu.csv"
 GPU_NV_CSV  = f"results/daint/{KERNEL}_gpu.csv"
 CPU_NV_CSV  = f"results/daint/{KERNEL}_cpu.csv"
 
-STREAM_PEAK = {
-    "MI300A Zen CPU": 1228*1e-3,  "Grace CPU": 1700.62*1e-3,
-    "MI300A GPU":       4294*1e-3,     "GH200 GPU": 3780*1e-3,
-}
+# --- Shared plotting helpers (common/plot_util.py) --------------------
+import os as _os, sys as _sys
+_here = _os.path.dirname(_os.path.abspath(__file__))
+_d = _here
+while _os.path.basename(_d) != "Experiments" and _os.path.dirname(_d) != _d:
+    _d = _os.path.dirname(_d)
+if _os.path.basename(_d) == "Experiments":
+    _sys.path.insert(0, _os.path.join(_d, "common"))
+from plot_util import load_stream_peaks as _load_stream_peaks
+
+STREAM_PEAK = _load_stream_peaks()
 
 SUBPLOT_W = 5.5   # wider to fit 3 distributions
 SUBPLOT_H = 3.5   # inches per row
@@ -74,7 +81,7 @@ DIST_LABEL = {
 }
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--add-peak', action='store_true')
+parser.add_argument('--add-peak', action='store_true', default=True)
 args = parser.parse_args()
 
 def compute_bandwidth(df):
@@ -134,15 +141,37 @@ def get_overall_best_data(df_full, fcol, dist, nlev):
 #  Main
 # ---------------------------------------------------------------------------
 
+def _normalise_schema(df: pd.DataFrame) -> pd.DataFrame:
+    """Accept both the L1 and L2-6 CSV schemas.
+
+    L1 uses `variant, parallelization, N_c, N_v`; L2-6 use `V, schedule`
+    and no `N_c`/`N_v`. Rename the L2-6 columns to the L1 names so the
+    rest of this script works unchanged across all six loopnests.
+    """
+    renames = {}
+    if "variant" not in df.columns and "V" in df.columns:
+        renames["V"] = "variant"
+    if "parallelization" not in df.columns and "schedule" in df.columns:
+        renames["schedule"] = "parallelization"
+    if renames:
+        df = df.rename(columns=renames)
+    return df
+
+
 def main():
     raw = {}
     for row in GRID:
         for label, csv, fcol, fval, _ in row:
             if label not in raw:
                 try:
-                    raw[label] = (pd.read_csv(csv), fcol, fval)
+                    df = _normalise_schema(pd.read_csv(csv))
                 except FileNotFoundError:
-                    print(f"  [WARN] {csv} not found"); return
+                    # Missing panel -> leave it blank, don't abort the figure.
+                    print(f"  [WARN] {csv} not found (panel will be empty)")
+                    continue
+                raw[label] = (df, fcol, fval)
+    if not raw:
+        print("  [WARN] no CSVs loaded; nothing to plot"); return
 
     plt.rcParams.update({
         "font.size": 14, "axes.titlesize": 15, "axes.labelsize": 14,
@@ -170,6 +199,14 @@ def main():
     for ri, row_data in enumerate(GRID):
         for ci, (label, csv, fcol, fval, _) in enumerate(row_data):
             ax = axes[ri, ci]
+            if label not in raw:
+                # CSV missing: show an empty placeholder instead of crashing.
+                ax.text(0.5, 0.5, f"(no {label} data)",
+                        ha='center', va='center', fontsize=12, color='gray',
+                        transform=ax.transAxes)
+                ax.set_xticks([]); ax.set_yticks([])
+                ax.set_title(label, loc='left')
+                continue
             df_full = raw[label][0]
             positions, data_all, col_all = [], [], []
             medians_for_pct = []   # (pos, median_bw, key)
@@ -286,6 +323,8 @@ def main():
     print("-" * 102)
     for row_data in GRID:
         for label, csv, fcol, fval, _ in row_data:
+            if label not in raw:
+                continue   # CSV was missing -- no summary row for this panel.
             df_full = raw[label][0]
             for dist in DISTS:
                 # --- orange (V1 best) ---

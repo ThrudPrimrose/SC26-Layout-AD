@@ -2,7 +2,7 @@
 #SBATCH --job-name=E6L1_zvgradw_beverin
 #SBATCH --nodes=1
 #SBATCH --partition=mi300
-#SBATCH --time=05:00:00
+#SBATCH --time=12:00:00
 #SBATCH --ntasks=1
 #SBATCH --gpus-per-task=1
 #SBATCH --cpus-per-task=192
@@ -31,8 +31,8 @@ echo "[E6L1 beverin] host=$(hostname) threads=$OMP_NUM_THREADS data=$ICON_DATA_P
 
 # --- T2 build ------------------------------------------------------------
 ${CPU_CXX} ${CPU_CXXFLAGS}            -o bench_cpu_a        bench_cpu.cpp                 ${CPU_LDFLAGS}
-${GPU_CXX} ${GPU_CXXFLAGS} -fgpu-rdc  -o bench_gpu_a        bench_gpu_hip.cpp             ${GPU_LDFLAGS}
-${GPU_CXX} ${GPU_CXXFLAGS} -fgpu-rdc  -o bench_gpu_oldstyle bench_gpu_oldstyle_hip.cpp    ${GPU_LDFLAGS}
+${GPU_CXX} ${GPU_CXXFLAGS} -fgpu-rdc  -o bench_gpu_a        -x hip bench_gpu.cu             ${GPU_LDFLAGS}
+${GPU_CXX} ${GPU_CXXFLAGS} -fgpu-rdc  -o bench_gpu_oldstyle -x hip bench_gpu_oldstyle.cu    ${GPU_LDFLAGS}
 
 # --- T3 run (binaries write CSV at the path passed as argv[1]) -----------
 ./bench_cpu_a        results/beverin/z_v_grad_w_cpu.csv

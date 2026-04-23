@@ -191,7 +191,26 @@ def fig_output_path(experiment_dir_path, stem, ext="pdf"):
 # hardcoded dicts in E2/E4/loopnest_1/etc.
 
 def _stream_peak_json_path():
+    """Locate stream_peak.json with cwd-awareness.
+
+    Walks up from the current working directory looking for a sibling
+    `common/stream_peak.json`. This lets scripts that `cd` into a
+    PaperSnapshot/<exp>/ directory pick up PaperSnapshot/common/
+    stream_peak.json instead of Experiments/common/stream_peak.json.
+
+    Falls back to the JSON next to this module (Experiments/common/) so
+    nothing breaks when there is no cwd-walkable override.
+    """
     import os
+    d = os.path.abspath(os.getcwd())
+    for _ in range(8):
+        cand = os.path.join(d, "common", "stream_peak.json")
+        if os.path.isfile(cand):
+            return cand
+        parent = os.path.dirname(d)
+        if parent == d:
+            break
+        d = parent
     return os.path.join(os.path.dirname(__file__), "stream_peak.json")
 
 

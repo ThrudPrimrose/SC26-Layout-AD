@@ -2,7 +2,7 @@
 #SBATCH --job-name=E6L2_zwconcorrme_daint
 #SBATCH --nodes=1
 #SBATCH --partition=normal
-#SBATCH --time=05:00:00
+#SBATCH --time=12:00:00
 #SBATCH --account=g177-1
 #SBATCH --ntasks=1
 #SBATCH --gpus-per-task=1

@@ -177,9 +177,11 @@ def compile_hptt(force=False):
         print(f"  {BINARY_LIB} exists, skipping")
         return True
 
-    # Try to find HPTT
+    # Try to find HPTT. On beverin, the manual install lives under $SCRATCH.
     hptt_flags = ""
-    for prefix in ["/usr", "/usr/local", os.environ.get("HPTT_ROOT", ""),
+    for prefix in ["/usr", "/usr/local",
+                   os.environ.get("HPTT_ROOT", ""),
+                   os.environ.get("SCRATCH", ""),
                    os.path.expanduser("~/hptt"), "./hptt"]:
         if not prefix:
             continue
