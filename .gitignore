@@ -27,6 +27,7 @@ Experiments/E6_VelocityTendencies/*/bench_cpu
 Experiments/E6_VelocityTendencies/*/bench_gpu
 Experiments/E6_VelocityTendencies/*/bench_gpu_a
 Experiments/E6_VelocityTendencies/*/bench_cpu_a
+Experiments/E6_VelocityTendencies/*/bench_gpu_oldstyle
 Experiments/E6_VelocityTendencies/*/bench_stream_cpu
 Experiments/E6_VelocityTendencies/*/bench_stream_gpu
 Experiments/E6_VelocityTendencies/*/cost_metrics
@@ -73,37 +74,43 @@ Experiments/E6_VelocityTendencies/data_r02b05/
 __pycache__/
 *.py[cod]
 *.egg-info/
-.venv/
-venv/
 
-# pyenv local venv created by common/setup.sh
-Experiments/common/venv/
+# ---- venv (any name) -------------------------------------------------------
+# Catches venv/, .venv/, venv-old/, venv.pyenv-backup/, .venv.new/, etc.
+# venv directories can be hundreds of MB of site-packages — never commit.
+venv*/
+.venv*/
 Experiments/common/dace/
+# Transient: get-pip.py gets dropped here during bootstrap (setup.sh cleans it).
+Experiments/common/.get-pip.py
 
-# ---- LaTeX build artifacts -------------------------------------------------
-latex/*.aux
-latex/*.log
-latex/*.out
-latex/*.bbl
-latex/*.blg
-latex/*.fdb_latexmk
-latex/*.fls
-latex/*.synctex.gz
-latex/*.toc
-latex/*.nav
-latex/*.snm
+# ---- Logs (SLURM stray, pip, build, session helpers, ...) ------------------
+*.log
+
+# ---- Core dumps (cluster names them core_nid<host>_<pid>) ------------------
+core
+core.*
+core_*
+nid*
+
+# ---- LaTeX build artifacts (capital-L: folder was renamed from latex/) -----
+Latex/*.aux
+Latex/*.log
+Latex/*.out
+Latex/*.bbl
+Latex/*.blg
+Latex/*.fdb_latexmk
+Latex/*.fls
+Latex/*.synctex.gz
+Latex/*.toc
+Latex/*.nav
+Latex/*.snm
+Latex/*.xdv
+Latex/*.auxlock
 # The committed PDF is the built AD; keep it tracked.
 # If a reviewer rebuilds, the new PDF will diff against the tracked one.
 # To always ignore: uncomment the next line.
-# latex/*.pdf
-AD/*.aux
-AD/*.log
-AD/*.out
-AD/*.bbl
-AD/*.blg
-AD/*.fdb_latexmk
-AD/*.fls
-AD/*.synctex.gz
+# Latex/*.pdf
 
 # ---- Editor / OS scratch ---------------------------------------------------
 .DS_Store
