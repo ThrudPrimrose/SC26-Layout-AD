@@ -2,25 +2,7 @@
 #include <cstdlib>
 #include <cstdint>
 
-#ifdef __HIP_PLATFORM_AMD__
-#include <hip/hip_runtime.h>
-#define cudaMalloc       hipMalloc
-#define cudaFree         hipFree
-#define cudaMemcpy       hipMemcpy
-#define cudaMemcpyHostToDevice hipMemcpyHostToDevice
-#define cudaDeviceSynchronize  hipDeviceSynchronize
-#define cudaGetDeviceCount     hipGetDeviceCount
-#define cudaSetDevice          hipSetDevice
-#define cudaEvent_t      hipEvent_t
-#define cudaEventCreate  hipEventCreate
-#define cudaEventDestroy hipEventDestroy
-#define cudaEventRecord  hipEventRecord
-#define cudaEventSynchronize hipEventSynchronize
-#define cudaEventElapsedTime hipEventElapsedTime
-#define cudaSuccess      hipSuccess
-#else
-#include <cuda_runtime.h>
-#endif
+#include "../common/gpu_compat.cuh"    /* single CUDA/HIP shim */
 
 /*  Conjugate P complex arrays in-place on GPU.
  *      buf.im_p = -buf.im_p   (negate im only)
@@ -97,21 +79,21 @@ static double bw_ip(int P, int64_t n, double ms) {
 } while (0)
 
 template<int P>
-static void bench_aos(int64_t n, double *dbuf) {
+static void bench_aos(int64_t n, double *__restrict__ dbuf) {
     int64_t grid = (n + BLK - 1) / BLK;
     GPU_BENCH(P, n, "AoS",
               (g_aos<P><<<grid, BLK>>>((AoS<P>*)dbuf, n)));
 }
 
 template<int P>
-static void bench_soa(int64_t n, double *dbuf) {
+static void bench_soa(int64_t n, double *__restrict__ dbuf) {
     int64_t grid = (n + BLK - 1) / BLK;
     GPU_BENCH(P, n, "SoA",
               (g_soa<P><<<grid, BLK>>>(dbuf, n)));
 }
 
 template<int P, int VL>
-static void bench_aosoa(int64_t n, double *dbuf, const char *label) {
+static void bench_aosoa(int64_t n, double *__restrict__ dbuf, const char *label) {
     int64_t grid = (n + BLK - 1) / BLK;
     GPU_BENCH(P, n, label,
               (g_aosoa<P,VL><<<grid, BLK>>>(
@@ -119,7 +101,7 @@ static void bench_aosoa(int64_t n, double *dbuf, const char *label) {
 }
 
 template<int P>
-static void run_all(double *dbuf) {
+static void run_all(double *__restrict__ dbuf) {
     int64_t n = (TOTAL_DOUBLES / (2 * P) / GPU_MAX_VL) * GPU_MAX_VL;
     printf("\n── P=%d complex pairs  (%d im streams)  N_base=%lld  "
            "total=%.1f GB ──\n",

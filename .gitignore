@@ -1,0 +1,102 @@
+# -----------------------------------------------------------------------------
+# SC26-Layout-AD -- repository-wide gitignore
+#
+# Keep a directory (like results/) while ignoring its contents? Commit a
+# `.gitkeep` in it and un-ignore that placeholder with `!<path>/.gitkeep`.
+# -----------------------------------------------------------------------------
+
+# ---- Build artifacts -------------------------------------------------------
+*.o
+*.obj
+*.a
+*.lo
+*.so
+*.dylib
+*.out
+
+# Per-experiment compiled bench binaries (run scripts write them into the
+# experiment root as `bench_cpu`, `bench_gpu`, `conjugate_{cpu,gpu}_*`, etc.)
+Experiments/*/bench_cpu
+Experiments/*/bench_gpu
+Experiments/*/bench_gpu_a
+Experiments/*/bench_cpu_a
+Experiments/*/bench_stream_cpu
+Experiments/*/bench_stream_gpu
+Experiments/*/cost_metrics
+Experiments/E6_VelocityTendencies/*/bench_cpu
+Experiments/E6_VelocityTendencies/*/bench_gpu
+Experiments/E6_VelocityTendencies/*/bench_gpu_a
+Experiments/E6_VelocityTendencies/*/bench_cpu_a
+Experiments/E6_VelocityTendencies/*/bench_stream_cpu
+Experiments/E6_VelocityTendencies/*/bench_stream_gpu
+Experiments/E6_VelocityTendencies/*/cost_metrics
+Experiments/E2_Conjugation/conjugate_cpu_*
+Experiments/E2_Conjugation/conjugate_gpu_*
+Experiments/E4_GAS/zaxpy_cpu
+Experiments/E4_GAS/zaxpy_gpu
+Experiments/E5_USXX/addusxx_cpu
+Experiments/E5_USXX/addusxx_gpu
+Experiments/E3_Transpose/transpose_*.exe
+Experiments/E3_Transpose/transpose_cpu_bin
+Experiments/E3_Transpose/transpose_gpu_bin
+
+# ---- Per-experiment results directories (CSV output of runs) ---------------
+Experiments/*/results/
+Experiments/E6_VelocityTendencies/*/results/
+
+# ---- Downloaded / generated data -------------------------------------------
+Experiments/E4_GAS/bin/
+Experiments/E5_USXX/bin/
+Experiments/E4_GAS/*.zip
+Experiments/E5_USXX/*.zip
+# ICON R02B05 data is user-provided (see Experiments/E6_*/README.md)
+Experiments/E6_VelocityTendencies/data_r02b05/
+
+# ---- Python ----------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# pyenv local venv created by common/setup.sh
+Experiments/common/venv/
+Experiments/common/dace/
+
+# ---- LaTeX build artifacts -------------------------------------------------
+latex/*.aux
+latex/*.log
+latex/*.out
+latex/*.bbl
+latex/*.blg
+latex/*.fdb_latexmk
+latex/*.fls
+latex/*.synctex.gz
+latex/*.toc
+latex/*.nav
+latex/*.snm
+# The committed PDF is the built AD; keep it tracked.
+# If a reviewer rebuilds, the new PDF will diff against the tracked one.
+# To always ignore: uncomment the next line.
+# latex/*.pdf
+AD/*.aux
+AD/*.log
+AD/*.out
+AD/*.bbl
+AD/*.blg
+AD/*.fdb_latexmk
+AD/*.fls
+AD/*.synctex.gz
+
+# ---- Editor / OS scratch ---------------------------------------------------
+.DS_Store
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.cache/
+
+# ---- DaCe scratch ----------------------------------------------------------
+.dacecache/
+*.sdfg.cache/

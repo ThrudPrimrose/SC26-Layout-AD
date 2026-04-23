@@ -85,7 +85,7 @@ static inline uint64_t splitmix64(uint64_t x) {
   x = (x ^ (x >> 27)) * 0x94D049BB133111EBULL;
   return x ^ (x >> 31);
 }
-static void fill_mask_d(double *arr, size_t n, unsigned seed, double p_true) {
+static void fill_mask_d(double *__restrict__ arr, size_t n, unsigned seed, double p_true) {
   for (size_t i = 0; i < n; i++) {
     uint64_t h = splitmix64((uint64_t)seed * 2654435761ULL + i);
     double u = (double)(h & 0xFFFFFF) / 16777216.0;
@@ -96,14 +96,14 @@ static void fill_mask_d(double *arr, size_t n, unsigned seed, double p_true) {
 enum SchedKind { SCHED_JK_OUTER=0, SCHED_JE_OUTER=1, SCHED_COLLAPSE2=2,
                  SCHED_NUMA4=3, SCHED_COLLAPSE2_JE=4 };
 
-template <int V> static void layout_2d(double *dst, const double *src,
+template <int V> static void layout_2d(double *__restrict__ dst, const double *__restrict__ src,
                                        int N, int nlev) {
 #pragma omp parallel for schedule(static) collapse(2)
   for (int jk = 0; jk < nlev; jk++)
     for (int i = 0; i < N; i++)
       dst[IC<V>(i,jk,N,nlev)] = src[i + jk*N];
 }
-static void rearrange_2d(int V, double *dst, const double *src, int N, int nlev) {
+static void rearrange_2d(int V, double *__restrict__ dst, const double *__restrict__ src, int N, int nlev) {
   switch (V) {
     case 1: layout_2d<1>(dst,src,N,nlev); break;
     case 2: layout_2d<2>(dst,src,N,nlev); break;
@@ -111,14 +111,14 @@ static void rearrange_2d(int V, double *dst, const double *src, int N, int nlev)
     case 4: layout_2d<4>(dst,src,N,nlev); break;
   }
 }
-static void layout_2d_blocked(double *dst, const double *src,
+static void layout_2d_blocked(double *__restrict__ dst, const double *__restrict__ src,
                               int N, int nlev, int B) {
 #pragma omp parallel for schedule(static) collapse(2)
   for (int jk = 0; jk < nlev; jk++)
     for (int i = 0; i < N; i++)
       dst[IC_blocked(i,jk,B,nlev)] = src[i + jk*N];
 }
-static void layout_2d_tiled(double *dst, const double *src,
+static void layout_2d_tiled(double *__restrict__ dst, const double *__restrict__ src,
                             int N, int nlev, int TX, int TY) {
 #pragma omp parallel for schedule(static) collapse(2)
   for (int jk = 0; jk < nlev; jk++)
@@ -131,7 +131,7 @@ static void layout_2d_tiled(double *dst, const double *src,
 #ifndef __CUDACC__
 #include "../../common/numa_util.h"
 template <int V>
-static double *redistribute_2d(const double *src, int N, int nlev, SchedKind sched) {
+static double *redistribute_2d(const double *__restrict__ src, int N, int nlev, SchedKind sched) {
   double *dst = numa_alloc_unfaulted<double>((size_t)N*nlev);
   switch (sched) {
     case SCHED_COLLAPSE2:
@@ -152,7 +152,7 @@ static double *redistribute_2d(const double *src, int N, int nlev, SchedKind sch
   }
   return dst;
 }
-static double *redistribute_2d_blocked(const double *src, int N, int nlev,
+static double *redistribute_2d_blocked(const double *__restrict__ src, int N, int nlev,
                                        int B, SchedKind) {
   double *dst = numa_alloc_unfaulted<double>((size_t)N*nlev);
   int nblk = N / B;
@@ -162,7 +162,7 @@ static double *redistribute_2d_blocked(const double *src, int N, int nlev,
       for (int jl = 0; jl < B; jl++) { int x=IC_blocked(jb*B+jl,jk,B,nlev); dst[x]=src[x]; }
   return dst;
 }
-static double *redistribute_2d_tiled(const double *src, int N, int nlev,
+static double *redistribute_2d_tiled(const double *__restrict__ src, int N, int nlev,
                                      int TX, int TY, SchedKind) {
   double *dst = numa_alloc_unfaulted<double>((size_t)N*nlev);
   int nx = N / TX, ny = (nlev + TY - 1) / TY;

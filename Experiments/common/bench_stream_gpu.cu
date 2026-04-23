@@ -15,48 +15,16 @@
 #include <cstdlib>
 #include <cstdint>
 
-#if defined(__HIP_PLATFORM_AMD__) || defined(HIP_PLATFORM_AMD)
-  #include <hip/hip_runtime.h>
-  #define gpuMalloc          hipMalloc
-  #define gpuFree            hipFree
-  #define gpuMemset          hipMemset
-  #define gpuEventCreate     hipEventCreate
-  #define gpuEventRecord     hipEventRecord
-  #define gpuEventSynchronize hipEventSynchronize
-  #define gpuEventElapsedTime hipEventElapsedTime
-  #define gpuEventDestroy    hipEventDestroy
-  #define gpuDeviceSynchronize hipDeviceSynchronize
-  #define gpuEvent_t         hipEvent_t
-  #define gpuSuccess         hipSuccess
-  #define gpuGetLastError    hipGetLastError
-  #define gpuGetErrorString  hipGetErrorString
-#else
-  #include <cuda_runtime.h>
-  #define gpuMalloc          cudaMalloc
-  #define gpuFree            cudaFree
-  #define gpuMemset          cudaMemset
-  #define gpuEventCreate     cudaEventCreate
-  #define gpuEventRecord     cudaEventRecord
-  #define gpuEventSynchronize cudaEventSynchronize
-  #define gpuEventElapsedTime cudaEventElapsedTime
-  #define gpuEventDestroy    cudaEventDestroy
-  #define gpuDeviceSynchronize cudaDeviceSynchronize
-  #define gpuEvent_t         cudaEvent_t
-  #define gpuSuccess         cudaSuccess
-  #define gpuGetLastError    cudaGetLastError
-  #define gpuGetErrorString  cudaGetErrorString
-#endif
+#include "gpu_compat.cuh"     /* cuda/hip unification lives here */
+#define CK GPU_CHECK
 
-#define CK(expr) do { auto _e = (expr); if (_e != gpuSuccess) { \
-    fprintf(stderr, "GPU error: %s\n", gpuGetErrorString(_e)); exit(1); } } while(0)
-
-__global__ void scale_add(float *A, const float *B, size_t N, float s) {
+__global__ void scale_add(float *__restrict__ A, const float *__restrict__ B, size_t N, float s) {
     size_t i = (size_t)blockIdx.x * blockDim.x + threadIdx.x;
     size_t stride = (size_t)gridDim.x * blockDim.x;
     for (; i < N; i += stride) A[i] = s * A[i] + B[i];
 }
 
-__global__ void fill(float *A, size_t N, float v) {
+__global__ void fill(float *__restrict__ A, size_t N, float v) {
     size_t i = (size_t)blockIdx.x * blockDim.x + threadIdx.x;
     size_t stride = (size_t)gridDim.x * blockDim.x;
     for (; i < N; i += stride) A[i] = v;

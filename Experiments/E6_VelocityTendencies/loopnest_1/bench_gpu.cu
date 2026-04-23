@@ -15,18 +15,7 @@
 #include <ctime>
 #include <cassert>
 
-#if __HIP_PLATFORM_AMD__
-#include "hip/hip_runtime.h"
-#endif
-
-#define CUDA_CHECK(call) do {                                              \
-    cudaError_t e = (call);                                                \
-    if (e != cudaSuccess) {                                                \
-        fprintf(stderr, "CUDA error %s:%d: %s\n",                         \
-                __FILE__, __LINE__, cudaGetErrorString(e));                 \
-        exit(1);                                                           \
-    }                                                                      \
-} while(0)
+/* CUDA_CHECK is provided transitively by ../../common/gpu_compat.cuh.   */
 #define CUDA_LAUNCH_CHECK() do {                                           \
     cudaError_t e = cudaGetLastError();                                     \
     if (e != cudaSuccess) {                                                \
@@ -558,34 +547,9 @@ static bool launch_gpu_tiled(int cfg,
 }
 
 /* ================================================================ */
-/*  GPU cache flush                                                  */
+/*  GPU cache flush -- canonical 8192^2 Jacobi (shared across repo). */
 /* ================================================================ */
-__global__ void flush_stencil_step(const double* __restrict__ A,
-                                   double* __restrict__ B, int N) {
-    int i=blockIdx.y*blockDim.y+threadIdx.y;
-    int j=blockIdx.x*blockDim.x+threadIdx.x;
-    if(i>=1&&i<N-1&&j>=1&&j<N-1)
-        B[i*N+j]=0.25*(A[(i-1)*N+j]+A[(i+1)*N+j]+A[i*N+(j-1)]+A[i*N+(j+1)]);
-}
-static constexpr int FLUSH_N=8192*4, FLUSH_STEPS=3;
-struct GpuFlush {
-    double *d_A=nullptr, *d_B=nullptr; bool inited=false;
-    void init(){if(inited)return; size_t n=(size_t)FLUSH_N*FLUSH_N;
-        double*h=new double[n]; for(size_t i=0;i<n;i++){uint64_t v=splitmix64(12345ULL+i);h[i]=(double)(v>>11)/(double)(1ULL<<53);}
-        CUDA_CHECK(cudaMalloc(&d_A,n*8)); CUDA_CHECK(cudaMalloc(&d_B,n*8));
-        CUDA_CHECK(cudaMemcpy(d_A,h,n*8,cudaMemcpyHostToDevice));
-        CUDA_CHECK(cudaMemcpy(d_B,h,n*8,cudaMemcpyHostToDevice));
-        delete[]h; inited=true;}
-    void flush(){init(); dim3 bl(16,16),gr((FLUSH_N+15)/16,(FLUSH_N+15)/16);
-        for(int s=0;s<FLUSH_STEPS;s++){flush_stencil_step<<<gr,bl>>>(d_A,d_B,FLUSH_N);std::swap(d_A,d_B);}
-        CUDA_CHECK(cudaDeviceSynchronize());
-        /* Deterministic sink at a fixed index; prevents DCE without
-         * introducing nondeterminism. */
-        int ri = FLUSH_N * FLUSH_N / 2; double val;
-        CUDA_CHECK(cudaMemcpy(&val,d_A+ri,8,cudaMemcpyDeviceToHost));}
-    void destroy(){if(d_A)cudaFree(d_A);if(d_B)cudaFree(d_B);d_A=d_B=nullptr;inited=false;}
-};
-static GpuFlush g_flush;
+#include "../../common/jacobi_flush_gpu.cuh"
 
 /* ================================================================ */
 /*  run_variant_configs  (V1-V5)                                     */
@@ -616,7 +580,7 @@ static void run_variant_configs(
         CUDA_CHECK(cudaMemset(d_out,0,sz_e*8));
         bool launched=true;
         for(int r=0;r<WARMUP;r++){
-            g_flush.flush();
+            flush_jacobi_gpu();
             launched=launch_gpu_v(V,ci,d_out,d_vn_ie,d_inv_dual,d_w,d_cidx,
                 d_z_vt_ie,d_inv_primal,d_tangent,d_z_w_v,d_vidx,N_e,N_c,N_v,nlev,nlev_end);
             if(!launched)break;
@@ -632,7 +596,7 @@ static void run_variant_configs(
         if(!ok){ printf("FAIL: V=%d cfg=%-14s fails=%d max_rel=%.3e\n",V,GCFG[ci].label,nf,mr); continue; }
         else if(ci==0) printf("OK:   nlev=%d(%d) dist=%-12s V=%d mr=%.3e\n",nlev,nlev_end,dist_label,V,mr);
         for(int r=0;r<NRUNS;r++){
-            g_flush.flush();
+            flush_jacobi_gpu();
             CUDA_CHECK(cudaEventRecord(ev0));
             launch_gpu_v(V,ci,d_out,d_vn_ie,d_inv_dual,d_w,d_cidx,
                 d_z_vt_ie,d_inv_primal,d_tangent,d_z_w_v,d_vidx,N_e,N_c,N_v,nlev,nlev_end);
@@ -642,7 +606,7 @@ static void run_variant_configs(
             fprintf(fcsv,"gpu,%d,%d,%d,%d,%d,%s,%s,%d,%d,%d,%d,%d,%.6f\n",
                 V,nlev_end,N_e,N_c,N_v,dist_label,GCFG[ci].label,
                 GCFG[ci].tx,GCFG[ci].ty,GCFG[ci].bx,GCFG[ci].by,r,(double)ms);
-            g_flush.flush();
+            flush_jacobi_gpu();
         }
     }
     printf("Done: nlev=%d(%d) dist=%-12s V=%d\n",nlev,nlev_end,dist_label,V);
@@ -674,7 +638,7 @@ static void run_v6_configs(
     for(int ci=0;ci<N_GCFG_V6;ci++){
         CUDA_CHECK(cudaMemset(d_out,0,sz_e*8));
         bool launched=true;
-        for(int r=0;r<WARMUP;r++){g_flush.flush();
+        for(int r=0;r<WARMUP;r++){flush_jacobi_gpu();
             launched=launch_gpu_v6<4>(ci,d_out,d_vn_ie,d_inv_dual,d_w,d_cidx,
                 d_z_vt_ie,d_inv_primal,d_tangent,d_z_w_v,d_vidx,N_e,N_c,N_v,nlev,nlev_end,nlev_padded);
             if(!launched)break; CUDA_CHECK(cudaDeviceSynchronize());}
@@ -685,14 +649,14 @@ static void run_v6_configs(
         if(!ok){printf("FAIL: V=6 cfg=%s fails=%d mr=%.3e\n",GCFG_V6[ci].label,nf,mr);continue;}
         else if(ci==0) printf("OK:   V=6 dist=%-12s mr=%.3e\n",dist_label,mr);
         for(int r=0;r<NRUNS;r++){
-            g_flush.flush(); CUDA_CHECK(cudaEventRecord(ev0));
+            flush_jacobi_gpu(); CUDA_CHECK(cudaEventRecord(ev0));
             launch_gpu_v6<4>(ci,d_out,d_vn_ie,d_inv_dual,d_w,d_cidx,
                 d_z_vt_ie,d_inv_primal,d_tangent,d_z_w_v,d_vidx,N_e,N_c,N_v,nlev,nlev_end,nlev_padded);
             CUDA_CHECK(cudaEventRecord(ev1)); CUDA_CHECK(cudaEventSynchronize(ev1));
             float ms=0; CUDA_CHECK(cudaEventElapsedTime(&ms,ev0,ev1));
             fprintf(fcsv,"gpu,6,%d,%d,%d,%d,%s,%s,1,1,%d,1,%d,%.6f\n",
                 nlev_end,N_e,N_c,N_v,dist_label,GCFG_V6[ci].label,(int)GCFG_V6[ci].bx,r,(double)ms);
-            g_flush.flush();
+            flush_jacobi_gpu();
         }
     }
     printf("Done: nlev=%d(%d) dist=%-12s V=6\n",nlev,nlev_end,dist_label);
@@ -724,7 +688,7 @@ static void run_v7_configs(
     for(int ci=0;ci<N_GCFG_V7;ci++){
         CUDA_CHECK(cudaMemset(d_out,0,sz_e*8));
         bool launched=true;
-        for(int r=0;r<WARMUP;r++){g_flush.flush();
+        for(int r=0;r<WARMUP;r++){flush_jacobi_gpu();
             launched=launch_gpu_v7<4>(ci,d_out,d_vn_ie,d_inv_dual,d_w,d_cidx,
                 d_z_vt_ie,d_inv_primal,d_tangent,d_z_w_v,d_vidx,N_e,N_c,N_v,nlev);
             if(!launched)break; CUDA_CHECK(cudaDeviceSynchronize());}
@@ -735,7 +699,7 @@ static void run_v7_configs(
         if(!ok){printf("FAIL: V=7 cfg=%s fails=%d mr=%.3e\n",GCFG_V7[ci].label,nf,mr);continue;}
         else if(ci==0) printf("OK:   V=7 dist=%-12s mr=%.3e\n",dist_label,mr);
         for(int r=0;r<NRUNS;r++){
-            g_flush.flush(); CUDA_CHECK(cudaEventRecord(ev0));
+            flush_jacobi_gpu(); CUDA_CHECK(cudaEventRecord(ev0));
             launch_gpu_v7<4>(ci,d_out,d_vn_ie,d_inv_dual,d_w,d_cidx,
                 d_z_vt_ie,d_inv_primal,d_tangent,d_z_w_v,d_vidx,N_e,N_c,N_v,nlev);
             CUDA_CHECK(cudaEventRecord(ev1)); CUDA_CHECK(cudaEventSynchronize(ev1));
@@ -743,7 +707,7 @@ static void run_v7_configs(
             fprintf(fcsv,"gpu,7,%d,%d,%d,%d,%s,%s,%d,1,%d,1,%d,%.6f\n",
                 nlev,N_e,N_c,N_v,dist_label,GCFG_V7[ci].label,
                 GCFG_V7[ci].tx,(int)GCFG_V7[ci].bx,r,(double)ms);
-            g_flush.flush();
+            flush_jacobi_gpu();
         }
     }
     printf("Done: nlev=%d dist=%-12s V=7\n",nlev,dist_label);
@@ -781,7 +745,7 @@ static void run_tiled_configs(
         CUDA_CHECK(cudaMemset(d_out,0,sz_e*8));
         bool launched=true;
         for (int r=0;r<WARMUP;r++) {
-            g_flush.flush();
+            flush_jacobi_gpu();
             launched=launch_gpu_tiled(ci,d_out,d_vn_ie,d_inv_dual,d_w,d_cidx,
                 d_z_vt_ie,d_inv_primal,d_tangent,d_z_w_v,d_vidx,N_e,N_c,N_v,nlev,nlev_end);
             if(!launched) break; CUDA_CHECK(cudaDeviceSynchronize());
@@ -793,7 +757,7 @@ static void run_tiled_configs(
         if(!ok){ printf("FAIL: tiled cfg=%s fails=%d mr=%.3e\n",GCFG_TILED[ci].label,nf,mr); continue; }
         else    printf("OK:   tiled cfg=%-18s dist=%-12s mr=%.3e\n",GCFG_TILED[ci].label,dist_label,mr);
         for (int r=0;r<NRUNS;r++) {
-            g_flush.flush(); CUDA_CHECK(cudaEventRecord(ev0));
+            flush_jacobi_gpu(); CUDA_CHECK(cudaEventRecord(ev0));
             launch_gpu_tiled(ci,d_out,d_vn_ie,d_inv_dual,d_w,d_cidx,
                 d_z_vt_ie,d_inv_primal,d_tangent,d_z_w_v,d_vidx,N_e,N_c,N_v,nlev,nlev_end);
             CUDA_CHECK(cudaEventRecord(ev1)); CUDA_CHECK(cudaEventSynchronize(ev1));
@@ -803,7 +767,7 @@ static void run_tiled_configs(
                 nlev_end,N_e,N_c,N_v,dist_label,GCFG_TILED[ci].label,
                 GCFG_TILED[ci].stx,GCFG_TILED[ci].sty,
                 GCFG_TILED[ci].bx, GCFG_TILED[ci].by, r,(double)ms);
-            g_flush.flush();
+            flush_jacobi_gpu();
         }
     }
     printf("Done: nlev=%d(%d) dist=%-12s tiled STX=%d STY=%d\n",nlev,nlev_end,dist_label,STX,STY);
@@ -972,7 +936,7 @@ int main(int argc, char* argv[]) {
     printf("GPU: %s  SM=%d  Configs: V1-V5=%d V6=%d V7=%d\n",
            prop.name,prop.multiProcessorCount,N_GCFG,N_GCFG_V6,N_GCFG_V7);
     /* All random draws go through common/prng.h with SC26_SEED=42. */
-    g_flush.init();
+    flush_jacobi_gpu_init();
 
     for(int ni=0;ni<N_NLEVS;ni++){
         int nlev_base=NLEVS[ni], nlev_padded=icon_pad_nlev(nlev_base);
@@ -1009,7 +973,7 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    g_flush.destroy();
+    flush_jacobi_gpu_destroy();
     delete[]cell_logical; delete[]vert_logical;
     if(have_exact) ied.free_all();
     fclose(fcsv);

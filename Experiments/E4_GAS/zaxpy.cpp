@@ -689,7 +689,7 @@ int main(int argc, char **argv)
     fclose(csv);
 
     delete[] qe_base;
-    if (g_flush) numa_dealloc(g_flush, FLUSH_ELEMS);
+    /* Flush buffers are owned by common/jacobi_flush.h (freed at exit). */
     printf("\nDone.  CSVs: zaxpy_sweep_small.csv  zaxpy_sweep_1gb.csv\n");
     return 0;
 }

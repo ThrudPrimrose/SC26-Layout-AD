@@ -28,7 +28,7 @@
 #include <string>
 #include <algorithm>
 #include <functional>
-#include <cuda_runtime.h>
+#include "../common/gpu_compat.cuh"    /* single CUDA/HIP shim */
 
 /* ---- dimensions ---- */
 #ifndef M_DIM
@@ -44,14 +44,7 @@ static constexpr int Nd = N_DIM;
 #define NWARMUP  5
 #define NREP     100
 
-#define CUDA_CHECK(call) do {                                       \
-    cudaError_t _e = (call);                                        \
-    if (_e != cudaSuccess) {                                        \
-        fprintf(stderr, "CUDA error %s:%d: %s\n",                  \
-                __FILE__, __LINE__, cudaGetErrorString(_e));        \
-        exit(1);                                                    \
-    }                                                               \
-} while (0)
+/* CUDA_CHECK is provided by ../common/gpu_compat.cuh. */
 
 
 /* ================================================================

@@ -75,3 +75,102 @@ def canonical_violin(ax, datasets, positions, widths=0.9):
         bw_method=VIOLIN_BW_METHOD,
         points=VIOLIN_POINTS,
     )
+
+
+# ──────────────────────────────────────────────────────────────────────────
+#  Data-discovery helpers
+#
+#  Every plot_paper.py across the repo should load its inputs through these
+#  helpers instead of hard-coding `results/daint/...` / `results/beverin/...`
+#  path strings. The convention is:
+#
+#    <experiment_dir>/results/<platform>/<csv_name>
+#
+#  where <platform> is one of `PLATFORMS` below. Each helper returns an
+#  empty / missing marker rather than raising when a CSV is absent, so a
+#  single-platform reproduction run still plots cleanly.
+# ──────────────────────────────────────────────────────────────────────────
+
+PLATFORMS = ("daint", "beverin")
+
+
+def experiment_dir(caller_file):
+    """Return the directory containing the calling plot_paper.py.
+
+    Usage from a plot script:
+        EXP_DIR = experiment_dir(__file__)
+    """
+    import os
+    return os.path.dirname(os.path.abspath(caller_file))
+
+
+def results_root(experiment_dir_path):
+    """`<experiment>/results` -- where every bench writes its CSVs."""
+    import os
+    return os.path.join(experiment_dir_path, "results")
+
+
+def results_path(experiment_dir_path, platform, csv_name):
+    """Compose the full CSV path for one (platform, csv_name) pair.
+
+    Example: results_path(EXP_DIR, "daint", "numa_cpu.csv")
+             -> "<EXP_DIR>/results/daint/numa_cpu.csv"
+    """
+    import os
+    return os.path.join(results_root(experiment_dir_path), platform, csv_name)
+
+
+def discover_csvs(experiment_dir_path, pattern="*.csv"):
+    """List every CSV under <experiment>/results/<platform>/, grouped by
+    platform. Missing platforms are silently skipped.
+
+    Returns a dict: { platform: [csv_path, ...] }.
+    """
+    import glob, os
+    found = {}
+    for plat in PLATFORMS:
+        plat_dir = os.path.join(results_root(experiment_dir_path), plat)
+        if not os.path.isdir(plat_dir):
+            continue
+        found[plat] = sorted(glob.glob(os.path.join(plat_dir, pattern)))
+    return found
+
+
+def load_csv(experiment_dir_path, csv_name, platform=None):
+    """Load one CSV as a pandas DataFrame. Adds a `platform` column so
+    that per-platform DataFrames can be concatenated downstream.
+
+    If `platform` is None, concatenates across every present platform.
+    Returns an empty DataFrame if nothing is found (never raises).
+    """
+    import os
+    import pandas as pd
+
+    if platform is not None:
+        path = results_path(experiment_dir_path, platform, csv_name)
+        if not os.path.isfile(path):
+            return pd.DataFrame()
+        df = pd.read_csv(path)
+        df["platform"] = platform
+        return df
+
+    frames = []
+    for plat in PLATFORMS:
+        path = results_path(experiment_dir_path, plat, csv_name)
+        if not os.path.isfile(path):
+            continue
+        df = pd.read_csv(path)
+        df["platform"] = plat
+        frames.append(df)
+    if not frames:
+        return pd.DataFrame()
+    return pd.concat(frames, ignore_index=True)
+
+
+def fig_output_path(experiment_dir_path, stem, ext="pdf"):
+    """Canonical figure output location: `<experiment_dir>/<stem>.<ext>`.
+    Keeps figures next to their source plot_paper.py. Always returns an
+    absolute path.
+    """
+    import os
+    return os.path.join(experiment_dir_path, f"{stem}.{ext}")

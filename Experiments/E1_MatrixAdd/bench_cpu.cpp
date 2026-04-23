@@ -88,7 +88,7 @@ static inline double elapsed_sec(Clock::time_point t0, Clock::time_point t1) {
  * ════════════════════════════════════════════════════════════════════ */
 
 /* First-touch init for row-major */
-static void ft_init_rm(double *buf, size_t total, int M_, int N_, bool is_B) {
+static void ft_init_rm(double *__restrict__ buf, size_t total, int M_, int N_, bool is_B) {
     bind_and_touch(buf, total * sizeof(double));
     #pragma omp parallel for schedule(static)
     for (size_t k = 0; k < total; k++) {
@@ -99,7 +99,7 @@ static void ft_init_rm(double *buf, size_t total, int M_, int N_, bool is_B) {
 }
 
 /* First-touch init for col-major B[j*M+i] */
-static void ft_init_cm(double *buf, size_t total, int M_, int N_) {
+static void ft_init_cm(double *__restrict__ buf, size_t total, int M_, int N_) {
     bind_and_touch(buf, total * sizeof(double));
     #pragma omp parallel for schedule(static)
     for (int j = 0; j < N_; j++)
@@ -109,7 +109,7 @@ static void ft_init_cm(double *buf, size_t total, int M_, int N_) {
 
 /* First-touch init for blocked-rowmajor */
 template <int SB>
-static void ft_init_blk_rm(double *buf, size_t total, int M_, int N_, bool is_B) {
+static void ft_init_blk_rm(double *__restrict__ buf, size_t total, int M_, int N_, bool is_B) {
     bind_and_touch(buf, total * sizeof(double));
     int NB = N_ / SB;
     #pragma omp parallel for schedule(static) collapse(2)
@@ -128,7 +128,7 @@ static void ft_init_blk_rm(double *buf, size_t total, int M_, int N_, bool is_B)
 
 /* First-touch init for blocked-colmajor (B with col-major inner layout) */
 template <int SB>
-static void ft_init_blk_cm(double *buf, size_t total, int M_, int N_) {
+static void ft_init_blk_cm(double *__restrict__ buf, size_t total, int M_, int N_) {
     bind_and_touch(buf, total * sizeof(double));
     int NB = N_ / SB;
     #pragma omp parallel for schedule(static) collapse(2)
@@ -555,8 +555,6 @@ int main(int argc, char **argv) {
     printf("  col_major predicted:  %.1fx  (cost %g vs 3)\n",
            (1 + 2 * B_eff) / 3.0, 1 + 2 * B_eff);
 
-    if (g_flush_buf)
-        numa_free(g_flush_buf, FLUSH_N * sizeof(double));
-
+    /* Flush buffers are owned by common/jacobi_flush.h (freed at exit). */
     return 0;
 }

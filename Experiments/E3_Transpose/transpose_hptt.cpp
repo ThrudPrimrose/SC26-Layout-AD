@@ -136,7 +136,7 @@ static void bind_contiguous(void *base, size_t total_bytes, int D) {
     }
 }
 
-static void parallel_init(float *p, size_t n, float val) {
+static void parallel_init(float *__restrict__ p, size_t n, float val) {
 #pragma omp parallel for schedule(static)
     for (size_t i = 0; i < n; i++)
         p[i] = val;
@@ -156,7 +156,8 @@ static bool is_patient(int var) { return var == 2 || var == 3; }
  * ═══════════════════════════════════════════════════════════════════════ */
 
 /* 2D full transpose: perm {1, 0} on [N, N] */
-static Plan make_full_plan(const float *A, float *B, int N,
+static Plan make_full_plan(const float *__restrict__ A,
+                           float *__restrict__ B, int N,
                            int numThreads, hptt::SelectionMethod method) {
     int perm[2] = {1, 0};
     int size[2] = {N, N};
@@ -172,7 +173,8 @@ static Plan make_full_plan(const float *A, float *B, int N,
  * Output layout:  B[bc][br][lc][lr]  — swap block indices AND local indices
  *
  * Single HPTT call transposes the entire blocked matrix. */
-static Plan make_blocked_plan(const float *src, float *dst,
+static Plan make_blocked_plan(const float *__restrict__ src,
+                              float *__restrict__ dst,
                               int N, int SB, int numThreads,
                               hptt::SelectionMethod method) {
     int NB = N / SB;
@@ -188,13 +190,13 @@ static Plan make_blocked_plan(const float *src, float *dst,
  *  Verification
  * ═══════════════════════════════════════════════════════════════════════ */
 
-static void ref_transpose(const float *in, float *ref, int N) {
+static void ref_transpose(const float *__restrict__ in, float *__restrict__ ref, int N) {
     for (int r = 0; r < N; r++)
         for (int c = 0; c < N; c++)
             ref[c * N + r] = in[r * N + c];
 }
 
-static float verify(const float *out, const float *ref, int N, int SB, bool blk) {
+static float verify(const float *__restrict__ out, const float *__restrict__ ref, int N, int SB, bool blk) {
     float mx = 0.0f;
     if (blk) {
         int NB = N / SB;

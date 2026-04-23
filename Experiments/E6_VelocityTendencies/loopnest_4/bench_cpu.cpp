@@ -204,6 +204,14 @@ static void jacobi_flush(double *, double *, int) { flush_jacobi(); }
 
 static SchedKind sched_for(int V) { return (V <= 2) ? SCHED_JK_OUTER : SCHED_JE_OUTER; }
 
+/* CALL_K is used by both the verify functions below and the timed
+ * run_variant / run_blocked / run_tiled runners; define it once here. */
+#define CALL_K(fn) \
+  fn(bd.h_ddt, bd.h_vn, bd.h_zw, bd.h_zeta, bd.h_ddqz, \
+     bd.h_cle, bd.h_gf, bd.h_area, bd.h_tang, bd.h_invp, \
+     bd.h_ici, bd.h_iqi, bd.h_ivi, bd.h_lvlm, \
+     bd.N_e, bd.nlev, jk0, jk1)
+
 /* ================================================================== */
 /*  Numerical verification                                             */
 /*                                                                    */
@@ -310,12 +318,6 @@ static void verify_blocked_B(int B, BenchData &bd, int jk0, int jk1,
       [&](int je,int jk){ return IC_blocked(je,jk,B,nlev); });
   if (!bad) fprintf(stderr, "[verify][OK]   loopnest_4 B=%d\n", B);
 }
-
-#define CALL_K(fn) \
-  fn(bd.h_ddt, bd.h_vn, bd.h_zw, bd.h_zeta, bd.h_ddqz, \
-     bd.h_cle, bd.h_gf, bd.h_area, bd.h_tang, bd.h_invp, \
-     bd.h_ici, bd.h_iqi, bd.h_ivi, bd.h_lvlm, \
-     bd.N_e, bd.nlev, jk0, jk1)
 
 static void run_variant(FILE *fcsv, int V, BenchData &bd,
                         int jk0, int jk1, const char *dist,

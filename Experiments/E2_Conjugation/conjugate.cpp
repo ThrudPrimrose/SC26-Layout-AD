@@ -53,7 +53,7 @@ static void flush_free()    {}
 
 /* ═══ Init helpers ═══ */
 
-static void init_and_bind(double *buf, int64_t n) {
+static void init_and_bind(double *__restrict__ buf, int64_t n) {
     bind_and_touch(buf, n * sizeof(double));
     #pragma omp parallel for schedule(static)
     for (int64_t i = 0; i < n; i++)

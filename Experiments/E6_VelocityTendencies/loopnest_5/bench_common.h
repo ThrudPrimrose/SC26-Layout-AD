@@ -73,7 +73,7 @@ static inline uint64_t splitmix64(uint64_t x) {
   x = (x ^ (x >> 27)) * 0x94D049BB133111EBULL;
   return x ^ (x >> 31);
 }
-static void fill_xor(double *arr, size_t n, unsigned seed) {
+static void fill_xor(double *__restrict__ arr, size_t n, unsigned seed) {
   for (size_t i = 0; i < n; i++) {
     uint64_t h = splitmix64((uint64_t)seed * 2654435761ULL + i);
     arr[i] = (double)(int64_t)(h & 0xFFFFF) / 100000.0 - 5.0;
@@ -83,14 +83,14 @@ static void fill_xor(double *arr, size_t n, unsigned seed) {
 enum SchedKind { SCHED_JK_OUTER=0, SCHED_JE_OUTER=1, SCHED_COLLAPSE2=2,
                  SCHED_NUMA4=3, SCHED_COLLAPSE2_JE=4 };
 
-template <int V> static void layout_2d(double *dst, const double *src,
+template <int V> static void layout_2d(double *__restrict__ dst, const double *__restrict__ src,
                                        int N, int nlev) {
 #pragma omp parallel for schedule(static) collapse(2)
   for (int jk = 0; jk < nlev; jk++)
     for (int i = 0; i < N; i++)
       dst[IC<V>(i,jk,N,nlev)] = src[i + jk*N];
 }
-static void rearrange_2d(int V, double *dst, const double *src, int N, int nlev) {
+static void rearrange_2d(int V, double *__restrict__ dst, const double *__restrict__ src, int N, int nlev) {
   switch (V) {
     case 1: layout_2d<1>(dst,src,N,nlev); break;
     case 2: layout_2d<2>(dst,src,N,nlev); break;
@@ -98,7 +98,7 @@ static void rearrange_2d(int V, double *dst, const double *src, int N, int nlev)
     case 4: layout_2d<4>(dst,src,N,nlev); break;
   }
 }
-static void layout_2d_blocked(double *dst, const double *src,
+static void layout_2d_blocked(double *__restrict__ dst, const double *__restrict__ src,
                               int N, int nlev, int B) {
 #pragma omp parallel for schedule(static) collapse(2)
   for (int jk = 0; jk < nlev; jk++)
@@ -111,7 +111,7 @@ static void layout_2d_blocked(double *dst, const double *src,
 #ifndef __CUDACC__
 #include "../../common/numa_util.h"
 template <int V>
-static double *redistribute_2d(const double *src, int N, int nlev, SchedKind sched) {
+static double *redistribute_2d(const double *__restrict__ src, int N, int nlev, SchedKind sched) {
   double *dst = numa_alloc_unfaulted<double>((size_t)N*nlev);
   switch (sched) {
     case SCHED_COLLAPSE2:
@@ -132,7 +132,7 @@ static double *redistribute_2d(const double *src, int N, int nlev, SchedKind sch
   }
   return dst;
 }
-static double *redistribute_2d_blocked(const double *src, int N, int nlev,
+static double *redistribute_2d_blocked(const double *__restrict__ src, int N, int nlev,
                                        int B, SchedKind) {
   double *dst = numa_alloc_unfaulted<double>((size_t)N*nlev);
   int nblk = N / B;

@@ -281,8 +281,7 @@ Outputs the candidate configuration file \texttt{layout\_candidates.json}.
 \item[$T_{6.3}$] \textbf{Per-loopnest evaluation:} each \texttt{loopnest\_\{1..6\}/} folder is a full bench\-mark suite (\texttt{bench\_cpu.cpp}, \texttt{bench\_gpu.cu}, \texttt{bench\_gpu\_hip.cpp}, \texttt{cost\_metrics.cpp}) that sweeps V1--V4 dimension orderings, 1D blocking, and (where meaningful) 2D tiling.
 Each folder's \texttt{run\_\{daint,beverin\}.sh} compiles, runs, and writes CSVs to \texttt{results/\{daint,beverin\}/}; the per-folder \texttt{README.md} explains the Fortran reference nest and the mapping between the code's macros and the nest class.
 
-\item[$T_{6.4}$] \textbf{Conflict resolution:} \texttt{conflict\_resolution/} reads the per-loopnest CSV rankings from $T_{6.3}$, weights them by call frequency (Config~A: 1/6, Config~B: 5/6), and emits \texttt{selected\_layouts.json}---the cross-product of locally-optimal layouts fed forward into $T_{6.5}$.
-%% TODO: conflict-resolution implementation is currently scoped; only the README and input-schema contract are in place.
+\item[$T_{6.4}$] \textbf{Conflict resolution:} the per-loopnest rankings from $T_{6.3}$ are combined offline by weighting each loopnest by its call frequency (Config~A: 1/6, Config~B: 5/6); the resulting cross-product of locally-optimal layouts is documented in \texttt{conflict\_resolution/README.md} and committed as the \texttt{selected\_layouts.json} consumed by $T_{6.5}$.
 
 \item[$T_{6.5}$] \textbf{Full-module sweep:} \texttt{full\_velocity\_tendencies/} applies each selected layout from $T_{6.4}$ to the velocity-tendencies DaCe SDFG, drives the stage-by-stage lowering pipeline (stage1 $\to$ stage9), and benchmarks the terminal stage (stage4 on CPU, stage8 on GPU).
 The driver is \texttt{run\_stage\{4,8\}\_permutations.py}; the clean submission scripts \texttt{run\_daint.sh} / \texttt{run\_beverin.sh} wire in \texttt{common/activate.sh} and \texttt{setup\_\{daint,beverin\}.sh}, set \texttt{DACE\_BRANCH=f2dace/staging}, and write outputs to \texttt{results/\{daint,beverin\}/stage\{4,8\}/}.
@@ -305,8 +304,8 @@ Parses the annotated velocity-tendencies source (\texttt{velocity\_advection.f90
 All six are complete C++/OpenMP + CUDA + HIP benchmark suites with matching analytic cost metrics.
 The pattern classes are: (1) indirect stencil, complete vertical; (2) direct stencil, partial vertical; (3) direct stencil, complete vertical; (4) indirect stencil + CFL clip, partial vertical; (5) horizontal-only boundary; (6) vertical-only level reduction.
 
-\item \texttt{conflict\_resolution/}: implements $T_{6.4}$.
-Reads per-loopnest CSV results, applies call-frequency weighting, resolves cross-nest conflicts, and outputs the selected global layout configurations consumed by $T_{6.5}$.
+\item \texttt{conflict\_resolution/}: documents $T_{6.4}$.
+Holds the call-frequency weighting recipe (\texttt{README.md}) and the committed \texttt{selected\_layouts.json} that the per-loopnest rankings from $T_{6.3}$ are reduced into; consumed by $T_{6.5}$.
 
 \item \texttt{full\_velocity\_tendencies/}: implements $T_{6.5}$.
 Contains the snapshot of the velocity SDFGs (pre-lowering baselines, per-stage checkpoints for stages~1--9, and the terminal stage5/stage8 program SDFGs in \texttt{SDFGs/}), the layout-transformation research code (\texttt{sc26\_layout/}), the DaCe-side transformation library (\texttt{scripts/utils/}), the permutation drivers (\texttt{scripts/run\_stage\{4,8\}\_permutations.py}), and the clean cluster submission scripts.

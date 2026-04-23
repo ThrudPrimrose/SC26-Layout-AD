@@ -32,7 +32,7 @@ static float *alloc_huge(size_t bytes) {
     return (float *)p;
 }
 
-static void first_touch(float *a, size_t N, float val) {
+static void first_touch(float *__restrict__ a, size_t N, float val) {
     #pragma omp parallel
     {
         int tid = omp_get_thread_num();
@@ -43,7 +43,7 @@ static void first_touch(float *a, size_t N, float val) {
     }
 }
 
-static double run_scale_add(float *A, const float *B, size_t N, int reps) {
+static double run_scale_add(float *__restrict__ A, const float *__restrict__ B, size_t N, int reps) {
     const float s = 1.0001f;
     /* warmup */
     #pragma omp parallel

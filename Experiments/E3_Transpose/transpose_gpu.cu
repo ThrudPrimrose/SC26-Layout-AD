@@ -12,7 +12,7 @@
 #include <cstring>
 #include <cmath>
 #include <algorithm>
-#include <cuda_runtime.h>
+#include "../common/gpu_compat.cuh"    /* single CUDA/HIP shim */
 
 #define GPU(call) do { cudaError_t e = (call); if (e != cudaSuccess) { \
     fprintf(stderr, "CUDA %s:%d: %s\n", __FILE__, __LINE__, \

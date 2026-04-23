@@ -110,21 +110,21 @@ static double bw_oop(int P, int64_t n, double ms) {
 } while (0)
 
 template<int P>
-static void bench_aos(int64_t n, double *di, double *dout) {
+static void bench_aos(int64_t n, double *__restrict__ di, double *__restrict__ dout) {
     int64_t grid = (n + BLK - 1) / BLK;
     GPU_BENCH(P, n, "AoS",
               (g_aos<P><<<grid, BLK>>>((AoS<P>*)di, (AoS<P>*)dout, n)));
 }
 
 template<int P>
-static void bench_soa(int64_t n, double *di, double *dout) {
+static void bench_soa(int64_t n, double *__restrict__ di, double *__restrict__ dout) {
     int64_t grid = (n + BLK - 1) / BLK;
     GPU_BENCH(P, n, "SoA",
               (g_soa<P><<<grid, BLK>>>(di, dout, n)));
 }
 
 template<int P, int VL>
-static void bench_aosoa(int64_t n, double *di, double *dout, const char *label) {
+static void bench_aosoa(int64_t n, double *__restrict__ di, double *__restrict__ dout, const char *label) {
     int64_t grid = (n + BLK - 1) / BLK;
     GPU_BENCH(P, n, label,
               (g_aosoa<P,VL><<<grid, BLK>>>(
@@ -132,7 +132,7 @@ static void bench_aosoa(int64_t n, double *di, double *dout, const char *label) 
 }
 
 template<int P>
-static void run_all(double *di, double *dout) {
+static void run_all(double *__restrict__ di, double *__restrict__ dout) {
     int64_t n = (TOTAL_DOUBLES / (2 * P) / GPU_MAX_VL) * GPU_MAX_VL;
     printf("\n── P=%d complex pairs  (%d SoA streams)  N_base=%lld  "
            "total=%.1f GB/side ──\n",

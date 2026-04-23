@@ -18,7 +18,7 @@
 // Compile:
 //   nvcc -O3 -std=c++17 zaxpy_indirect_sweep.cu -o zaxpy_indirect_sweep
 
-#include <cuda_runtime.h>
+#include "../common/gpu_compat.cuh"    /* single CUDA/HIP shim */
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
@@ -36,46 +36,27 @@
 
 #include "../common/prng.h"
 
-#define CUDA_CHECK(call)                                     \
-    do                                                       \
-    {                                                        \
-        cudaError_t err = (call);                            \
-        if (err != cudaSuccess)                              \
-        {                                                    \
-            std::cerr << "CUDA error at " << __FILE__ << ":" \
-                      << __LINE__ << " -> "                  \
-                      << cudaGetErrorString(err)             \
-                      << std::endl;                          \
-            std::exit(EXIT_FAILURE);                         \
-        }                                                    \
-    } while (0)
+/* CUDA_CHECK is provided by ../common/gpu_compat.cuh. */
 
 /* ================================================================ */
-/*  Cache-flush helper                                               */
+/*  Cache-flush helper -- canonical 8192^2 Jacobi (shared).          */
 /* ================================================================ */
-static double *d_flush = nullptr;
-static constexpr size_t FLUSH_SIZE = 256ULL * 1024 * 1024  * 8;
-
-__global__ void flush_kernel(double *buf, size_t n)
-{
-    size_t i = blockIdx.x * blockDim.x + threadIdx.x;
-    if (i < n) buf[i] = 1.0;
-}
-static void init_flush()
-{
-    if (!d_flush) CUDA_CHECK(cudaMalloc(&d_flush, FLUSH_SIZE));
-}
-static void flush_l2()
-{
-    size_t n = FLUSH_SIZE / sizeof(double);
-    flush_kernel<<<(n + 255) / 256, 256>>>(d_flush, n);
-    CUDA_CHECK(cudaDeviceSynchronize());
-}
+#include "../common/jacobi_flush_gpu.cuh"
 
 /* ================================================================ */
 /*  AoS kernels (cuDoubleComplex)                                    */
 /* ================================================================ */
 
+/* Precondition: every ymap value is unique (equivalently, ymap is a  */
+/* permutation of its range). Under that precondition no two threads  */
+/* target the same y[yi], so the non-atomic RMW below is race-free.   */
+/* The index generators in this file all enforce uniqueness:          */
+/*   - uniformSample: Fisher-Yates partial shuffle of [0, ny).         */
+/*   - normalSample : rejection loop with std::unordered_set dedup.    */
+/*   - tileIndexMap : preserves uniqueness by offsetting each tile     */
+/*                    into disjoint y-ranges.                          */
+/* The QE-loaded map is assumed collision-free too; verify_aos /       */
+/* verify_soa would fire (tol 1e-6) if that assumption were violated. */
 template <int C>
 __global__ void kern_aos_scatter(
     int nx, const int *__restrict__ ymap,
@@ -234,7 +215,7 @@ void profile_config(
         if (!verify_fn()) { fprintf(stderr,"FAIL %s %s tpb=%d cf=%d\n",vname,ename,tpb,coarsen); return; }
         for (int w=0;w<warmup;w++){launch();CUDA_CHECK(cudaDeviceSynchronize());}
         for (int r=0;r<iters;r++){
-            flush_l2();
+            flush_jacobi_gpu();
             CUDA_CHECK(cudaEventRecord(e0));
             launch();
             CUDA_CHECK(cudaEventRecord(e1));
@@ -427,7 +408,7 @@ int main(int argc, char **argv)
     std::array<int,4> cfs  = {1, 2, 4, 8};
 
     std::mt19937 rng(42);
-    init_flush();
+    flush_jacobi_gpu_init();
 
     // ── Load QE base index map ──────────────────────────────────────────
     int N = 0;
@@ -533,7 +514,7 @@ int main(int argc, char **argv)
     fclose(csv);
 
     delete[] qe_base;
-    if (d_flush) cudaFree(d_flush);
+    flush_jacobi_gpu_destroy();
     printf("\nDone.  CSVs: zaxpy_sweep_small.csv  zaxpy_sweep_1gb.csv\n");
     return 0;
 }
