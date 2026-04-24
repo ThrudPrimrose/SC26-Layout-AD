@@ -64,3 +64,18 @@ if [[ -n "${SCRATCH:-}" ]]; then
   export LD_LIBRARY_PATH=$SCRATCH/lib:$SCRATCH/lib64:$LD_LIBRARY_PATH
   export PATH=$SCRATCH/bin:$PATH
 fi
+
+# --- Auto-fetch experiment data if missing -------------------------------
+# Each download_*.sh is internally idempotent (skips when target is
+# already populated). EXP_DIR is set by the caller (run_<exp>_beverin.sh)
+# before sourcing this script.
+if [[ -n "${EXP_DIR:-}" ]]; then
+  shopt -s nullglob
+  for _dl in "${EXP_DIR}/download_data.sh" "${EXP_DIR}"/scripts/download_*_data.sh; do
+    [[ -f "${_dl}" ]] || continue
+    echo "[setup_beverin] data check via $(basename "${_dl}")"
+    ( cd "$(dirname "${_dl}")" && bash "$(basename "${_dl}")" )
+  done
+  shopt -u nullglob
+  unset _dl
+fi
