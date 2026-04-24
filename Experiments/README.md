@@ -119,6 +119,34 @@ Each `run_*.sh` internally sources:
 The run script then builds CPU + GPU binaries using those flag
 variables and writes CSV results to `results/{daint,beverin}/`.
 
+### Canonical compile flags
+
+Both setup scripts export the same flag set, differing only where the
+toolchain forces it. Treat this set as authoritative — every ad-hoc
+`g++` / `nvcc` / `hipcc` invocation in the repo (including the Python
+drivers in E3 and the DaCe compile helper under E6) carries the same
+flags.
+
+| Toolchain | Flags |
+|---|---|
+| **g++ (CPU)** | `-O3 -ffast-math -fno-trapping-math -fno-math-errno -march=native -mtune=native -fno-vect-cost-model -fopenmp -std=c++17` |
+| **nvcc (Daint)** | device: `-O3 --use_fast_math`; host via `-Xcompiler=`: the full CPU set plus `-Xcompiler=-march=native -Xcompiler=-mtune=native` |
+| **hipcc (Beverin)** | same as CPU minus `-fno-vect-cost-model` (Clang has no equivalent), plus HIP-specific `-munsafe-fp-atomics`, `-mllvm -amdgpu-early-inline-all=true`, etc. |
+
+`-fno-trapping-math` / `-fno-math-errno` are already implied by
+`-ffast-math`; they are listed explicitly to make intent survive any
+future `-ffast-math` definition drift.
+
+### OpenMP scheduling
+
+`OMP_SCHEDULE=static` is exported by both setup scripts, and every
+`#pragma omp parallel for` in the repo uses `schedule(static)`
+explicitly. No dynamic / guided / runtime / auto scheduling anywhere in
+our sources — chosen deliberately to minimize timing jitter.
+
+CPU pinning is handled via `SLURM_CPU_BIND=cores` (set in each setup
+script) — no `#SBATCH --cpu-bind` flags are needed.
+
 For interactive debugging without SLURM:
 
 ```bash
@@ -150,6 +178,20 @@ Every data download is a one-time step gated behind an explicit
 
 E0, E1, E2, E3, and the `Figures/` proof illustrations all synthesize
 their inputs in-process (no network access required).
+
+### Cleaning up after crashes
+
+If a benchmark segfaults on Alps/Daint, SLURM may leave multi-GB
+`core_nid*` core dumps scattered across the experiment tree. Clear them
+with:
+
+```bash
+bash clean_core_dumps.sh             # dry-run: count + total size
+bash clean_core_dumps.sh --delete -y # actually remove
+```
+
+The script resolves its own location so it runs correctly regardless
+of the current working directory.
 
 Setup / environment-loading scripts and their assumptions:
 

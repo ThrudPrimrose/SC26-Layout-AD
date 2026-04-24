@@ -218,6 +218,19 @@ Platform-specific setup and activation scripts are centralized under \texttt{Exp
 \texttt{setup.sh} (first-time install), \texttt{activate.sh} (per-session), and the per-cluster environment scripts \texttt{setup\_daint.sh} / \texttt{setup\_beverin.sh}.
 Every experiment's \texttt{run\_\{daint,beverin\}.sh} sources these in turn, so a single invocation of \texttt{common/setup.sh} at the repository root covers all experiments.
 
+\paragraph{Compile flags.}
+Both setup scripts export a single canonical flag set via \texttt{CPU\_CXXFLAGS} and \texttt{GPU\_CXXFLAGS}.
+Every ad-hoc \texttt{g++} / \texttt{nvcc} / \texttt{hipcc} invocation in the Python drivers (E3, E6) carries the same set.
+The CPU flag set is \texttt{-O3 -ffast-math -fno-trapping-math -fno-math-errno -march=native -mtune=native -fno-vect-cost-model -fopenmp -std=c++17}.
+\texttt{nvcc} uses \texttt{-O3 --use\_fast\_math} on the device side and the full CPU set is forwarded to the host GCC pass via \texttt{-Xcompiler=}.
+\texttt{hipcc} uses the same set minus \texttt{-fno-vect-cost-model} (Clang has no equivalent; \texttt{-O3}'s vectorizer is the accepted fallback), plus HIP-specific \texttt{-munsafe-fp-atomics} and early-inlining flags.
+\texttt{-fno-trapping-math} and \texttt{-fno-math-errno} are already implied by \texttt{-ffast-math}; they are listed explicitly so intent survives any future \texttt{-ffast-math} definition drift.
+
+\paragraph{OpenMP scheduling.}
+\texttt{OMP\_SCHEDULE=static} is exported by both setup scripts, and every \texttt{\#pragma omp parallel for} in our sources uses \texttt{schedule(static)} explicitly (no dynamic / guided / runtime / auto scheduling anywhere).
+This choice minimizes timing jitter across repetitions.
+CPU-to-core pinning is handled via \texttt{SLURM\_CPU\_BIND=cores}; no \texttt{\#SBATCH --cpu-bind} flags are used.
+
 \artinpart{Datasets / Inputs}
 
 Microbenchmarks (E1--E4) generate all input data synthetically at runtime.
