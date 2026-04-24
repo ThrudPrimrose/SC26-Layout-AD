@@ -131,19 +131,19 @@ The MI300A GPU shows no gain because its unified memory architecture already abs
 
 \textbf{E6 (ICON Velocity Tendencies, Figures~12--13, Table~IV):}
 The velocity-tendencies module contains 25~loop nests that access 50~arrays.
-After canonicalization, these collapse into 6~pattern classes with 7~layout-equivalent array groups.
+After canonicalization these collapse into 6~pattern classes, and the downstream layout search operates on a 5-group storage taxonomy (\texttt{cv}, \texttt{ch}, \texttt{f}, \texttt{s}, \texttt{n}) that matches the reference DaCe sweep in \texttt{permute\_stage8.py}.
 Experiment~E6 evaluates a representative loop nest from each class individually and the full module end-to-end:
 \begin{itemize}
 \item \emph{Loopnest~1 (indirect stencil, complete vertical):} Vertical-first layout improves CPU bandwidth by $1.85\times$ on Zen4 (from 30\% to 55\% of STREAM peak) with a modest gain on Grace (from 44\% to 47\%).
 On GPUs, both layouts achieve comparable bandwidth under exact R02B05 connectivity: 48--49\% on MI300A and 90--91\% on Hopper.
 Under uniform random indirection, GPUs show large vertical-first gains: $3.3\times$ on MI300A and $2.3\times$ on Hopper.
 The metric~$\mu$ is invariant to the indirection distribution under vertical-first layout on any platform (Table~IV).
-\item \emph{Loopnests~2--6:} Representative nests from the remaining five pattern classes (direct stencil / partial vertical, direct stencil / complete vertical, indirect stencil + CFL clip / partial vertical, horizontal-only boundary, and vertical-only level reduction) are each implemented as a full C++/OpenMP + CUDA + HIP benchmark suite and an analytic cost-metric sweep.
-Each suite sweeps V1--V4 dimension-order variants, 1D blocking $B \in \{8,16,32,64,128\}$, and (where vertical locality is meaningful) 2D tiling over $(T_X, T_Y) \in \{8,16,32,64\}^2$; GPU variants add a thread-block-size sweep.
+\item \emph{Loopnests~2--6:} Representative nests from the remaining five pattern classes (direct stencil / partial vertical, direct stencil / complete vertical, indirect stencil + CFL clip / partial vertical, horizontal-only boundary, and vertical-only level reduction) are each implemented as a full C++/OpenMP + CUDA/HIP benchmark suite (single-source via \texttt{common/gpu\_compat.cuh}) with an analytic cost-metric sweep.
+Each suite sweeps V1--V7 dimension-order variants and, where the access pattern makes it meaningful, blocked factors $B \in \{8,16,32,64,128\}$ and 2D tiling over $(T_X, T_Y)$; GPU variants add a thread-block-size sweep.
 The analytic cost metrics mirror the sweep axes and let us cross-check the empirical ordering against~$\mu$ and~$\Delta$.
 \item \emph{Full module (GPU, cross-layout sweep):} Vertical-first yields $1.17\times$ on MI300A GPU and $1.07\times$ on Hopper GPU for Config~B (5 of every 6~calls); Config~A shows $1.06\times$ on MI300A and $0.97\times$ on Hopper.
 The net per-timestep improvement is approximately 15\% on MI300A and 5\% on Hopper, weighted by the 5:1 call ratio.
-The evaluation is driven by \texttt{run\_stage\{4,8\}\_permutations.py}, which sweeps a 95-configuration layout-permutation matrix (five dimension groups: \texttt{cv}, \texttt{ch}, \texttt{f}, \texttt{s}, \texttt{n}) per device, per loop-nest lowering stage.
+The evaluation is driven by \texttt{build\_layout\_crossproduct.py} (which projects each micro-bench V-winner onto its per-axis storage component --- IC for (h,v,b)~arrays, IN for 2-column connectivity --- and votes per group on axis values rather than opaque V-ids) followed by \texttt{run\_stage\{4,8\}\_permutations.py}, which runs each configuration in \texttt{layout\_crossproduct.csv} per device and per loop-nest lowering stage.
 On any platform, the aggregate improvement should be positive whenever the dominant configuration benefits from vertical-first layout.
 \end{itemize}
 
@@ -280,39 +280,50 @@ Experiment~E6 follows a multi-stage pipeline that mirrors the paper's optimizati
 \begin{description}
 \item[$T_{6.1}$] \textbf{Download data:} fetch R02B05 connectivity tables and serialized fields via the per-loopnest \texttt{download\_data.sh} (or the full-module \texttt{scripts/download\_nproma20480\_data.sh}).
 
-\item[$T_{6.2}$] \textbf{Access analysis:} \texttt{access\_analysis/analyze\_access.py} (plus \texttt{select\_loopnests.py}, \texttt{jaccard.py}, \texttt{coaccess.py}) canonicalizes the 25~loop nests into 6~pattern classes, groups the 50~arrays into 7~layout-equivalent groups, and computes $\mu$/$\Delta$ for each candidate layout per group.
-Outputs the candidate configuration file \texttt{layout\_candidates.json}.
+\item[$T_{6.2}$] \textbf{Access analysis (LOKI):} \texttt{access\_analysis/analyze\_access.py} parses \texttt{velocity\_advection\_preprocessed.f90} with LOKI and extracts the 25~leaf loop nests and their role-tagged array access patterns (\texttt{h:S~v:S~b:S}, \texttt{h:U~v:S~b:S}, \ldots); \texttt{select\_loopnests.py} groups the nests by pattern class and picks one representative per class (6~nests total), writing \texttt{layout\_candidates.json} and \texttt{chosen\_loopnests.md}.
 
-\item[$T_{6.3}$] \textbf{Per-loopnest evaluation:} each \texttt{loopnest\_\{1..6\}/} folder is a full benchmark suite that sweeps V1--V4 dimension orderings, 1D blocking, and (where meaningful) 2D tiling.
+\item[$T_{6.3}$] \textbf{Canonical 5-group taxonomy:} \texttt{access\_analysis/generate\_canonical\_groups.py} assigns each array touched by a representative nest to one of five groups --- \texttt{cv}~(COMPUTE\_VERT), \texttt{ch}~(COMPUTE\_HORIZ), \texttt{f}~(FIELDS), \texttt{s}~(STENCIL), \texttt{n}~(CONN) --- by name/role rule, mirroring the split used in the reference DaCe sweep (\texttt{icon-artifacts/velocity/sc26\_layout/permute\_stage8.py}).
+Each group is tagged with its storage axis: cv/ch/f/s consume the \emph{IC}~axis (whether \texttt{je} or \texttt{jk} is innermost on the (h,v,b)~arrays), and n consumes the \emph{IN}~axis (SoA vs.\ AoS on the 2-column connectivity).
+Connectivity aliases (\texttt{icidx}, \texttt{ivblk}, \ldots) are force-added to \texttt{n} because LOKI filters them out of per-nest array lists.
+Writes \texttt{canonical\_array\_groups.json}.
+
+\item[$T_{6.4}$] \textbf{Per-loopnest evaluation:} each \texttt{loopnest\_\{1..6\}/} folder is a full benchmark suite that sweeps V1--V7 dimension orderings and, where meaningful, blocked factors B8--B128 at nlev=256.
 Each folder's \texttt{run\_\{daint,beverin\}.sh} compiles, runs, and writes CSVs to \texttt{results/\{daint,beverin\}/}; the per-folder \texttt{README.md} explains the Fortran reference nest and the mapping between the code's macros and the nest class.
 
-\item[$T_{6.4}$] \textbf{Conflict resolution:} the per-loopnest rankings from $T_{6.3}$ are combined offline by weighting each loopnest by its call frequency (Config~A: 1/6, Config~B: 5/6); the resulting cross-product of locally-optimal layouts is documented in \texttt{conflict\_resolution/README.md} and committed as the \texttt{selected\_layouts.json} consumed by $T_{6.5}$.
+\item[$T_{6.5}$] \textbf{Blocked-vs-unblocked verdict:} \texttt{analyze\_blocked\_vs\_unblocked.py} compares the best blocked layout's median runtime against the best unblocked layout's median, per loopnest $\times$ target.
+A loopnest \emph{keeps} blocked in its candidate pool iff the max speedup across the selected backends meets \texttt{--threshold} (default $1.25\times$); otherwise blocked is dropped.
+Writes \texttt{blocked\_verdict.json}.
 
-\item[$T_{6.5}$] \textbf{Full-module sweep:} \texttt{full\_velocity\_tendencies/} applies each selected layout from $T_{6.4}$ to the velocity-tendencies DaCe SDFG, drives the stage-by-stage lowering pipeline (stage1 $\to$ stage9), and benchmarks the terminal stage (stage4 on CPU, stage8 on GPU).
-The driver is \texttt{run\_stage\{4,8\}\_permutations.py}; the clean submission scripts \texttt{run\_daint.sh} / \texttt{run\_beverin.sh} wire in \texttt{common/activate.sh} and \texttt{setup\_\{daint,beverin\}.sh}, set \texttt{DACE\_BRANCH=f2dace/staging}, and write outputs to \texttt{results/\{daint,beverin\}/stage\{4,8\}/}.
+\item[$T_{6.6}$] \textbf{Layout cross-product:} \texttt{build\_layout\_crossproduct.py} ranks V-ids per loopnest by the geomean of normalized medians across every measured $\{$platform, backend$\}$ target, then \emph{projects} each V-id onto its storage-axis components (e.g.\ V6 $\to$ IC:v\_first, IN:AoS) and votes for axis values on the axis each group consumes.
+Each group's candidate set is the rank-weighted winner on its axis (rank-1 union, padded to \texttt{--top-k}); unanimous groups collapse to a single candidate and groups with no touching loopnest (e.g.\ \texttt{n}) fall back to both axis values.
+Writes \texttt{full\_velocity\_tendencies/layout\_crossproduct.\{json,csv\}} --- the input list for the full-module sweep, with one row per $(\mathrm{cv},\mathrm{ch},\mathrm{f},\mathrm{s},\mathrm{n})$ axis-value tuple.
+
+\item[$T_{6.7}$] \textbf{Full-module sweep:} \texttt{full\_velocity\_tendencies/} applies each configuration from \texttt{layout\_crossproduct.csv} to the velocity-tendencies DaCe SDFG, drives the stage-by-stage lowering pipeline (stage1~$\to$~stage9), and benchmarks the terminal stage (stage4 on CPU, stage8 on GPU).
+The driver is \texttt{run\_stage\{4,8\}\_permutations.py}; the clean submission scripts \texttt{run\_daint.sh}~/ \texttt{run\_beverin.sh} wire in \texttt{common/activate.sh} and \texttt{setup\_\{daint,beverin\}.sh}, set \texttt{DACE\_BRANCH=f2dace/staging}, and write outputs to \texttt{results/\{daint,beverin\}/stage\{4,8\}/}.
 Outputs CSV results for Figure~13.
 
-\item[$T_{6.6}$] \textbf{Analysis:} \texttt{plot\_paper.py} (top-level) and the per-folder plotting scripts under \texttt{full\_velocity\_tendencies/scripts/plotting/} produce Figures~12--13 and Table~IV from the combined results of $T_{6.3}$ and $T_{6.5}$.
+\item[$T_{6.8}$] \textbf{Analysis:} \texttt{plot\_paper.py} (top-level) and the per-folder plotting scripts under \texttt{full\_velocity\_tendencies/scripts/plotting/} produce Figures~12--13 and Table~IV from the combined results of $T_{6.4}$ and $T_{6.7}$.
 \end{description}
 
-\noindent Dependencies: $T_{6.1} \to T_{6.2} \to T_{6.3} \to T_{6.4} \to T_{6.5} \to T_{6.6}$.
+\noindent Dependencies: $T_{6.1} \to T_{6.2} \to T_{6.3} \to T_{6.4} \to T_{6.5} \to T_{6.6} \to T_{6.7} \to T_{6.8}$.
 
 \textbf{E6 sub-experiment structure.}
 The ICON experiment spans two repositories and two DaCe branches.
 Its folder is subdivided as follows:
 
 \begin{itemize}
-\item \texttt{access\_analysis/}: implements $T_{6.2}$.
-Parses the annotated velocity-tendencies source (\texttt{velocity\_advection.f90}), canonicalizes the 25~loop nests into 6~pattern classes, groups the 50~arrays into 7~layout-equivalent groups, and emits \texttt{layout\_candidates.json}.
+\item \texttt{access\_analysis/}: implements $T_{6.2}$ and $T_{6.3}$.
+Parses the preprocessed velocity-tendencies source (\texttt{velocity\_advection\_preprocessed.f90}) with LOKI, canonicalizes the 25~loop nests into 6~pattern classes (\texttt{select\_loopnests.py} picks one representative per class), and derives the 5-group storage taxonomy (cv / ch / f / s / n with per-group axis tag) via \texttt{generate\_canonical\_groups.py}.
+Outputs: \texttt{layout\_candidates.json}, \texttt{chosen\_loopnests.md}, \texttt{canonical\_array\_groups.json}.
 
-\item \texttt{loopnest\_\{1..6\}/}: one subfolder per pattern class, implementing $T_{6.3}$.
-All six are complete C++/OpenMP + CUDA + HIP benchmark suites with matching analytic cost metrics.
+\item \texttt{loopnest\_\{1..6\}/}: one subfolder per pattern class, implementing $T_{6.4}$.
+All six are complete C++/OpenMP + CUDA/HIP benchmark suites (single-source via \texttt{common/gpu\_compat.cuh}) with matching analytic cost metrics.
 The pattern classes are: (1) indirect stencil, complete vertical; (2) direct stencil, partial vertical; (3) direct stencil, complete vertical; (4) indirect stencil + CFL clip, partial vertical; (5) horizontal-only boundary; (6) vertical-only level reduction.
 
-\item \texttt{conflict\_resolution/}: documents $T_{6.4}$.
-Holds the call-frequency weighting recipe (\texttt{README.md}) and the committed \texttt{selected\_layouts.json} that the per-loopnest rankings from $T_{6.3}$ are reduced into; consumed by $T_{6.5}$.
+\item \texttt{analyze\_blocked\_vs\_unblocked.py} + \texttt{build\_layout\_crossproduct.py} (E6 root): implement $T_{6.5}$ and $T_{6.6}$.
+\texttt{analyze\_blocked\_vs\_unblocked.py} emits the blocked-vs-unblocked verdict (JSON); \texttt{build\_layout\_crossproduct.py} consumes it together with the per-loopnest CSVs and the canonical taxonomy to produce \texttt{full\_velocity\_tendencies/layout\_crossproduct.\{json,csv\}} --- the axis-projected cross-product that drives the full-module sweep.
 
-\item \texttt{full\_velocity\_tendencies/}: implements $T_{6.5}$.
+\item \texttt{full\_velocity\_tendencies/}: implements $T_{6.7}$.
 Contains the snapshot of the velocity SDFGs (pre-lowering baselines, per-stage checkpoints for stages~1--9, and the terminal stage5/stage8 program SDFGs in \texttt{SDFGs/}), the layout-transformation research code (\texttt{sc26\_layout/}), the DaCe-side transformation library (\texttt{scripts/utils/}), the permutation drivers (\texttt{scripts/run\_stage\{4,8\}\_permutations.py}), and the clean cluster submission scripts.
 Uses repository~R2 with DaCe branch \texttt{f2dace/staging}.
 \end{itemize}
