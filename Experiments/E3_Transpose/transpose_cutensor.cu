@@ -1,5 +1,5 @@
 // transpose_cutensor.cpp — cuTENSOR 2.x permutation: row-major + blocked (FP32)
-// Compile: nvcc -O3 -std=c++17 -o transpose_cutensor transpose_cutensor.cpp -lcutensor
+// Compile: nvcc -O3 -Xcompiler=-fno-vect-cost-model -std=c++17 -o transpose_cutensor transpose_cutensor.cpp -lcutensor
 // variant=0: A[N,N] {r,c} -> B[N,N] {c,r}            (row-major)
 // variant=1: A[NB,NB,SB,SB] {a,b,r,c} -> {b,a,c,r}   (blocked layout)
 #include <cstdio>

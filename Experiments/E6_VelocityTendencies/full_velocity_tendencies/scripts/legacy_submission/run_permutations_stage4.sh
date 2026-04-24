@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 #SBATCH --job-name=cc
 #SBATCH --nodes=1
 #SBATCH --partition=normal
@@ -16,6 +17,7 @@ export GENCODE_NUMBER=90a
 export OMP_NUM_THREADS=288
 export OMP_PROC_BIND=spread
 export OMP_PLACES=cores
+export OMP_SCHEDULE=static
 export OMP_DISPLAY_ENV=TRUE
 export __HIP_PLATFORM_AMD__=0
 export HIP_PLATFORM_AMD=0
@@ -47,16 +49,10 @@ export _SUFFIX=""
 export V2=0
 
 # Run unpermuted one
-<<<<<<< HEAD
 python run_permutations.py --configs "c102_e102_b102" --reps ${REPS}
 python run_permutations.py --configs "c102_e201_b102" --reps ${REPS}
 python run_permutations.py --configs "c102_e021_b120" --reps ${REPS}
 python run_permutations.py --configs "c102_e021_b021" --reps ${REPS}
 python run_permutations.py --configs "c102_e021_b021" --unpermuted --reps ${REPS}
 python run_permutations.py --reps ${REPS}
-=======
-python run_cpu_permutations.py --configs "c102_e201_b102" --reps ${REPS}
-python run_cpu_permutations.py --configs "c102_e102_b102" --unpermuted --reps ${REPS}
-python run_cpu_permutations.py --reps ${REPS}
->>>>>>> 56bf9d769bc93c4d91fcfee75ead7a2e7077b614
 

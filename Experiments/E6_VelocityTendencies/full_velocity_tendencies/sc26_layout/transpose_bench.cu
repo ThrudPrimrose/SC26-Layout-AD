@@ -8,7 +8,7 @@
 // each element is a float2 (8 bytes). This gives coalesced 8-byte accesses.
 //
 // Compile:
-//   nvcc -O3 transpose_bench.cu -lcutensor -o transpose_bench
+//   nvcc -O3 -Xcompiler=-fno-vect-cost-model transpose_bench.cu -lcutensor -o transpose_bench
 //
 // Run:
 //   ./transpose_bench

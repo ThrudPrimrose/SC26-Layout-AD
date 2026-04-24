@@ -592,7 +592,7 @@ def _get_flags(gpu: bool, release: bool, lib: bool, debuginfo: bool) -> str:
                 "-mllvm -amdgpu-early-inline-all=true "
                 "-munsafe-fp-atomics "
                 "-ffp-contract=fast "
-                "-fPIC -O3 -ffast-math "
+                "-fPIC -O3 -ffast-math -fno-trapping-math -fno-math-errno "
                 "-Wno-unused-parameter -Wno-ignored-attributes -Wno-unused-result"
             )
         else:
@@ -632,7 +632,9 @@ def _get_flags(gpu: bool, release: bool, lib: bool, debuginfo: bool) -> str:
                 f"--use_fast_math -O3 {debugflag} --ftz=true "
                 f"--prec-div=false --prec-sqrt=false --fmad=true "
                 f"-Xptxas=-O3 -Xptxas=-v -Xcompiler=-march=native "
-                f"-Xcompiler=-mtune=native --restrict"
+                f"-Xcompiler=-mtune=native -Xcompiler=-ffast-math "
+                f"-Xcompiler=-fno-trapping-math -Xcompiler=-fno-math-errno "
+                f"-Xcompiler=-fno-vect-cost-model --restrict"
             )
         else:
             flags = (
@@ -640,6 +642,7 @@ def _get_flags(gpu: bool, release: bool, lib: bool, debuginfo: bool) -> str:
                 f"-Xcompiler=-Wall -Xcompiler=-Wextra {omp_flag} "
                 f"--expt-relaxed-constexpr {arch_flag} "
                 f"-O0 -Xcompiler=-g -g -Xcompiler=-O0 -G {debugflag} "
+                f"-Xcompiler=-fno-vect-cost-model "
                 f"--fmad=false --prec-div=true --prec-sqrt=true --ftz=false "
                 f"-DDACE_VELOCITY_DEBUG -Xcompiler=-DDACE_VELOCITY_DEBUG"
             )
@@ -658,6 +661,8 @@ def _get_flags(gpu: bool, release: bool, lib: bool, debuginfo: bool) -> str:
             flags = (
                 f"{warns} {debugflag} -std=c++20 -Wall -Wextra "
                 f"-Wno-unused-parameter -Wno-unused-variable -O3 -DNDEBUG "
+                f"-ffast-math -fno-trapping-math -fno-math-errno "
+                f"-fno-vect-cost-model -march=native -mtune=native "
                 f"{omp_flag}"
             )
         else:
@@ -665,6 +670,7 @@ def _get_flags(gpu: bool, release: bool, lib: bool, debuginfo: bool) -> str:
                 f"{warns} -DDACE_VELOCITY_DEBUG -std=c++20 -Wall -Wextra "
                 f"-Wno-unused-parameter -Wno-unused-variable "
                 f"-Wno-unknown-pragmas -O0 -g -ggdb {debugflag} "
+                f"-fno-vect-cost-model "
                 f"{omp_flag}"
             )
 
@@ -778,7 +784,7 @@ def compile_if_propagated_sdfgs(
                 "-mllvm -amdgpu-early-inline-all=true "
                 "-munsafe-fp-atomics "
                 "-ffp-contract=fast "
-                "-fPIC -O3 -ffast-math "
+                "-fPIC -O3 -ffast-math -fno-trapping-math -fno-math-errno "
                 "-Wno-unused-parameter -Wno-ignored-attributes -Wno-unused-result"
             ),
         )

@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 #SBATCH --job-name=s8_p_low
 #SBATCH --nodes=1
 #SBATCH --partition=normal
@@ -16,6 +17,7 @@ export GENCODE_NUMBER=90a
 export OMP_NUM_THREADS=288
 export OMP_PROC_BIND=spread
 export OMP_PLACES=cores
+export OMP_SCHEDULE=static
 export OMP_DISPLAY_ENV=TRUE
 export __HIP_PLATFORM_AMD__=0
 export HIP_PLATFORM_AMD=0

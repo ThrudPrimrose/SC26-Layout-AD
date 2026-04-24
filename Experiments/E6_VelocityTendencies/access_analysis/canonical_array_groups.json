@@ -14,6 +14,13 @@
     "s": "STENCIL        (read-only metric + interp coefficients)",
     "n": "CONN           (edge/vertex/cell index connectivity tables)"
   },
+  "group_axis": {
+    "cv": "IC",
+    "ch": "IC",
+    "f": "IC",
+    "s": "IC",
+    "n": "IN"
+  },
   "arrays": {
     "cv": [
       "z_ekinh",

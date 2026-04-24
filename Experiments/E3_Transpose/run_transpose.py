@@ -7,7 +7,8 @@ from pathlib import Path
 
 AMD = os.environ.get("BEVERIN", "0") == "1"
 
-AMD_FLAGS = ("-O3 -ffast-math -fPIC -Wall -Wextra  -DHIP_PLATFORM_AMD=1 -D__HIP_PLATFORM_AMD__=1  "
+AMD_FLAGS = ("-O3 -ffast-math -fno-trapping-math -fno-math-errno -fPIC -Wall -Wextra "
+             "-DHIP_PLATFORM_AMD=1 -D__HIP_PLATFORM_AMD__=1 "
              "-Wno-unused-parameter -munsafe-fp-atomics  --offload-arch=gfx942 "
              "-ffp-contract=fast -Wno-ignored-attributes -Wno-unused-result -std=c++17")
 
@@ -126,7 +127,7 @@ def get_roofline():
     else:
         name, peak_fp64, peak_bw = "GH200", 34000.0, 4023.0
         suffix, src = ".cu", CUDA_ROOFLINE_SRC
-        compile_cmd = lambda obj, src: f"nvcc -O3 -arch=sm_90 -o {obj} {src}"
+        compile_cmd = lambda obj, src: f"nvcc -O3 --use_fast_math -arch=sm_90 -Xcompiler=-ffast-math -Xcompiler=-fno-trapping-math -Xcompiler=-fno-math-errno -Xcompiler=-fno-vect-cost-model -o {obj} {src}"
 
     src_path = os.path.join(CACHE_DIR, f"roofline{suffix}")
     bw_bin   = os.path.join(CACHE_DIR, "roofline")
@@ -154,7 +155,7 @@ def compile_kernels(force=False):
         print(f"  {BINARY} exists, skipping (use --compile to force)")
         return True
     if not AMD:
-        cmd = f"nvcc -O3 -std=c++17 -arch=native -o {BINARY} transpose_gpu.cu"
+        cmd = f"nvcc -O3 --use_fast_math -std=c++17 -arch=native -Xcompiler=-ffast-math -Xcompiler=-fno-trapping-math -Xcompiler=-fno-math-errno -Xcompiler=-fno-vect-cost-model -o {BINARY} transpose_gpu.cu"
     else:
         cmd = f"hipcc {AMD_FLAGS} -o {BINARY} transpose_gpu_hip.cpp"
     print(f"  Compiling kernels: {cmd}")
@@ -170,7 +171,7 @@ def compile_lib(force=False):
         return True
 
     if not AMD:
-        cmd = f"nvcc -O3 -std=c++17 -arch=native -o {BINARY_LIB} transpose_cutensor.cu -lcutensor"
+        cmd = f"nvcc -O3 --use_fast_math -std=c++17 -arch=native -Xcompiler=-ffast-math -Xcompiler=-fno-trapping-math -Xcompiler=-fno-math-errno -Xcompiler=-fno-vect-cost-model -o {BINARY_LIB} transpose_cutensor.cu -lcutensor"
         lib = "cuTENSOR"
     else:
         # hipTensor on beverin is a manual install under $SCRATCH/{include,lib}.
@@ -195,8 +196,14 @@ def compile_lib(force=False):
     return True
 
 # ── Sweep ──
+# Children append their per-iteration rows to CSV_PARTIAL. After both
+# sweep() and sweep_lib() succeed, the caller renames CSV_PARTIAL ->
+# CSV_RAW. If the job crashes mid-sweep, CSV_PARTIAL is left behind for
+# inspection; CSV_RAW from a previous run is never clobbered.
+CSV_PARTIAL = CSV_RAW + ".partial"
+
 def sweep():
-    open(CSV_RAW, "w").close()
+    open(CSV_PARTIAL, "w").close()
     for bx, by, tx, ty in CONFIGS:
         for v in VARIANTS:
             sb_list  = SB_VALS  if v in (1, 3, 6) else [32]
@@ -206,7 +213,7 @@ def sweep():
                     if v in (1, 3, 6) and N % sb != 0:
                         continue
                     cmd = [BINARY, str(N), str(v), str(bx), str(by), str(tx), str(ty),
-                           CSV_RAW, str(sb), str(pad), str(WARMUP), str(REPS)]
+                           CSV_PARTIAL, str(sb), str(pad), str(WARMUP), str(REPS)]
                     try:
                         r = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
                         if r.returncode != 0:
@@ -222,7 +229,7 @@ def sweep_lib():
     lib = "hipTensor" if AMD else "cuTENSOR"
     print(f"\n  ── Library: {lib} ──")
     # variant 0: row-major
-    cmd = [BINARY_LIB, str(N), "0", CSV_RAW, "32", str(WARMUP), str(REPS)]
+    cmd = [BINARY_LIB, str(N), "0", CSV_PARTIAL, "32", str(WARMUP), str(REPS)]
     try:
         r = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
         if r.returncode == 0: print(f"  {r.stdout.strip()}")
@@ -233,13 +240,19 @@ def sweep_lib():
     for sb in LIB_SB_VALS:
         if N % sb != 0:
             continue
-        cmd = [BINARY_LIB, str(N), "1", CSV_RAW, str(sb), str(WARMUP), str(REPS)]
+        cmd = [BINARY_LIB, str(N), "1", CSV_PARTIAL, str(sb), str(WARMUP), str(REPS)]
         try:
             r = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
             if r.returncode == 0: print(f"  {r.stdout.strip()}")
             else: print(f"  FAIL {lib} blocked SB={sb}: {r.stderr.strip()[:100]}")
         except subprocess.TimeoutExpired:
             print(f"  TIMEOUT {lib} blocked SB={sb}")
+
+def finalize_sweep():
+    """Rename the .partial CSV to its final path only after the sweep
+    completes without crashing. Prior CSV_RAW is replaced atomically."""
+    if os.path.exists(CSV_PARTIAL):
+        os.replace(CSV_PARTIAL, CSV_RAW)
 
 # ── Aggregate ──
 def aggregate(roof):
@@ -248,13 +261,21 @@ def aggregate(roof):
         sys.exit(1)
 
     groups = defaultdict(list)
+    dropped = []
     with open(CSV_RAW) as f:
-        for line in f:
+        for lineno, line in enumerate(f, 1):
             p = line.strip().split(",")
             if len(p) < 12:
+                dropped.append((lineno, line.rstrip("\n")))
                 continue
             key = tuple(p[:8])
             groups[key].append((float(p[9]), float(p[10])))
+    if dropped:
+        print(f"  [WARN] {len(dropped)} malformed row(s) dropped from {CSV_RAW}:")
+        for ln, txt in dropped[:5]:
+            print(f"    line {ln}: {txt[:120]}")
+        if len(dropped) > 5:
+            print(f"    ... and {len(dropped) - 5} more")
 
     if not groups:
         print(f"  [ERROR] {CSV_RAW} is empty — no results to aggregate.")
@@ -339,24 +360,24 @@ if __name__ == "__main__":
     print("\n── Compile ──")
 
     if lib_only:
-        # --lib-only: recompile library, strip old lib rows, run only lib sweep
+        # --lib-only: recompile library, strip old lib rows, run only lib sweep.
+        # Seed CSV_PARTIAL with the surviving kernel rows from CSV_RAW so the
+        # lib sweep can append without clobbering existing kernel data; the
+        # eventual finalize_sweep() atomically replaces CSV_RAW.
         has_lib = compile_lib(force=True)
         if not has_lib:
             print("  [ERROR] Library not available"); sys.exit(1)
 
-        # Strip old library rows from CSV, keep kernel rows
         if os.path.exists(CSV_RAW):
-            lib_prefixes = tuple(LIB_NAMES)
             with open(CSV_RAW) as f:
-                lines = [l for l in f if not l.split(",", 1)[0] in LIB_NAMES]
-            with open(CSV_RAW, "w") as f:
-                f.writelines(lines)
-            print(f"  Stripped old library rows from {CSV_RAW} "
-                  f"({len(lines)} kernel rows kept)")
+                kept = [l for l in f if l.split(",", 1)[0] not in LIB_NAMES]
+            with open(CSV_PARTIAL, "w") as f:
+                f.writelines(kept)
+            print(f"  Seeded {CSV_PARTIAL} with {len(kept)} kernel row(s) from {CSV_RAW}")
         else:
-            open(CSV_RAW, "w").close()
+            open(CSV_PARTIAL, "w").close()
 
-        print(f"\n── Lib-only sweep (appending to {CSV_RAW}): "
+        print(f"\n── Lib-only sweep (appending to {CSV_PARTIAL}): "
               f"N={N} reps={REPS} warmup={WARMUP} ──")
         sweep_lib()
     else:
@@ -369,6 +390,8 @@ if __name__ == "__main__":
         sweep()
         if has_lib:
             sweep_lib()
+
+    finalize_sweep()
 
     print(f"\n── Aggregate ──")
     rows = aggregate(roof)

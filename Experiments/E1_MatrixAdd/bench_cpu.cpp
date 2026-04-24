@@ -17,7 +17,7 @@
  *       (all implemented in ../common/numa_util.h, shared across E1-E6).
  * CSV:  one row per iteration for violin plots
  *
- * Compile: g++ -O3 -march=native -std=c++17 -fopenmp -o bench_cpu bench_cpu.cpp
+ * Compile: g++ -O3 -fno-vect-cost-model -march=native -std=c++17 -fopenmp -o bench_cpu bench_cpu.cpp
  * Run:     ./bench_cpu <csv_file> [nthreads]
  */
 
@@ -308,32 +308,38 @@ static void bench(const char *variant_name, int tile_sz, KernelFn fn,
         fn(A, B, C);
     }
 
-    /* Zero C and run once for correctness check */
-    #pragma omp parallel for schedule(static)
-    for (size_t k = 0; k < total; k++)
-        C[k] = 0.0;
-    fn(A, B, C);
-
-    double cs = 0.0;
-    #pragma omp parallel for schedule(static) reduction(+:cs)
-    for (size_t k = 0; k < total; k++)
-        cs += C[k];
-    bool ok = (std::fabs(cs - ref_checksum) <= 1e-3 * std::fabs(ref_checksum));
-    const char *status = ok ? "PASS" : "FAIL";
-
-    if (!ok)
-        fprintf(stderr, "  [%s T=%d] CHECKSUM MISMATCH: got %.6e expected %.6e\n",
-                variant_name, tile_sz, cs, ref_checksum);
-
+    /* Per-rep: zero C (outside timing), flush caches, time the kernel,
+     * then recompute the checksum for that specific rep. C must be zeroed
+     * every rep because `fn` is accumulating (C += A + B); without the
+     * reset, reps drift and the checksum would vary as a function of rep
+     * index rather than correctness. */
+    bool all_pass = true;
     for (int r = 0; r < NREP; r++) {
+        #pragma omp parallel for schedule(static)
+        for (size_t k = 0; k < total; k++)
+            C[k] = 0.0;
+
         cache_flush();
         auto t0 = Clock::now();
         fn(A, B, C);
         auto t1 = Clock::now();
         double dt = elapsed_sec(t0, t1);
         double bw = data_bytes / dt / 1e9;
+
+        double cs = 0.0;
+        #pragma omp parallel for schedule(static) reduction(+:cs)
+        for (size_t k = 0; k < total; k++)
+            cs += C[k];
+        bool ok = (std::fabs(cs - ref_checksum) <= 1e-3 * std::fabs(ref_checksum));
+        const char *status = ok ? "PASS" : "FAIL";
+        if (!ok) {
+            all_pass = false;
+            fprintf(stderr, "  [%s T=%d rep=%d] CHECKSUM MISMATCH: got %.6e expected %.6e\n",
+                    variant_name, tile_sz, r, cs, ref_checksum);
+        }
         g_records.push_back({variant_name, tile_sz, nthreads, r, dt, bw, cs, status});
     }
+    const char *status = all_pass ? "PASS" : "FAIL";
 
     std::vector<double> bws;
     for (int i = (int)g_records.size() - NREP; i < (int)g_records.size(); i++)

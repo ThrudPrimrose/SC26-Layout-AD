@@ -2,7 +2,7 @@
  *  for the matrix transpose kernel: out[c*N+r] = in[r*N+c]
  *  under row-major and blocked(SB) layouts, with various schedules.
  *
- *  Compile: g++ -O3 -fopenmp -o transpose_metrics transpose_metrics.cpp
+ *  Compile: g++ -O3 -fno-vect-cost-model -fopenmp -o transpose_metrics transpose_metrics.cpp
  *  Usage:   ./transpose_metrics <N> <B> [SB_list] [csv_out]
  *           N  = matrix dimension
  *           B  = cache-line size in floats (e.g. 16 for 64-byte lines of fp32)
@@ -157,7 +157,7 @@ int main(int argc, char** argv) {
     int nc = (int)configs.size();
     std::vector<Metrics> results(nc);
 
-    #pragma omp parallel for schedule(dynamic)
+    #pragma omp parallel for schedule(static)
     for (int i = 0; i < nc; i++)
         results[i] = run_config(configs[i], N, B);
 

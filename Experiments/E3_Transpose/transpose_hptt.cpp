@@ -10,7 +10,7 @@
  *    3 = hptt_patient_blk   blocked layout as 4D tensor, PATIENT auto-tune
  *
  *  Build:
- *    g++ -O3 -march=native -fopenmp -I<hptt>/include -L<hptt>/lib \
+ *    g++ -O3 -fno-vect-cost-model -march=native -fopenmp -I<hptt>/include -L<hptt>/lib \
  *        -o transpose_hptt transpose_hptt.cpp -lhptt
  */
 #include <cstdio>
@@ -21,120 +21,16 @@
 #include <memory>
 #include <vector>
 #include <omp.h>
-#include <sys/mman.h>
-#include <sys/syscall.h>
-#include <unistd.h>
 #include <hptt.h>
+
+#include "../common/numa_util.h"
 
 using Plan = std::shared_ptr<hptt::Transpose<float>>;
 
-/* ═══════════════════════════════════════════════════════════════════════
- *  NUMA helpers (no libnuma — direct syscalls)
- * ═══════════════════════════════════════════════════════════════════════ */
-static long sys_mbind(void *a, unsigned long l, int m,
-                      const unsigned long *nm, unsigned long mx, unsigned f) {
-}
-
-static int detect_numa_nodes() {
-    int n = 0;
-    for (int i = 0; i < 128; i++) {
-        char p[128];
-        snprintf(p, 128, "/sys/devices/system/node/node%d", i);
-        if (access(p, F_OK) == 0)
-            n = i + 1;
-        else if (n)
-            break;
-    }
-    return n > 0 ? n : 1;
-}
-
-static void bind_pages(void *a, size_t l, int node) {
-    if (!l || node < 0)
-        return;
-    unsigned long m[4] = {};
-    m[node / 64] |= 1UL << (node % 64);
-}
-
-static size_t g_pagesz = 0;
-static size_t pagesz() {
-    if (!g_pagesz)
-        g_pagesz = (size_t)sysconf(_SC_PAGESIZE);
-    return g_pagesz;
-}
-
-template <typename T>
-static T *numa_alloc(size_t count) {
-    size_t bytes = count * sizeof(T);
-    void *p = mmap(nullptr, bytes, PROT_READ | PROT_WRITE,
-                   MAP_PRIVATE | MAP_ANONYMOUS | MAP_NORESERVE, -1, 0);
-    if (p == MAP_FAILED) {
-        perror("mmap");
-        std::abort();
-    }
-    madvise(p, bytes, MADV_NOHUGEPAGE);
-    return (T *)p;
-}
-
-template <typename T>
-static void numa_dealloc(T *p, size_t count) {
-    if (p)
-        munmap(p, count * sizeof(T));
-}
-
-static void bind_by_rows(void *base, int N, int D) {
-    size_t ps = pagesz();
-    size_t row_bytes = (size_t)N * sizeof(float);
-    size_t total = (size_t)N * row_bytes;
-    int rows_per = (N + D - 1) / D;
-
-    for (int d = 0; d < D; d++) {
-        size_t lo = (size_t)d * rows_per * row_bytes;
-        size_t hi = std::min((size_t)(d + 1) * rows_per * row_bytes, total);
-        lo = (lo / ps) * ps;
-        hi = ((hi + ps - 1) / ps) * ps;
-        if (hi > ((total + ps - 1) / ps) * ps)
-            hi = ((total + ps - 1) / ps) * ps;
-        if (hi > lo)
-            bind_pages((char *)base + lo, hi - lo, d);
-    }
-}
-
-static void bind_by_cols(void *base, int N, int D) {
-    size_t ps = pagesz();
-    size_t elem_sz = sizeof(float);
-    size_t cols_per_domain = (size_t)N / D;
-    size_t row_bytes = (size_t)N * elem_sz;
-    size_t total_bytes = (size_t)N * row_bytes;
-    size_t total_pages = (total_bytes + ps - 1) / ps;
-
-    for (size_t pg = 0; pg < total_pages; pg++) {
-        size_t byte_off = pg * ps;
-        size_t elem0 = byte_off / elem_sz;
-        size_t col0 = elem0 % (size_t)N;
-        int domain = (int)(col0 / cols_per_domain);
-        if (domain >= D)
-            domain = D - 1;
-        size_t len = ps;
-        if (byte_off + len > total_bytes)
-            len = total_bytes - byte_off;
-        bind_pages((char *)base + byte_off, len, domain);
-    }
-}
-
-static void bind_contiguous(void *base, size_t total_bytes, int D) {
-    size_t ps = pagesz();
-    size_t per = total_bytes / D;
-    for (int d = 0; d < D; d++) {
-        size_t lo = (size_t)d * per;
-        size_t hi = (d == D - 1) ? total_bytes : (size_t)(d + 1) * per;
-        lo = (lo / ps) * ps;
-        hi = ((hi + ps - 1) / ps) * ps;
-        if (hi > ((total_bytes + ps - 1) / ps) * ps)
-            hi = ((total_bytes + ps - 1) / ps) * ps;
-        if (hi > lo)
-            bind_pages((char *)base + lo, hi - lo, d);
-    }
-}
+/* NUMA-aware allocation, binding, and first-touch come from
+ * ../common/numa_util.h: numa_alloc<T>, numa_dealloc<T>, numa_num_nodes,
+ * and bind_and_touch (mbind + per-page first-touch across all nodes).
+ * That header applies MADV_HUGEPAGE globally. */
 
 static void parallel_init(float *__restrict__ p, size_t n, float val) {
 #pragma omp parallel for schedule(static)
@@ -262,7 +158,7 @@ int main(int argc, char **argv) {
         nthreads = omp_get_num_threads();
     }
 
-    int D = detect_numa_nodes();
+    int D = numa_num_nodes();
     int hptt_threads = nthreads;
 
     size_t elems = (size_t)N * N;
@@ -279,20 +175,21 @@ int main(int argc, char **argv) {
     bool use_numa = (D >= 2) && is_blocked(VAR);
 
     if (use_numa) {
-        /* Blocked variants: mmap + contiguous NUMA split */
+        /* Blocked variants: mmap-reserved + mbind + per-page first-touch.
+         * bind_and_touch partitions the buffer across all NUMA nodes and
+         * commits every page before HPTT plan creation reads from them. */
         h_in  = numa_alloc<float>(elems);
         h_out = numa_alloc<float>(elems);
         h_row = numa_alloc<float>(elems);
         h_ref = (float *)aligned_alloc(64, bytes);
 
-        bind_contiguous(h_in, bytes, D);
-        bind_contiguous(h_out, bytes, D);
-        bind_by_rows(h_row, N, D);
+        bind_and_touch(h_in,  bytes);
+        bind_and_touch(h_out, bytes);
+        bind_and_touch(h_row, bytes);
 
-        printf("  NUMA: blocked contiguous split\n");
+        printf("  NUMA: bind_and_touch across %d node(s)\n", D);
     } else {
-        /* Row-major variants: aligned_alloc + first-touch via parallel_init.
-         * HPTT's internal planner can segfault with mmap + per-page mbind. */
+        /* Row-major variants: aligned_alloc + first-touch via parallel_init. */
         h_in  = (float *)aligned_alloc(64, bytes);
         h_out = (float *)aligned_alloc(64, bytes);
         h_row = (float *)aligned_alloc(64, bytes);

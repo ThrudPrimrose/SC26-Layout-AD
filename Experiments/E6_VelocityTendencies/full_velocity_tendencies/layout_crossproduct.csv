@@ -1,0 +1,17 @@
+config_id,cv,ch,f,s,n
+0,v_first,h_first,v_first,v_first,SoA
+1,v_first,h_first,v_first,v_first,AoS
+2,v_first,h_first,v_first,h_first,SoA
+3,v_first,h_first,v_first,h_first,AoS
+4,v_first,h_first,h_first,v_first,SoA
+5,v_first,h_first,h_first,v_first,AoS
+6,v_first,h_first,h_first,h_first,SoA
+7,v_first,h_first,h_first,h_first,AoS
+8,h_first,h_first,v_first,v_first,SoA
+9,h_first,h_first,v_first,v_first,AoS
+10,h_first,h_first,v_first,h_first,SoA
+11,h_first,h_first,v_first,h_first,AoS
+12,h_first,h_first,h_first,v_first,SoA
+13,h_first,h_first,h_first,v_first,AoS
+14,h_first,h_first,h_first,h_first,SoA
+15,h_first,h_first,h_first,h_first,AoS

@@ -35,11 +35,11 @@ export SLURM_CPU_BIND=cores
 
 # --- build flags ---------------------------------------------------------
 export CPU_CXX="${CPU_CXX:-g++}"
-export CPU_CXXFLAGS="${CPU_CXXFLAGS:--O3 -march=native -mtune=native -fopenmp -ffast-math -fno-vect-cost-model -std=c++17}"
+export CPU_CXXFLAGS="${CPU_CXXFLAGS:--O3 -march=native -mtune=native -fopenmp -ffast-math -fno-trapping-math -fno-math-errno -fno-vect-cost-model -std=c++17}"
 export CPU_LDFLAGS="${CPU_LDFLAGS:--lnuma}"
 
 export GPU_CXX="${GPU_CXX:-hipcc}"
-export GPU_CXXFLAGS="${GPU_CXXFLAGS:--O3 -std=c++17 --offload-arch=${ARCH} -march=native -mtune=native -ffast-math -munsafe-fp-atomics -mllvm -amdgpu-early-inline-all=true -mllvm -amdgpu-function-calls=false -fgpu-flush-denormals-to-zero -D__HIP_PLATFORM_AMD__=1 -DHIP_PLATFORM_AMD=1 -fopenmp=libgomp}"
+export GPU_CXXFLAGS="${GPU_CXXFLAGS:--O3 -std=c++17 --offload-arch=${ARCH} -march=native -mtune=native -ffast-math -fno-trapping-math -fno-math-errno -munsafe-fp-atomics -mllvm -amdgpu-early-inline-all=true -mllvm -amdgpu-function-calls=false -fgpu-flush-denormals-to-zero -D__HIP_PLATFORM_AMD__=1 -DHIP_PLATFORM_AMD=1 -fopenmp=libgomp}"
 export GPU_LDFLAGS="${GPU_LDFLAGS:--lnuma}"
 
 # Optional: OpenBLAS for CPU baselines (E3 transpose uses this).

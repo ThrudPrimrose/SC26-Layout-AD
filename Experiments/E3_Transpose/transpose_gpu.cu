@@ -3,7 +3,7 @@
  *  Arg order matches run_transpose.py:
  *    ./transpose_gpu N variant BX BY TX TY csv SB PAD WARMUP REPS
  *
- *  Compile (CUDA): nvcc -O3 -std=c++17 -arch=native -o transpose_gpu transpose_gpu.cu
+ *  Compile (CUDA): nvcc -O3 -Xcompiler=-fno-vect-cost-model -std=c++17 -arch=native -o transpose_gpu transpose_gpu.cu
  *  Compile (HIP):  hipcc <flags> -o transpose_gpu transpose_gpu_hip.cpp
  *                  (rename file, swap cuda→hip API calls)
  */

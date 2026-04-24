@@ -2,320 +2,214 @@
 """
 build_layout_crossproduct.py
 
-Prepare the input list for the full velocity-tendencies sweep, following the
-recipe in section IV-A of the paper ("Searching the Transformation Space"):
+Prepare the input list for the full velocity-tendencies sweep, following
+section IV-A of the paper ("Searching the Transformation Space"):
 
-  Step 3-4: per representative loop nest, pick the top-k (=2) winning layouts
-            from the measured sweep (CSV under loopnest_{1..6}/results/*/).
+  Step 3-4: per representative loop nest, pick the top-k (=2) winning
+            layouts from the measured sweep (CSV under
+            loopnest_{1..6}/results/*/).
 
-  Step 5:   take the Cartesian product of those winners across all array
-            groups, plus an identity layout for every array group that no
-            representative loop nest covered.
+  Step 5:   take the Cartesian product of those winners across the 5
+            canonical array groups (cv / ch / f / s / n); groups no
+            representative loop nest covers default to identity.
 
-Input sources
--------------
-  access_analysis/layout_candidates.json
-      chosen_nid / arrays per representative loop nest (nid 1..6 -> N arrays)
-
-  loopnest_{1..6}/results/{beverin,daint}/<kernel>_{cpu,gpu}.csv
-      benchmarked sweep. Two schemas:
-        - loopnest_1:         variant, blocking, parallelization, ...
-        - loopnest_{2..6}:    V, layout, schedule, ...   (CPU)
-                              V, config_label, run_label (GPU)
-
-Output
+Inputs
 ------
-  full_velocity_tendencies/layout_crossproduct.json
-      {
-        "winners_per_loopnest": { "1": {...}, ..., "6": {...} },
-        "array_groups":          [ {group_id, arrays, touching_loopnests,
-                                    candidate_layouts:[...]} ],
-        "crossproduct":          [ { group_id -> layout_id }, ... ],
-        "meta":                  { nlev, cell_dist, k, n_configs, ... }
-      }
+  access_analysis/layout_candidates.json       chosen_nid + arrays per nest
+  access_analysis/canonical_array_groups.json  cv / ch / f / s / n taxonomy
+  loopnest_{1..6}/results/{beverin,daint}/*.csv benchmark sweep
 
-  full_velocity_tendencies/layout_crossproduct.csv
-      one row per config, columns = group_id_0..group_id_{G-1}, values =
-      layout_id chosen for that group.
+Outputs
+-------
+  full_velocity_tendencies/layout_crossproduct.json   full record
+  full_velocity_tendencies/layout_crossproduct.csv    one row per config
 """
 
 import argparse
 import csv
 import json
-import os
-import statistics
+import math
 import sys
 from collections import defaultdict
 from itertools import product
 from pathlib import Path
 
-EXP_DIR = Path(__file__).resolve().parent
+from _analysis_util import (
+    ALL_BACKENDS,
+    EXP_DIR,
+    IDENTITY_LAYOUT_ID,
+    LOOPNEST_IDS,
+    PLATFORMS,
+    csv_for,
+    is_blocked_layout_id,
+    load_medians,
+    project_layout_to_axis,
+)
+
 ACCESS_JSON = EXP_DIR / "access_analysis" / "layout_candidates.json"
 CANONICAL_GROUPS_JSON = EXP_DIR / "access_analysis" / "canonical_array_groups.json"
 DEFAULT_OUT_DIR = EXP_DIR / "full_velocity_tendencies"
 
-LOOPNEST_IDS = [1, 2, 3, 4, 5, 6]
-PLATFORMS = ("beverin", "daint")
-ALL_BACKENDS = ("cpu", "gpu")
 
-# Identity layout: no permutation, no blocking. Matches the convention used
-# elsewhere in this repo where V=1 is horizontal-first row-major.
-IDENTITY_LAYOUT_ID = "V1"
-
-
-def _csv_for(loopnest_id, platform, backend):
-    """Return the one per-kernel CSV for (loopnest, platform, backend)."""
-    d = EXP_DIR / f"loopnest_{loopnest_id}" / "results" / platform
-    if not d.is_dir():
-        return None
-    for p in sorted(d.glob(f"*_{backend}.csv")):
-        name = p.name
-        if name.startswith("metrics"):
-            continue
-        if name.endswith("_old.csv"):
-            continue
-        return p
-    return None
-
-
-def _layout_id_l1_cpu(row):
-    """loopnest_1 CPU schema: variant + blocking columns.
-
-    variant >= 1 and blocking == 0  ->  "V{variant}"   (unblocked permutation)
-    variant == 0 and blocking  > 0  ->  "B{blocking}"  (blocked layout)
-    """
-    V = int(row["variant"])
-    B = int(row["blocking"])
-    if V > 0 and B == 0:
-        return f"V{V}"
-    if V == 0 and B > 0:
-        return f"B{B}"
-    # Fallback — defensive, should not happen in clean data.
-    return f"V{V}_B{B}"
-
-
-def _layout_id_l1_gpu(row):
-    """loopnest_1 GPU schema: only `variant` distinguishes layouts (the
-    config_label prefix encodes the thread-block schedule, which varies
-    WITHIN a layout). All V=0 rows share the blocked-row-major layout; V>=1
-    are unblocked permutations."""
-    V = int(row["variant"])
-    return f"V{V}"
-
-
-def _layout_id_new_cpu(row):
-    """loopnest_{2..6} CPU schema: explicit `layout` column (e.g. V1, B64).
-
-    A few rows contain a bare integer (8/16/32/64) — treat those as a
-    blocked layout "B{n}" since the factor matches the blocking family.
-    """
-    lay = row["layout"]
-    if lay.isdigit():
-        return f"B{lay}"
-    return lay
-
-
-def _layout_id_new_gpu(row):
-    """loopnest_{2..6} GPU schema: no `layout` column — parse config_label
-    prefix. Examples:
-       "B128_bx128_by01"  -> blocked layout, factor 128   -> "B128"
-       "t08x08"           -> tile-only unblocked          -> "V{V}"
-    """
-    cfg = row["config_label"]
-    if cfg.startswith("B"):
-        return cfg.split("_", 1)[0]
-    V = int(row["V"])
-    return f"V{V}"
-
-
-def extract_layout_id(row, schema, backend):
-    """Dispatch to the right per-schema layout extractor."""
-    if schema == "l1_cpu":
-        return _layout_id_l1_cpu(row)
-    if schema == "l1_gpu":
-        return _layout_id_l1_gpu(row)
-    if backend == "cpu":
-        return _layout_id_new_cpu(row)
-    return _layout_id_new_gpu(row)
-
-
-def detect_schema(header, loopnest_id, backend):
-    """Return one of: 'l1_cpu', 'l1_gpu', 'new_cpu', 'new_gpu'.
-
-    L1 uses `variant`; L{2..6} use `V`. Blocking is only a separate column
-    on the L1 CPU side; L1 GPU collapses it into config_label so we treat
-    every V=0 row as the single blocked layout."""
-    if "variant" in header:
-        return "l1_cpu" if backend == "cpu" else "l1_gpu"
-    if "V" in header:
-        return "new_cpu" if backend == "cpu" else "new_gpu"
-    raise RuntimeError(
-        f"loopnest_{loopnest_id} ({backend}): unknown CSV schema {list(header)}"
-    )
-
-
-def load_medians(csv_path, loopnest_id, backend, nlev, cell_dist):
-    """Return { layout_id : median(time_ms) } — the median is taken over
-    every (schedule, config_label, run_id) sample for that layout_id.
-    Filtered to nlev and cell_dist.
-    """
-    rows = list(csv.DictReader(open(csv_path)))
-    if not rows:
-        return {}
-    schema = detect_schema(rows[0].keys(), loopnest_id, backend)
-    nlev_str = str(nlev)
-
-    # Collect all times per layout_id, then median.
-    bucket = defaultdict(list)
-    for r in rows:
-        if r.get("nlev") != nlev_str:
-            continue
-        if "cell_dist" in r and cell_dist and r["cell_dist"] != cell_dist:
-            continue
-        try:
-            lid = extract_layout_id(r, schema, backend)
-        except (KeyError, ValueError):
-            continue
-        try:
-            t = float(r["time_ms"])
-        except (KeyError, ValueError):
-            continue
-        bucket[lid].append(t)
-
-    return {lid: statistics.median(ts) for lid, ts in bucket.items() if ts}
-
-
-def top_k_winners(medians, k):
-    """Lowest-median k layout ids."""
-    return [lid for lid, _ in sorted(medians.items(), key=lambda kv: kv[1])[:k]]
-
-
-def _is_blocked_layout_id(lid):
-    """B{n} or t{TX}x{TY} prefixes — every blocked/tiled-storage family."""
-    return lid.startswith("B") or lid.startswith("t")
-
+# ──────────────────────────────────────────────────────────────────────
+#  Per-loopnest winner ranking
+# ──────────────────────────────────────────────────────────────────────
 
 def collect_winners(loopnest_id, nlev, cell_dist, k, drop_blocked=False,
                     backends=ALL_BACKENDS):
-    """Rank layouts per loopnest by the GEOMEAN of normalized medians across
-    every measured {platform, backend} target. `backends` restricts which
-    device families contribute to the ranking — pass ("gpu",) for GPU-only
-    or ("cpu",) for CPU-only sweeps.
+    """Rank layouts per loopnest by GEOMEAN of normalized medians across
+    every measured {platform, backend} target in `backends`.
 
-    Normalization: each target's median is divided by the target's min so
-    every target contributes on the same dimensionless scale. A layout that
-    is missing from a target is charged the target's 95th-percentile ratio
-    (so partial coverage is not rewarded over full coverage).
+    Each target's median is divided by the target's min (so every target
+    contributes on the same dimensionless scale). A layout missing from
+    a target is charged that target's 95th-percentile ratio (partial
+    coverage not rewarded over full coverage).
 
-    Returns top-k layout_ids plus a per-target detail block for
-    provenance/debugging.
-    """
+    Returns (top-k layout_ids, per_target_detail, winner_scores)."""
     per_target = {}
-    all_targets = []
     for platform in PLATFORMS:
         for backend in backends:
-            csv_path = _csv_for(loopnest_id, platform, backend)
+            csv_path = csv_for(loopnest_id, platform, backend)
             if csv_path is None:
                 continue
             medians = load_medians(csv_path, loopnest_id, backend,
                                    nlev, cell_dist)
             if drop_blocked:
                 medians = {lid: t for lid, t in medians.items()
-                           if not _is_blocked_layout_id(lid)}
+                           if not is_blocked_layout_id(lid)}
             if not medians:
                 continue
-            tgt_key = f"{platform}_{backend}"
-            per_target[tgt_key] = {
+            per_target[f"{platform}_{backend}"] = {
                 "csv": str(csv_path.relative_to(EXP_DIR)),
-                "n_layouts_measured": len(medians),
                 "medians_ms": medians,
             }
-            all_targets.append((tgt_key, medians))
 
-    # Build per-target normalized ratios and the missing-value penalty.
-    target_ratios = {}
-    target_penalty = {}
+    # Per-target normalized ratios + the missing-value penalty.
+    ratios = {}
+    penalty = {}
     all_layouts = set()
-    for tgt_key, medians in all_targets:
-        m_min = min(medians.values())
-        ratios = {lid: (t / m_min) for lid, t in medians.items()}
-        target_ratios[tgt_key] = ratios
-        # 95th percentile of present ratios is the "you weren't measured here"
-        # penalty — punishes incomplete coverage without making it infinite.
-        vals = sorted(ratios.values())
-        idx = max(0, int(0.95 * (len(vals) - 1)))
-        target_penalty[tgt_key] = vals[idx] if vals else 1.0
-        all_layouts.update(ratios.keys())
+    for tgt, blob in per_target.items():
+        m = blob["medians_ms"]
+        m_min = min(m.values())
+        r = {lid: t / m_min for lid, t in m.items()}
+        ratios[tgt] = r
+        vals = sorted(r.values())
+        penalty[tgt] = vals[max(0, int(0.95 * (len(vals) - 1)))] if vals else 1.0
+        all_layouts.update(r)
 
     scores = {}
+    n_targets = len(per_target)
     for lid in all_layouts:
-        log_sum = 0.0
-        n = 0
-        for tgt_key, _ in all_targets:
-            r = target_ratios[tgt_key].get(lid, target_penalty[tgt_key])
-            import math
-            log_sum += math.log(r)
-            n += 1
-        scores[lid] = math.exp(log_sum / n) if n else float("inf")
+        if not n_targets:
+            continue
+        log_sum = sum(math.log(ratios[t].get(lid, penalty[t])) for t in per_target)
+        scores[lid] = math.exp(log_sum / n_targets)
 
     ranked = sorted(scores.items(), key=lambda kv: kv[1])
     winners = [lid for lid, _ in ranked[:k]]
 
-    # Tighten per-target detail: keep only the layouts that are in the
-    # global top-N (10) so the JSON stays readable.
+    # Trim per-target detail to the global top-N so the JSON stays readable.
     keep = {lid for lid, _ in ranked[:max(10, k)]}
-    for tgt_key in per_target:
-        med = per_target[tgt_key].pop("medians_ms")
-        per_target[tgt_key]["top_medians_ms"] = {
+    for tgt in per_target:
+        med = per_target[tgt].pop("medians_ms")
+        ordered_lids = sorted(med, key=med.get)
+        per_target[tgt]["n_layouts_measured"] = len(med)
+        per_target[tgt]["top_medians_ms"] = {
             lid: round(med[lid], 6) for lid in keep if lid in med
         }
-        per_target[tgt_key]["top_k"] = [
-            {"layout_id": lid,
-             "median_time_ms": round(med[lid], 6)}
-            for lid in top_k_winners(med, k)
+        per_target[tgt]["top_k"] = [
+            {"layout_id": lid, "median_time_ms": round(med[lid], 6)}
+            for lid in ordered_lids[:k]
         ]
 
-    winner_scores = [
+    return winners, per_target, [
         {"layout_id": lid, "geomean_ratio": round(scores[lid], 4)}
         for lid in winners
     ]
-    return winners, per_target, winner_scores
 
+
+# ──────────────────────────────────────────────────────────────────────
+#  Array-group transfer (winners → per-group candidates)
+# ──────────────────────────────────────────────────────────────────────
 
 def load_loopnest_to_arrays():
-    """loopnest_id -> (chosen_nid, [arrays])  via layout_candidates.json +
-    all_nests lookup."""
+    """loopnest_id → (chosen_nid, arrays[]) via layout_candidates.json."""
     data = json.load(open(ACCESS_JSON))
     nest_arrays = {n["nid"]: n["arrays"] for n in data["all_nests"]}
     out = {}
     for sel in data["selections"]:
-        ln_id = sel["loopnest_id"]
-        nid = sel["chosen_nid"]
-        out[ln_id] = {
-            "chosen_nid": nid,
+        ln = sel["loopnest_id"]
+        out[ln] = {
+            "chosen_nid": sel["chosen_nid"],
             "class_label": sel["class_label"],
-            "arrays": nest_arrays.get(nid, []),
+            "arrays": nest_arrays.get(sel["chosen_nid"], []),
         }
     return out
 
 
-def build_array_groups_canonical(loopnest_to_arrays, loopnest_winners,
-                                 top_k):
-    """Canonical 5-group split from icon-artifacts/velocity/sc26_layout/
-    permute_stage8.py (cv, ch, f, s, n). Every array named in the JSON is
-    assigned to its fixed group; candidate layouts per group are the
-    rank-weighted vote from every touching loopnest's top-k (same as the
-    auto-derived path, just with pinned group membership).
+def _rank_weighted_axis_vote(touching_loopnests, loopnest_winners, axis, top_k):
+    """Each touching loopnest's top-k V-winners vote for an AXIS value
+    (h_first/v_first on IC, SoA/AoS on IN). Rank-1 gets `top_k` points,
+    rank-2 gets `top_k-1`, ... V-ids that don't project onto this axis
+    (e.g. blocked) are skipped."""
+    votes = defaultdict(int)
+    for ln in touching_loopnests:
+        for rank, lid in enumerate(loopnest_winners.get(ln, {}).get("winners", [])):
+            axis_val = project_layout_to_axis(lid, axis)
+            if axis_val is None:
+                continue
+            votes[axis_val] += (top_k - rank)
+    return votes
 
-    Arrays not listed in canonical_array_groups.json are collected into a
-    single synthetic group `unclassified` with identity layout only.
+
+def _rank1_axis_union(touching_loopnests, loopnest_winners, axis):
+    """Union of rank-1 axis values across every touching loopnest."""
+    out = []
+    seen = set()
+    for ln in touching_loopnests:
+        winners = loopnest_winners.get(ln, {}).get("winners", [])
+        if not winners:
+            continue
+        axis_val = project_layout_to_axis(winners[0], axis)
+        if axis_val is None or axis_val in seen:
+            continue
+        seen.add(axis_val)
+        out.append(axis_val)
+    return out
+
+
+def build_array_groups(loopnest_to_arrays, loopnest_winners, top_k,
+                       must_include=()):
+    """Apply the canonical 5-group split (cv / ch / f / s / n). Each
+    group has one storage axis it consumes (IC for cv/ch/f/s, IN for n).
+    Micro-bench V-winners are PROJECTED to that axis before voting, so
+    V1 and V2 are equivalent on the IC axis (both h_first), and V3..V7
+    are equivalent on IC (all v_first). The IN axis splits them
+    differently: V1/V3/V5/V7 = SoA, V2/V4/V6 = AoS.
+
+    Per-group candidate selection:
+      1. rank-1 axis union — each touching loopnest's top winner
+         projects to an axis value; those axis values are all kept.
+      2. pad with rank-weighted axis-vote winners until the candidate
+         set has at least `top_k` entries.
+      3. inject `must_include` axis values that have a non-zero vote.
+
+    Group `n` has no arrays LOKI exposes (INDIRECT_ARRAYS filter), so
+    no loopnest votes on the IN axis. It defaults to SoA for identity.
     """
+    from _analysis_util import IC_CHOICES, IN_CHOICES
     data = json.load(open(CANONICAL_GROUPS_JSON))
     group_ids = data["group_ids"]
     canon = {g: set(data["arrays"].get(g, [])) for g in group_ids}
     labels = data["group_labels"]
+    axes = data.get("group_axis", {})
 
-    # Reverse: array -> set of loopnests touching it
+    # Full choice set per axis. Used when a group has no touching
+    # loopnest (LOKI can't expose its arrays, e.g. `n` whose
+    # connectivity aliases are filtered): sweep both axis values so the
+    # DaCe permutation search still has something to try there.
+    AXIS_CHOICES = {"IC": list(IC_CHOICES), "IN": list(IN_CHOICES)}
+
     arr_to_lns = defaultdict(set)
     all_real_arrays = set()
     for ln_id, info in loopnest_to_arrays.items():
@@ -323,173 +217,165 @@ def build_array_groups_canonical(loopnest_to_arrays, loopnest_winners,
             arr_to_lns[a].add(ln_id)
             all_real_arrays.add(a)
 
+    must_include = tuple(must_include)
+
     groups = []
     classified = set()
     for gid in group_ids:
-        arrs_in_group = sorted(canon[gid] & all_real_arrays)
-        classified.update(arrs_in_group)
-        touching = sorted(set().union(
-            *(arr_to_lns[a] for a in arrs_in_group)
-        )) if arrs_in_group else []
-        votes = defaultdict(int)
-        for ln_id in touching:
-            wlist = loopnest_winners.get(ln_id, {}).get("winners", [])
-            for rank, lid in enumerate(wlist):
-                votes[lid] += (top_k - rank)
+        arrs = sorted(canon[gid] & all_real_arrays)
+        classified.update(arrs)
+        touching = sorted(set().union(*(arr_to_lns[a] for a in arrs))) \
+            if arrs else []
+        axis = axes.get(gid, "IC")
+        votes = _rank_weighted_axis_vote(touching, loopnest_winners,
+                                         axis, top_k)
+
+        # 1. rank-1 axis union — always included
+        candidates = _rank1_axis_union(touching, loopnest_winners, axis)
+
+        # 2. pad with top vote-getters on this axis
         if votes:
-            ranked = sorted(votes.items(),
-                            key=lambda kv: (-kv[1], kv[0]))
-            candidates = [lid for lid, _ in ranked[:top_k]]
-        else:
-            candidates = [IDENTITY_LAYOUT_ID]
+            ranked = sorted(votes.items(), key=lambda kv: (-kv[1], kv[0]))
+            for axis_val, _ in ranked:
+                if len(candidates) >= top_k:
+                    break
+                if axis_val not in candidates:
+                    candidates.append(axis_val)
+
+        # 3. must-include forced axis values (projected from V-ids)
+        for lid in must_include:
+            axis_val = project_layout_to_axis(lid, axis)
+            if axis_val is None or axis_val in candidates:
+                continue
+            if votes.get(axis_val, 0) > 0:
+                candidates.append(axis_val)
+
+        # If no touching loopnest voted (group has 0 arrays LOKI exposed,
+        # e.g. `n` connectivity), sweep the entire axis.
+        if not candidates:
+            candidates = AXIS_CHOICES.get(axis, [IDENTITY_LAYOUT_ID])
+
         groups.append({
             "group_id": gid,
             "group_label": labels.get(gid, ""),
+            "axis": axis,
             "touching_loopnests": touching,
-            "arrays": arrs_in_group,
+            "arrays": arrs,
             "candidate_layouts": candidates,
-            "candidate_votes": {lid: votes.get(lid, 0)
-                                 for lid in candidates},
+            "candidate_votes": {v: votes.get(v, 0) for v in candidates},
         })
 
-    # Anything in the LOKI analysis not covered by the canonical split
-    # goes to a trailing "unclassified" group, pinned to identity so it
-    # never expands the cross-product.
+    # Trailing group for anything outside the canonical taxonomy.
     missing = sorted(all_real_arrays - classified)
     if missing:
         groups.append({
             "group_id": "unclassified",
             "group_label": "arrays not in canonical permute_stage8.py split",
+            "axis": "IC",
             "touching_loopnests": sorted(set().union(
                 *(arr_to_lns[a] for a in missing)
             )),
             "arrays": missing,
-            "candidate_layouts": [IDENTITY_LAYOUT_ID],
-            "candidate_votes": {IDENTITY_LAYOUT_ID: 0},
-        })
-    return groups
-
-
-def build_array_groups(loopnest_to_arrays, loopnest_winners, top_k):
-    """Group arrays by the *set of loopnests that touches them* (equivalence
-    classes from the paper's §III-F). For each group, the candidate-layout
-    set is capped at `top_k`, scored by a rank-weighted vote across every
-    touching loopnest: rank-1 winner contributes `top_k` points, rank-2
-    contributes `top_k-1`, and so on.
-
-    Arrays touched by no measured loopnest form groups whose only candidate
-    is IDENTITY_LAYOUT_ID.
-    """
-    # arrays -> set of loopnest_ids that touch it
-    arr_to_lns = defaultdict(set)
-    for ln_id, info in loopnest_to_arrays.items():
-        for a in info["arrays"]:
-            arr_to_lns[a].add(ln_id)
-
-    # inverse: frozenset(loopnest_ids) -> [arrays]
-    class_to_arrays = defaultdict(list)
-    for a, lns in arr_to_lns.items():
-        class_to_arrays[frozenset(lns)].append(a)
-
-    groups = []
-    for i, (lns_key, arrs) in enumerate(
-            sorted(class_to_arrays.items(),
-                   key=lambda kv: (sorted(kv[0]), kv[1]))):
-        touching = sorted(lns_key)
-        votes = defaultdict(int)
-        for ln_id in touching:
-            wlist = loopnest_winners.get(ln_id, {}).get("winners", [])
-            for rank, lid in enumerate(wlist):
-                votes[lid] += (top_k - rank)
-        if votes:
-            ranked = sorted(votes.items(),
-                            key=lambda kv: (-kv[1], kv[0]))
-            candidates = [lid for lid, _ in ranked[:top_k]]
-        else:
-            candidates = [IDENTITY_LAYOUT_ID]
-        groups.append({
-            "group_id": f"G{i}",
-            "touching_loopnests": touching,
-            "arrays": sorted(arrs),
-            "candidate_layouts": candidates,
-            "candidate_votes": {lid: votes.get(lid, 0)
-                                 for lid in candidates},
+            "candidate_layouts": ["h_first"],
+            "candidate_votes": {"h_first": 0},
         })
     return groups
 
 
 def crossproduct_over_groups(groups):
-    """Cartesian product: one layout choice per group, covering every
-    combination of candidate_layouts."""
+    """Cartesian product of candidate_layouts across every group.
+
+    Each config is a dict `{group_id -> layout_id}`."""
     gids = [g["group_id"] for g in groups]
     axes = [g["candidate_layouts"] for g in groups]
-    configs = []
-    for combo in product(*axes):
-        configs.append(dict(zip(gids, combo)))
-    return configs
+    return [dict(zip(gids, combo)) for combo in product(*axes)]
 
+
+# ──────────────────────────────────────────────────────────────────────
+#  stdout summary (self-contained record per invocation)
+# ──────────────────────────────────────────────────────────────────────
+
+def print_loki_summary(groups):
+    data = json.load(open(ACCESS_JSON))
+    all_nests = data.get("all_nests", [])
+    print()
+    print(f"# 25 LOKI loop nests (from analyze_access.py):")
+    print(f"  {'nid':>3}  {'shape':<6} {'ranges':<32} {'collapsed':<14} "
+          f"{'arrs':>4}  class")
+    for n in all_nests:
+        print(f"  {n['nid']:>3}  {n.get('shape',''):<6} "
+              f"{','.join(n.get('ranges', [])):<32} "
+              f"{n.get('collapsed',''):<14} {n['n_arrays']:>4}  "
+              f"{n.get('class_label','')}")
+    print()
+    print(f"# {len(groups)} array groups (from canonical_array_groups.json):")
+    for g in groups:
+        print(f"  {g['group_id']:<14} touching={g['touching_loopnests']} "
+              f"candidates={g['candidate_layouts']}  "
+              f"({len(g['arrays'])} arrays)")
+
+
+# ──────────────────────────────────────────────────────────────────────
+#  main
+# ──────────────────────────────────────────────────────────────────────
 
 def main():
-    ap = argparse.ArgumentParser(description=__doc__,
-                                 formatter_class=argparse.RawTextHelpFormatter)
+    ap = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawTextHelpFormatter)
     ap.add_argument("--nlev", default=96, type=int,
                     help="nlev slice of the CSV to rank (default: 96)")
     ap.add_argument("--cell-dist", default="exact",
                     help="cell_dist filter ('exact', 'uniform', or '' for none)")
     ap.add_argument("-k", "--top-k", default=2, type=int,
-                    help="top-k layouts to retain per loopnest per target "
-                         "(default: 2 per the paper)")
+                    help="top-k layouts retained per loopnest (default: 2)")
+    ap.add_argument("--backend", default="all",
+                    choices=["gpu", "cpu", "all"],
+                    help="restrict ranking to GPU-only or CPU-only CSVs")
+    ap.add_argument("--blocked-verdict", default=None, type=Path,
+                    help="JSON from analyze_blocked_vs_unblocked.py. "
+                         "Loopnests flagged 'drop blocked' exclude "
+                         "B*/t*x* layouts from their winner set.")
+    ap.add_argument("--must-include", default="",
+                    help="comma-separated layout IDs to force into every "
+                         "group's candidate set where at least one touching "
+                         "loopnest voted for it (e.g. 'V6' to test the "
+                         "loopnest_1 rank-1 winner across all groups it "
+                         "participates in, or 'V3,V4' for vertical-first "
+                         "sanity checks).")
     ap.add_argument("--out-dir", default=str(DEFAULT_OUT_DIR), type=Path,
                     help="where to write layout_crossproduct.{json,csv}")
     ap.add_argument("--no-csv", action="store_true",
                     help="skip CSV output, JSON only")
-    ap.add_argument("--blocked-verdict", default=None, type=Path,
-                    help="JSON produced by analyze_blocked_vs_unblocked.py. "
-                         "Loopnests flagged 'drop blocked' have B*/t*x* "
-                         "layouts excluded from their winner set before "
-                         "top-k selection, shrinking the crossproduct.")
-    ap.add_argument("--backend", default="all",
-                    choices=["gpu", "cpu", "all"],
-                    help="restrict ranking to GPU-only or CPU-only CSVs. "
-                         "Default 'all' uses every measured target.")
-    ap.add_argument("--canonical-groups", action="store_true", default=True,
-                    help="use the 5-group canonical split from "
-                         "access_analysis/canonical_array_groups.json "
-                         "(default). Matches the real sweep in "
-                         "icon-artifacts/velocity/sc26_layout/"
-                         "permute_stage8.py.")
-    ap.add_argument("--equivalence-groups", dest="canonical_groups",
-                    action="store_false",
-                    help="fall back to per-loopnest-membership "
-                         "equivalence-class grouping (11 groups).")
     args = ap.parse_args()
-    backends = ALL_BACKENDS if args.backend == "all" else (args.backend,)
 
+    backends = ALL_BACKENDS if args.backend == "all" else (args.backend,)
     cell_dist = args.cell_dist or None
+    must_include = [s.strip() for s in args.must_include.split(",") if s.strip()]
     args.out_dir.mkdir(parents=True, exist_ok=True)
 
     print(f"[build_layout_crossproduct] nlev={args.nlev} "
           f"cell_dist={cell_dist} top_k={args.top_k} "
-          f"backend={args.backend}")
-    print(f"  access_json = {ACCESS_JSON.relative_to(EXP_DIR)}")
+          f"backend={args.backend}"
+          + (f" must_include={must_include}" if must_include else ""))
 
     # 1. loopnest -> (chosen_nid, arrays)
     ln_to_arrays = load_loopnest_to_arrays()
 
+    # 2. blocked-verdict → set of loopnests that should exclude B* / t*x*
     drop_blocked_set = set()
     if args.blocked_verdict:
-        with open(args.blocked_verdict) as f:
-            vd = json.load(f)
-        for ln_id_str, info in vd["verdict_per_loopnest"].items():
-            if not info.get("keep_blocked", True):
-                drop_blocked_set.add(int(ln_id_str))
+        vd = json.loads(args.blocked_verdict.read_text())
+        drop_blocked_set = {
+            int(k) for k, info in vd["verdict_per_loopnest"].items()
+            if not info.get("keep_blocked", True)
+        }
         print(f"  blocked-verdict: dropping blocked layouts for "
               f"loopnests {sorted(drop_blocked_set)}")
 
-    # 2. winners per loopnest
+    # 3. winners per loopnest
     loopnest_winners = {}
     for ln_id in LOOPNEST_IDS:
-        winners, per_target, winner_scores = collect_winners(
+        winners, per_target, scores = collect_winners(
             ln_id, args.nlev, cell_dist, args.top_k,
             drop_blocked=(ln_id in drop_blocked_set),
             backends=backends)
@@ -499,31 +385,23 @@ def main():
             "class_label": info.get("class_label"),
             "arrays": info.get("arrays", []),
             "winners": winners,
-            "winner_scores": winner_scores,
+            "winner_scores": scores,
             "per_target": per_target,
         }
         print(f"  loopnest_{ln_id}: winners={winners} "
               f"(from {len(per_target)} target CSVs)")
 
-    # 3. array groups + candidate layouts
-    if args.canonical_groups:
-        groups = build_array_groups_canonical(ln_to_arrays, loopnest_winners,
-                                              args.top_k)
-    else:
-        groups = build_array_groups(ln_to_arrays, loopnest_winners,
-                                    args.top_k)
-    n_unconsidered = sum(1 for g in groups
-                         if g["candidate_layouts"] == [IDENTITY_LAYOUT_ID]
-                         and not g["touching_loopnests"])
-    print(f"  array groups = {len(groups)}  "
-          f"(unconsidered: {n_unconsidered})")
+    # 4. array groups (5 canonical + optional unclassified)
+    groups = build_array_groups(ln_to_arrays, loopnest_winners, args.top_k,
+                                must_include=must_include)
+    print(f"  array groups = {len(groups)}")
 
-    # 4. cross product
+    # 5. cross product
     configs = crossproduct_over_groups(groups)
-    print(f"  crossproduct configs = {len(configs)}  "
-          f"(= {' x '.join(str(len(g['candidate_layouts'])) for g in groups)})")
+    axes_str = " x ".join(str(len(g["candidate_layouts"])) for g in groups)
+    print(f"  crossproduct configs = {len(configs)}  (= {axes_str})")
 
-    # 5. write JSON
+    # 6. write JSON + CSV
     out = {
         "meta": {
             "nlev": args.nlev,
@@ -541,57 +419,20 @@ def main():
         "crossproduct": configs,
     }
     json_path = args.out_dir / "layout_crossproduct.json"
-    with open(json_path, "w") as f:
-        json.dump(out, f, indent=2)
+    json_path.write_text(json.dumps(out, indent=2))
     print(f"  wrote {json_path.relative_to(EXP_DIR)}")
 
-    # 6. write CSV (flat, one row per config)
     if not args.no_csv:
         csv_path = args.out_dir / "layout_crossproduct.csv"
-        header = ["config_id"] + [g["group_id"] for g in groups]
         with open(csv_path, "w", newline="") as f:
             w = csv.writer(f)
-            w.writerow(header)
+            w.writerow(["config_id"] + [g["group_id"] for g in groups])
             for i, cfg in enumerate(configs):
                 w.writerow([i] + [cfg[g["group_id"]] for g in groups])
         print(f"  wrote {csv_path.relative_to(EXP_DIR)}")
 
-    # 7. LOKI-sourced summary — every loop nest and every array group,
-    #    so the crossproduct is readable without opening the JSON.
-    print_loki_summary(json.load(open(ACCESS_JSON)), groups)
+    print_loki_summary(groups)
     return 0
-
-
-def print_loki_summary(access_data, groups):
-    """Echo the upstream LOKI analysis (25 loop nests, their pattern
-    signatures, and the array groups we derived from them) so every
-    invocation of this script produces a self-contained record of which
-    arrays are driven by which loop nests and which layout candidates."""
-    all_nests = access_data.get("all_nests", [])
-    print()
-    print("# ── LOKI loop nests (velocity_tendencies, R02B05) ────────────")
-    print(f"#   {len(all_nests)} nests extracted by access_analysis/"
-          f"analyze_access.py from")
-    print(f"#   velocity_advection_preprocessed.f90")
-    print(f"{'nid':>3}  {'shape':<6} {'ranges':<32} {'collapsed':<14}  "
-          f"{'arrs':>4}  class")
-    print("  " + "-" * 82)
-    for n in all_nests:
-        rr = ",".join(n.get("ranges", []))
-        print(f"{n['nid']:>3}  {n.get('shape',''):<6} {rr:<32} "
-              f"{n.get('collapsed',''):<14}  "
-              f"{n['n_arrays']:>4}  {n.get('class_label','')}")
-
-    print()
-    print("# ── Array groups (equivalence classes on loopnest membership) ")
-    print(f"#   {len(groups)} groups. Candidate layouts are rank-weighted")
-    print(f"#   votes from touching loopnests' top-k (see winners above).")
-    for g in groups:
-        print(f"  {g['group_id']:<4} touching=loopnest{tuple(g['touching_loopnests'])}  "
-              f"candidates={g['candidate_layouts']}  "
-              f"({len(g['arrays'])} arrays)")
-        for a in g["arrays"]:
-            print(f"        {a}")
 
 
 if __name__ == "__main__":

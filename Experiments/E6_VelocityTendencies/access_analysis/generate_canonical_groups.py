@@ -97,6 +97,19 @@ GROUP_LABELS = {
     "n":  "CONN           (edge/vertex/cell index connectivity tables)",
 }
 
+# Which storage axis each group consumes. cv/ch/f/s are (h,v,b) arrays —
+# the layout choice that matters is whether `je` or `jk` is innermost
+# (IC axis). `n` is (N,2) connectivity — the choice is SoA vs AoS (IN
+# axis). Each V-id in the micro-bench encodes BOTH axes, but each group
+# only consumes the axis relevant to its arrays.
+GROUP_AXIS = {
+    "cv": "IC",
+    "ch": "IC",
+    "f":  "IC",
+    "s":  "IC",
+    "n":  "IN",
+}
+
 
 def _is_conn(name: str) -> bool:
     if name in CONN_ALIASES:
@@ -176,6 +189,7 @@ def build(loki_json_path: Path) -> dict:
                   "array lists).",
         "group_ids": ["cv", "ch", "f", "s", "n"],
         "group_labels": GROUP_LABELS,
+        "group_axis":   GROUP_AXIS,
         "arrays": groups,
         "unclassified": unclassified,
     }

@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 #SBATCH --job-name=s4_p1
 #SBATCH --nodes=1
 #SBATCH --partition=mi300
@@ -14,6 +15,7 @@ export GENCODE_NUMBER=90
 export OMP_NUM_THREADS=96
 export OMP_PROC_BIND=spread
 export OMP_PLACES=cores
+export OMP_SCHEDULE=static
 export OMP_DISPLAY_ENV=TRUE
 export __HIP_PLATFORM_AMD__=1
 export HIP_PLATFORM_AMD=1

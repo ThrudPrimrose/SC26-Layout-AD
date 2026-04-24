@@ -70,7 +70,8 @@ export CXXFLAGS=" \
   -I${LIBXML2_PREFIX}/include \
   -I${LIBXML2_PREFIX}/include/libxml2 \
   -I${OPENBLAS_PREFIX}/include \
-  -fPIC  -Wno-implicit-function-declaration \
+  -fPIC -Wno-implicit-function-declaration \
+  -fno-vect-cost-model \
   ${CXXFLAGS}  \
 "
 
@@ -80,6 +81,7 @@ export CFLAGS=" \
   -I${LIBXML2_PREFIX}/include/libxml2 \
   -I${OPENBLAS_PREFIX}/include \
   -fPIC -Wno-implicit-function-declaration \
+  -fno-vect-cost-model \
   ${CFLAGS}  \
 "
 

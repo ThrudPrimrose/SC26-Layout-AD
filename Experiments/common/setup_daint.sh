@@ -28,16 +28,17 @@ alias python=/usr/bin/python3.11
 export OMP_NUM_THREADS=288
 export OMP_PROC_BIND=close
 export OMP_PLACES="{0}:72:1,{72}:72:1,{144}:72:1,{216}:72:1"
+export OMP_SCHEDULE=static
 export OMP_DISPLAY_ENV=TRUE
 export SLURM_CPU_BIND=cores
 
 # --- build flags ---------------------------------------------------------
 export CPU_CXX="${CPU_CXX:-g++}"
-export CPU_CXXFLAGS="${CPU_CXXFLAGS:--O3 -march=native -mtune=native -fopenmp -ffast-math -fno-vect-cost-model -std=c++17}"
+export CPU_CXXFLAGS="${CPU_CXXFLAGS:--O3 -march=native -mtune=native -fopenmp -ffast-math -fno-trapping-math -fno-math-errno -fno-vect-cost-model -std=c++17}"
 export CPU_LDFLAGS="${CPU_LDFLAGS:--lnuma}"
 
 export GPU_CXX="${GPU_CXX:-nvcc}"
-export GPU_CXXFLAGS="${GPU_CXXFLAGS:--O3 -arch=${ARCH} -std=c++17 -Xcompiler=-fopenmp}"
+export GPU_CXXFLAGS="${GPU_CXXFLAGS:--O3 --use_fast_math -arch=${ARCH} -std=c++17 -Xcompiler=-fopenmp -Xcompiler=-ffast-math -Xcompiler=-fno-trapping-math -Xcompiler=-fno-math-errno -Xcompiler=-fno-vect-cost-model -Xcompiler=-march=native -Xcompiler=-mtune=native}"
 export GPU_LDFLAGS="${GPU_LDFLAGS:--lnuma}"
 
 # Optional: OpenBLAS for CPU baselines (E3).

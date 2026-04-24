@@ -16,7 +16,7 @@
 // Sweep: 7 thread-block sizes × 4 coarsening factors, 100 reps each.
 //
 // Compile:
-//   nvcc -O3 -std=c++17 zaxpy_indirect_sweep.cu -o zaxpy_indirect_sweep
+//   nvcc -O3 -Xcompiler=-fno-vect-cost-model -std=c++17 zaxpy_indirect_sweep.cu -o zaxpy_indirect_sweep
 
 #include "../common/gpu_compat.cuh"    /* single CUDA/HIP shim */
 #include <stdio.h>
