@@ -30,6 +30,9 @@ from pathlib import Path
 
 os.environ.setdefault("__DACE_NO_SYNC", "1")
 
+from utils.dace_branch import YAKUP_DEV_BRANCH, ensure_branch
+ensure_branch(YAKUP_DEV_BRANCH)
+
 import dace
 
 from utils.passes.compress_indices import (

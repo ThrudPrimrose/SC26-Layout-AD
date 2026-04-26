@@ -10,12 +10,10 @@
 # next step in the pipeline (generate_baselines.py).
 #
 # Pipeline order:
-#   1. tools/f90_to_sdfg.sh             this script           (f2dace/staging)
-#   2. python generate_baselines.py     4 specialised variants (f2dace/staging)
-#   3. python compile_baselines.py      compile + link (also gives main binary)
-#   4. tools/verify_baselines.sh        run binary on TS {1,7,9}
-#   5. python -m utils.stages.stage1    optimize + compile        (yakup/dev)
-#   6. tools/verify_stage1.sh           re-run binary, recheck    (yakup/dev)
+#   1. tools/f90_to_sdfg.sh             this script              (f2dace/staging)
+#   2. python generate_baselines.py     4 specialised variants   (f2dace/staging)
+#   3. python -m utils.stages.stage1    freeze ABI + compile     (yakup/dev)
+#   4. tools/verify_stage1.sh           run binary, recheck      (yakup/dev)
 #
 # Env knobs:
 #   PYTHON              python interpreter (default: python3)

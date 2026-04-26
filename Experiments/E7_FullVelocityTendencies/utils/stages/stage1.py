@@ -24,6 +24,9 @@ Run:
 import argparse
 from pathlib import Path
 
+from utils.dace_branch import YAKUP_DEV_BRANCH, ensure_branch
+ensure_branch(YAKUP_DEV_BRANCH)
+
 import dace
 from dace import nodes
 from dace.sdfg.propagation import propagate_memlets_sdfg
@@ -197,15 +200,15 @@ def main():
     names = common.sdfg_names()
 
     if args.optimize:
-        # Re-unify against the post-phase-1 baseline at the end of stage 1.
-        # Stage 1's optimisations (LoopToMap / simplify / InlineSDFG / ...)
-        # surface additional free symbols and prune unused arrays, drifting
-        # the per-variant signature from the baseline that ``main.cpp`` was
-        # compiled against. Re-running ``unify_variant_signatures`` here
-        # re-pads each variant back to the baseline ABI.
+        # Stage 1 is the freeze point for the kernel ABI. Stage 1's
+        # optimisations (LoopToReduce / LoopToMap / InlineSDFG /
+        # simplify) surface additional free symbols (typically the d_2
+        # shape extents that LoopToMap exposes) and prune unused
+        # arrays, so the per-variant signature drifts from the
+        # post-phase-1 baseline. We do **not** try to re-pad back to
+        # the baseline -- whatever stage 1 produces *is* the frozen
+        # ABI, and stages 2-6 must preserve it.
         from utils.passes.unify_variant_signatures import unify_variant_signatures
-        baseline_path = Path("baseline") / "velocity_no_nproma_post_aos_soa.sdfgz"
-        baseline = dace.SDFG.from_file(str(baseline_path)) if baseline_path.exists() else None
         optimized = []
         for name in names:
             infile = common.stage_input(name, STAGE_ID)
@@ -216,11 +219,39 @@ def main():
             sdfg = optimization_action(sdfg)
             optimized.append(sdfg)
 
-        if baseline is not None and optimized:
-            print(f"Stage #{STAGE_ID}: re-unifying {len(optimized)} variant(s) against post-phase-1 baseline")
-            unify_variant_signatures(baseline, optimized)
+        if optimized:
+            # Unify the 4 variants against each other (no external
+            # baseline). ``unify_variant_signatures`` pools the union
+            # of every variant's arglist, pads each variant up to the
+            # union, and asserts the 4 final arglists agree. Pass
+            # ``optimized[0]`` as the unify reference so the helper
+            # has a baseline parameter to satisfy its API; the union
+            # is over all 4 anyway.
+            print(f"Stage #{STAGE_ID}: freezing signature across "
+                  f"{len(optimized)} variant(s)")
+            unify_variant_signatures(optimized[0], optimized)
             for v in optimized:
                 v.validate()
+
+            sigs = [list(v.arglist().keys()) for v in optimized]
+            ref = sigs[0]
+            for v, s in zip(optimized[1:], sigs[1:]):
+                if s != ref:
+                    extra = set(s) - set(ref)
+                    missing = set(ref) - set(s)
+                    raise RuntimeError(
+                        f"Stage #{STAGE_ID}: signature drift in {v.name!r} "
+                        f"after unify. extra={sorted(extra)} "
+                        f"missing={sorted(missing)}"
+                    )
+
+            # Persist the frozen signature so stages 2-6 can assert
+            # they preserved it. Stage 1's output is the canonical ABI.
+            sig_path = Path("codegen/stage1/__signature.txt")
+            sig_path.parent.mkdir(parents=True, exist_ok=True)
+            sig_path.write_text("\n".join(ref) + "\n")
+            print(f"Stage #{STAGE_ID}: signature frozen ({len(ref)} args), "
+                  f"saved to {sig_path}")
 
         for sdfg in optimized:
             outfile = common.stage_output(sdfg.name, STAGE_ID)
@@ -233,6 +264,54 @@ def main():
             name: dace.SDFG.from_file(common.stage_output(name, STAGE_ID))
             for name in names
         }
+
+        # Regenerate the C++ struct definitions and the call-site macros
+        # from the frozen stage1 SDFG before compile. ``_s_<NNN>`` and
+        # ``__f2dace_*`` are stripped by RenameStrippedSymbols on the
+        # SDFG side, so both header generators emit names in stripped
+        # form -- no drift between the kernel signature, the struct
+        # member set, and the macro arglist.
+        import re as _re
+        from tools.gen_struct_headers import emit_header as _emit_struct_header
+        from tools.gen_call_site import emit_header as _emit_call_site
+
+        repo = Path(__file__).resolve().parent.parent.parent
+        baseline_unstripped = repo / "baseline" / "velocity_no_nproma.sdfgz"
+        any_stage1 = repo / common.stage_output(next(iter(sdfgs)), STAGE_ID)
+
+        struct_h = repo / "include" / "velocity_tendencies_no_nproma.h"
+        struct_text, rename_log = _emit_struct_header(baseline_unstripped, strip=True)
+        struct_h.write_text(struct_text)
+        print(f"Stage #{STAGE_ID}: regenerated {struct_h.relative_to(repo)} "
+              f"(stripped {len(rename_log)} member name(s))")
+
+        call_h = repo / "include" / "call_velocity.h"
+        call_text, unmapped = _emit_call_site(
+            any_stage1, baseline_unstripped, variant_names=list(sdfgs.keys()),
+        )
+        call_h.write_text(call_text)
+        print(f"Stage #{STAGE_ID}: regenerated {call_h.relative_to(repo)}")
+        if unmapped:
+            print(f"Stage #{STAGE_ID}: WARNING -- {len(unmapped)} unmapped "
+                  f"init param(s) in call_velocity.h: {unmapped[:5]}")
+
+        # Normalise the (de)serialization header in place. The committed
+        # serde file refers to struct members by their original f2dace
+        # names (``x->__f2dace_<KIND>_<arr>_d_<dim>_s_<NNN>``); apply the
+        # same strip rules used by RenameStrippedSymbols so it lines up
+        # with the regenerated struct definitions. Idempotent.
+        serde_h = repo / "include" / "serde_velocity_no_nproma.h"
+        if serde_h.exists():
+            txt = serde_h.read_text()
+            new = _re.sub(r"__f2dace_([A-Za-z][A-Za-z0-9]*)_", r"\1_", txt)
+            new = _re.sub(r"_s_\d+", "", new)
+            if new != txt:
+                serde_h.write_text(new)
+                stripped = sum(1 for _ in _re.finditer(
+                    r"__f2dace_[A-Za-z][A-Za-z0-9]*_|_s_\d+", txt))
+                print(f"Stage #{STAGE_ID}: stripped serde header in place "
+                      f"({stripped} occurrence(s))")
+
         common.compile_action(STAGE_ID, sdfgs, release=args.release)
 
 
