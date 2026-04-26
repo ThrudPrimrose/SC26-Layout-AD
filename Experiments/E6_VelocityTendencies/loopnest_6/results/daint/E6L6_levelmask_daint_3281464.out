@@ -1,0 +1,56 @@
+[E6L6 daint] host=nid006484 threads=288 data=/capstor/scratch/cscs/ybudanaz/icon-artifacts/velocity/data_r02b05
+OK   V=1 dist=uniform max_rel=0.000e+00
+OK   V=2 dist=uniform max_rel=0.000e+00
+OK   V=3 dist=uniform max_rel=0.000e+00
+OK   V=4 dist=uniform max_rel=0.000e+00
+OK   V=1 dist=normal_var1 max_rel=0.000e+00
+OK   V=2 dist=normal_var1 max_rel=0.000e+00
+OK   V=3 dist=normal_var1 max_rel=0.000e+00
+OK   V=4 dist=normal_var1 max_rel=0.000e+00
+OK   V=1 dist=exact max_rel=0.000e+00
+OK   V=2 dist=exact max_rel=0.000e+00
+OK   V=3 dist=exact max_rel=0.000e+00
+OK   V=4 dist=exact max_rel=0.000e+00
+OK   B=8 dist=uniform max_rel=0.000e+00
+OK   B=16 dist=uniform max_rel=0.000e+00
+OK   B=32 dist=uniform max_rel=0.000e+00
+OK   B=8 dist=normal_var1 max_rel=0.000e+00
+OK   B=16 dist=normal_var1 max_rel=0.000e+00
+OK   B=32 dist=normal_var1 max_rel=0.000e+00
+OK   B=8 dist=exact max_rel=0.000e+00
+OK   B=16 dist=exact max_rel=0.000e+00
+OK   B=32 dist=exact max_rel=0.000e+00
+OK   TX=8 TY=8 dist=uniform max_rel=0.000e+00
+OK   TX=8 TY=16 dist=uniform max_rel=0.000e+00
+OK   TX=8 TY=32 dist=uniform max_rel=0.000e+00
+OK   TX=16 TY=8 dist=uniform max_rel=0.000e+00
+OK   TX=16 TY=16 dist=uniform max_rel=0.000e+00
+OK   TX=16 TY=32 dist=uniform max_rel=0.000e+00
+OK   TX=32 TY=8 dist=uniform max_rel=0.000e+00
+OK   TX=32 TY=16 dist=uniform max_rel=0.000e+00
+OK   TX=32 TY=32 dist=uniform max_rel=0.000e+00
+OK   TX=8 TY=8 dist=normal_var1 max_rel=0.000e+00
+OK   TX=8 TY=16 dist=normal_var1 max_rel=0.000e+00
+OK   TX=8 TY=32 dist=normal_var1 max_rel=0.000e+00
+OK   TX=16 TY=8 dist=normal_var1 max_rel=0.000e+00
+OK   TX=16 TY=16 dist=normal_var1 max_rel=0.000e+00
+OK   TX=16 TY=32 dist=normal_var1 max_rel=0.000e+00
+OK   TX=32 TY=8 dist=normal_var1 max_rel=0.000e+00
+OK   TX=32 TY=16 dist=normal_var1 max_rel=0.000e+00
+OK   TX=32 TY=32 dist=normal_var1 max_rel=0.000e+00
+OK   TX=8 TY=8 dist=exact max_rel=0.000e+00
+OK   TX=8 TY=16 dist=exact max_rel=0.000e+00
+OK   TX=8 TY=32 dist=exact max_rel=0.000e+00
+OK   TX=16 TY=8 dist=exact max_rel=0.000e+00
+OK   TX=16 TY=16 dist=exact max_rel=0.000e+00
+OK   TX=16 TY=32 dist=exact max_rel=0.000e+00
+OK   TX=32 TY=8 dist=exact max_rel=0.000e+00
+OK   TX=32 TY=16 dist=exact max_rel=0.000e+00
+OK   TX=32 TY=32 dist=exact max_rel=0.000e+00
+
+  [ln6] N=81920 nlev=90 (vert-only reduction) beta=0.6000 alpha=0.4000 gamma=0.050 P=4
+
+
+  [ln6] N=81920 nlev=90 (vert-only reduction) beta=0.6000 alpha=0.4000 gamma=0.050 P=4
+
+[E6L6 daint] done. CSVs under results/daint/

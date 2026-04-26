@@ -12,7 +12,16 @@
       "backend": "gpu",
       "csv": "loopnest_1/results/beverin/z_v_grad_w_gpu.csv",
       "best_V_id": "V6",
-      "best_V_ms": 0.5736435,
+      "best_V_ms": 0.578103,
+      "n_unblocked_measured": 7
+    },
+    {
+      "loopnest": 1,
+      "platform": "daint",
+      "backend": "gpu",
+      "csv": "loopnest_1/results/daint/z_v_grad_w_gpu.csv",
+      "best_V_id": "V6",
+      "best_V_ms": 0.306304,
       "n_unblocked_measured": 7
     },
     {
@@ -20,13 +29,26 @@
       "platform": "beverin",
       "backend": "gpu",
       "csv": "loopnest_2/results/beverin/z_w_concorr_me_gpu.csv",
-      "best_V_id": "V1",
-      "best_V_ms": 0.4781875,
+      "best_V_id": "V2",
+      "best_V_ms": 0.492213,
       "n_unblocked_measured": 5,
       "best_B_id": "B32",
-      "best_B_ms": 0.5095525,
+      "best_B_ms": 0.5180279999999999,
       "n_blocked_measured": 3,
-      "speedup": 0.9384459893730284
+      "speedup": 0.950166786351317
+    },
+    {
+      "loopnest": 2,
+      "platform": "daint",
+      "backend": "gpu",
+      "csv": "loopnest_2/results/daint/z_w_concorr_me_gpu.csv",
+      "best_V_id": "V2",
+      "best_V_ms": 0.338304,
+      "n_unblocked_measured": 5,
+      "best_B_id": "B16",
+      "best_B_ms": 0.343312,
+      "n_blocked_measured": 3,
+      "speedup": 0.9854126858367899
     },
     {
       "loopnest": 3,
@@ -34,12 +56,51 @@
       "backend": "gpu",
       "csv": "loopnest_3/results/beverin/z_v_grad_w_full_gpu.csv",
       "best_V_id": "V2",
-      "best_V_ms": 0.5524235,
+      "best_V_ms": 0.559768,
       "n_unblocked_measured": 5,
       "best_B_id": "B32",
-      "best_B_ms": 0.651844,
+      "best_B_ms": 0.656164,
       "n_blocked_measured": 3,
-      "speedup": 0.8474780775768435
+      "speedup": 0.8530916051474937
+    },
+    {
+      "loopnest": 3,
+      "platform": "daint",
+      "backend": "gpu",
+      "csv": "loopnest_3/results/daint/z_v_grad_w_full_gpu.csv",
+      "best_V_id": "V1",
+      "best_V_ms": 0.366784,
+      "n_unblocked_measured": 5,
+      "best_B_id": "B32",
+      "best_B_ms": 0.381152,
+      "n_blocked_measured": 3,
+      "speedup": 0.9623037528335152
+    },
+    {
+      "loopnest": 4,
+      "platform": "beverin",
+      "backend": "gpu",
+      "csv": "loopnest_4/results/beverin/ddt_vn_vert_gpu.csv",
+      "best_V_id": "V2",
+      "best_V_ms": 3.3965615,
+      "n_unblocked_measured": 5,
+      "best_B_id": "B8",
+      "best_B_ms": 3.16226,
+      "n_blocked_measured": 3,
+      "speedup": 1.0740930537020992
+    },
+    {
+      "loopnest": 4,
+      "platform": "daint",
+      "backend": "gpu",
+      "csv": "loopnest_4/results/daint/ddt_vn_vert_gpu.csv",
+      "best_V_id": "V1",
+      "best_V_ms": 1.128752,
+      "n_unblocked_measured": 5,
+      "best_B_id": "B32",
+      "best_B_ms": 1.97448,
+      "n_blocked_measured": 3,
+      "speedup": 0.5716705157813703
     },
     {
       "loopnest": 5,
@@ -47,25 +108,51 @@
       "backend": "gpu",
       "csv": "loopnest_5/results/beverin/vn_ie_boundary_gpu.csv",
       "best_V_id": "V1",
-      "best_V_ms": 0.0162805,
+      "best_V_ms": 0.0164405,
       "n_unblocked_measured": 4,
       "best_B_id": "B32",
       "best_B_ms": 0.01824,
       "n_blocked_measured": 3,
-      "speedup": 0.8925712719298246
+      "speedup": 0.901343201754386
+    },
+    {
+      "loopnest": 5,
+      "platform": "daint",
+      "backend": "gpu",
+      "csv": "loopnest_5/results/daint/vn_ie_boundary_gpu.csv",
+      "best_V_id": "V1",
+      "best_V_ms": 0.010144,
+      "n_unblocked_measured": 4,
+      "best_B_id": "B32",
+      "best_B_ms": 0.010464,
+      "n_blocked_measured": 3,
+      "speedup": 0.9694189602446484
     },
     {
       "loopnest": 6,
       "platform": "beverin",
       "backend": "gpu",
       "csv": "loopnest_6/results/beverin/levelmask_gpu.csv",
-      "best_V_id": "V1",
-      "best_V_ms": 0.1817805,
+      "best_V_id": "V2",
+      "best_V_ms": 0.212881,
       "n_unblocked_measured": 5,
-      "best_B_id": "B64",
-      "best_B_ms": 0.1926005,
-      "n_blocked_measured": 4,
-      "speedup": 0.9438215373272655
+      "best_B_id": "B32",
+      "best_B_ms": 0.209401,
+      "n_blocked_measured": 3,
+      "speedup": 1.0166188318107363
+    },
+    {
+      "loopnest": 6,
+      "platform": "daint",
+      "backend": "gpu",
+      "csv": "loopnest_6/results/daint/levelmask_gpu.csv",
+      "best_V_id": "V2",
+      "best_V_ms": 0.627328,
+      "n_unblocked_measured": 5,
+      "best_B_id": "B16",
+      "best_B_ms": 0.717856,
+      "n_blocked_measured": 3,
+      "speedup": 0.8738911425132616
     }
   ],
   "verdict_per_loopnest": {
@@ -82,7 +169,7 @@
       "keep_blocked": false
     },
     "4": {
-      "max_speedup": 1.0,
+      "max_speedup": 1.0740930537020992,
       "keep_blocked": false
     },
     "5": {
@@ -90,7 +177,7 @@
       "keep_blocked": false
     },
     "6": {
-      "max_speedup": 1.0,
+      "max_speedup": 1.0166188318107363,
       "keep_blocked": false
     }
   }

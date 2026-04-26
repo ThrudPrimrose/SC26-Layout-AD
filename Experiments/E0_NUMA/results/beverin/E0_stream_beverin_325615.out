@@ -1,0 +1,174 @@
+[E0 beverin] host=nid002936 threads=96
+NUMA STREAM peak (E0)
+  N1d=16384  N=268435456  (1.00 GiB/buf)  threads=96  NUMA nodes=4
+  reps=100  warmup=5  headline stat=peak (min time -> max BW)
+
+######## setup=ft_flat ########
+[numa] ft_flat A  262144 pages  1024.0 MiB (ps=4 KiB)
+  node 0 :    65253 pages ( 24.9%)
+  node 1 :    65536 pages ( 25.0%)
+  node 2 :    65536 pages ( 25.0%)
+  node 3 :    65819 pages ( 25.1%)
+[numa] ft_flat B  262144 pages  1024.0 MiB (ps=4 KiB)
+  node 0 :    65536 pages ( 25.0%)
+  node 1 :    65536 pages ( 25.0%)
+  node 2 :    65536 pages ( 25.0%)
+  node 3 :    65536 pages ( 25.0%)
+  ft_flat        1d_rows_static     flush=yes  min   720.0  mean   861.4  max   871.7 GB/s  PASS
+  ft_flat        1d_rows_static     flush=no   min   720.9  mean   853.4  max   884.8 GB/s  PASS
+  ft_flat        1d_rows_dynamic    flush=yes  min   204.3  mean   217.6  max   238.4 GB/s  PASS
+  ft_flat        1d_rows_dynamic    flush=no   min   125.4  mean   213.6  max   227.4 GB/s  PASS
+  ft_flat        1d_flat_static     flush=yes  min   848.5  mean   865.5  max   873.2 GB/s  PASS
+  ft_flat        1d_flat_static     flush=no   min   862.3  mean   876.6  max   886.4 GB/s  PASS
+  ft_flat        4_stripe_aware     flush=yes  min   830.6  mean   865.3  max   873.3 GB/s  PASS
+  ft_flat        4_stripe_aware     flush=no   min   831.8  mean   876.9  max   887.2 GB/s  PASS
+
+######## setup=bind_stripe_4 ########
+[numa] bind_stripe_4 A  262144 pages  1024.0 MiB (ps=4 KiB)
+  node 0 :    65024 pages ( 24.8%)
+  node 1 :    65536 pages ( 25.0%)
+  node 2 :    65536 pages ( 25.0%)
+  node 3 :    66048 pages ( 25.2%)
+[numa] bind_stripe_4 B  262144 pages  1024.0 MiB (ps=4 KiB)
+  node 0 :    65253 pages ( 24.9%)
+  node 1 :    65536 pages ( 25.0%)
+  node 2 :    65536 pages ( 25.0%)
+  node 3 :    65819 pages ( 25.1%)
+  bind_stripe_4  1d_rows_static     flush=yes  min   726.8  mean   856.4  max   867.7 GB/s  PASS
+  bind_stripe_4  1d_rows_static     flush=no   min   685.8  mean   841.0  max   880.7 GB/s  PASS
+  bind_stripe_4  1d_rows_dynamic    flush=yes  min   205.2  mean   219.6  max   231.1 GB/s  PASS
+  bind_stripe_4  1d_rows_dynamic    flush=no   min   198.2  mean   215.4  max   232.5 GB/s  PASS
+  bind_stripe_4  1d_flat_static     flush=yes  min   352.0  mean   856.6  max   868.1 GB/s  PASS
+  bind_stripe_4  1d_flat_static     flush=no   min   811.2  mean   871.2  max   882.1 GB/s  PASS
+  bind_stripe_4  4_stripe_aware     flush=yes  min   791.1  mean   858.9  max   868.4 GB/s  PASS
+  bind_stripe_4  4_stripe_aware     flush=no   min   844.4  mean   871.9  max   881.1 GB/s  PASS
+
+######## setup=interleave ########
+[numa] interleave A  262144 pages  1024.0 MiB (ps=4 KiB)
+  node 0 :    65024 pages ( 24.8%)
+  node 1 :    65536 pages ( 25.0%)
+  node 2 :    65536 pages ( 25.0%)
+  node 3 :    66048 pages ( 25.2%)
+[numa] interleave B  262144 pages  1024.0 MiB (ps=4 KiB)
+  node 0 :    65253 pages ( 24.9%)
+  node 1 :    65536 pages ( 25.0%)
+  node 2 :    65536 pages ( 25.0%)
+  node 3 :    65819 pages ( 25.1%)
+  interleave     1d_rows_static     flush=yes  min   727.8  mean   854.7  max   867.6 GB/s  PASS
+  interleave     1d_rows_static     flush=no   min   188.3  mean   863.8  max   880.4 GB/s  PASS
+  interleave     1d_rows_dynamic    flush=yes  min   205.4  mean   219.0  max   229.9 GB/s  PASS
+  interleave     1d_rows_dynamic    flush=no   min   143.0  mean   214.6  max   232.8 GB/s  PASS
+  interleave     1d_flat_static     flush=yes  min   773.1  mean   858.3  max   869.5 GB/s  PASS
+  interleave     1d_flat_static     flush=no   min   781.7  mean   865.1  max   882.1 GB/s  PASS
+  interleave     4_stripe_aware     flush=yes  min   816.1  mean   859.7  max   875.3 GB/s  PASS
+  interleave     4_stripe_aware     flush=no   min   795.9  mean   866.2  max   880.7 GB/s  PASS
+
+Wrote 2400 records to results/beverin/stream_peak_cpu.csv
+NUMA STREAM peak GPU (E0) on AMD Instinct MI300A
+  N1d=16384  (1.00 GiB/buf)  reps=100  warmup=5  backend=HIP
+
+
+######## flush=yes ########
+Kernel                                                   flush         mean ms          BW  ok
+------------------------------------------------------------------------------------------------
+  scale_add_2d BX=32  BY=1   TX=1  TY=1   tile=1x32        flush=yes     4.367 ms     737.6 GB/s  OK
+  scale_add_2d BX=32  BY=1   TX=2  TY=1   tile=1x64        flush=yes     2.527 ms    1275.4 GB/s  OK
+  scale_add_2d BX=32  BY=1   TX=4  TY=1   tile=1x128       flush=yes     1.503 ms    2147.8 GB/s  OK
+  scale_add_2d BX=32  BY=1   TX=1  TY=2   tile=2x32        flush=yes     2.536 ms    1270.4 GB/s  OK
+  scale_add_2d BX=32  BY=1   TX=2  TY=2   tile=2x64        flush=yes     1.521 ms    2121.1 GB/s  OK
+  scale_add_2d BX=32  BY=1   TX=4  TY=4   tile=4x128       flush=yes     1.235 ms    2609.8 GB/s  OK
+  scale_add_2d BX=128 BY=1   TX=1  TY=1   tile=1x128       flush=yes     1.498 ms    2153.9 GB/s  OK
+  scale_add_2d BX=128 BY=1   TX=1  TY=2   tile=2x128       flush=yes     1.230 ms    2621.2 GB/s  OK
+  scale_add_2d BX=128 BY=1   TX=2  TY=2   tile=2x256       flush=yes     1.005 ms    3205.2 GB/s  OK
+  scale_add_2d BX=128 BY=1   TX=4  TY=4   tile=4x512       flush=yes     1.105 ms    2918.2 GB/s  OK
+  scale_add_2d BX=256 BY=1   TX=1  TY=1   tile=1x256       flush=yes     1.238 ms    2604.0 GB/s  OK
+  scale_add_2d BX=256 BY=1   TX=1  TY=2   tile=2x256       flush=yes     1.015 ms    3174.5 GB/s  OK
+  scale_add_2d BX=256 BY=1   TX=1  TY=4   tile=4x256       flush=yes     1.064 ms    3028.1 GB/s  OK
+  scale_add_2d BX=16  BY=16  TX=1  TY=1   tile=16x16       flush=yes     1.538 ms    2094.3 GB/s  OK
+  scale_add_2d BX=16  BY=16  TX=2  TY=1   tile=16x32       flush=yes     1.392 ms    2314.8 GB/s  OK
+  scale_add_2d BX=16  BY=16  TX=1  TY=2   tile=32x16       flush=yes     1.489 ms    2164.7 GB/s  OK
+  scale_add_2d BX=16  BY=16  TX=2  TY=2   tile=32x32       flush=yes     1.460 ms    2206.4 GB/s  OK
+  scale_add_2d BX=16  BY=16  TX=4  TY=1   tile=16x64       flush=yes     1.223 ms    2635.6 GB/s  OK
+  scale_add_2d BX=16  BY=16  TX=1  TY=4   tile=64x16       flush=yes     1.492 ms    2159.2 GB/s  OK
+  scale_add_2d BX=16  BY=16  TX=4  TY=4   tile=64x64       flush=yes     1.274 ms    2529.6 GB/s  OK
+  scale_add_2d BX=32  BY=32  TX=1  TY=1   tile=32x32       flush=yes     1.261 ms    2557.0 GB/s  OK
+  scale_add_2d BX=32  BY=32  TX=2  TY=1   tile=32x64       flush=yes     1.175 ms    2742.3 GB/s  OK
+  scale_add_2d BX=32  BY=32  TX=1  TY=2   tile=64x32       flush=yes     1.214 ms    2654.4 GB/s  OK
+  scale_add_2d BX=32  BY=32  TX=2  TY=2   tile=64x64       flush=yes     1.079 ms    2987.4 GB/s  OK
+  scale_add_2d BX=32  BY=4   TX=1  TY=1   tile=4x32        flush=yes     1.506 ms    2141.0 GB/s  OK
+  scale_add_2d BX=32  BY=4   TX=2  TY=1   tile=4x64        flush=yes     1.242 ms    2596.0 GB/s  OK
+  scale_add_2d BX=32  BY=4   TX=4  TY=1   tile=4x128       flush=yes     0.961 ms    3353.9 GB/s  OK
+  scale_add_2d BX=32  BY=4   TX=1  TY=4   tile=16x32       flush=yes     1.125 ms    2865.1 GB/s  OK
+  scale_add_2d BX=32  BY=4   TX=4  TY=4   tile=16x128      flush=yes     0.995 ms    3238.6 GB/s  OK
+  scale_add_2d BX=32  BY=8   TX=1  TY=1   tile=8x32        flush=yes     1.240 ms    2598.9 GB/s  OK
+  scale_add_2d BX=32  BY=8   TX=2  TY=1   tile=8x64        flush=yes     1.031 ms    3124.5 GB/s  OK
+  scale_add_2d BX=32  BY=8   TX=1  TY=2   tile=16x32       flush=yes     1.120 ms    2875.6 GB/s  OK
+  scale_add_2d BX=32  BY=8   TX=2  TY=2   tile=16x64       flush=yes     0.960 ms    3355.9 GB/s  OK
+  scale_add_2d BX=32  BY=8   TX=4  TY=4   tile=32x128      flush=yes     1.005 ms    3209.1 GB/s  OK
+  scale_add_2d BX=32  BY=8   TX=8  TY=1   tile=8x256       flush=yes     0.988 ms    3263.9 GB/s  OK
+  scale_add_2d BX=32  BY=8   TX=1  TY=8   tile=64x32       flush=yes     1.141 ms    2824.8 GB/s  OK
+  scale_add_2d BX=64  BY=4   TX=1  TY=1   tile=4x64        flush=yes     1.233 ms    2614.5 GB/s  OK
+  scale_add_2d BX=64  BY=4   TX=2  TY=2   tile=8x128       flush=yes     0.951 ms    3386.5 GB/s  OK
+  scale_add_2d BX=64  BY=4   TX=4  TY=4   tile=16x256      flush=yes     1.013 ms    3181.3 GB/s  OK
+  scale_add_2d BX=64  BY=8   TX=1  TY=1   tile=8x64        flush=yes     1.100 ms    2928.2 GB/s  OK
+  scale_add_2d BX=64  BY=8   TX=2  TY=2   tile=16x128      flush=yes     0.950 ms    3391.1 GB/s  OK
+  scale_add_2d BX=64  BY=16  TX=1  TY=1   tile=16x64       flush=yes     1.183 ms    2724.2 GB/s  OK
+  scale_add_2d BX=128 BY=2   TX=1  TY=1   tile=2x128       flush=yes     1.231 ms    2619.3 GB/s  OK
+  scale_add_2d BX=128 BY=2   TX=2  TY=2   tile=4x256       flush=yes     1.047 ms    3076.8 GB/s  OK
+  scale_add_2d BX=128 BY=4   TX=1  TY=1   tile=4x128       flush=yes     1.094 ms    2945.4 GB/s  OK
+  scale_add_2d BX=128 BY=4   TX=2  TY=2   tile=8x256       flush=yes     0.982 ms    3279.9 GB/s  OK
+  scale_add_2d BX=128 BY=8   TX=1  TY=1   tile=8x128       flush=yes     1.129 ms    2854.1 GB/s  OK
+
+######## flush=no ########
+Kernel                                                   flush         mean ms          BW  ok
+------------------------------------------------------------------------------------------------
+  scale_add_2d BX=32  BY=1   TX=1  TY=1   tile=1x32        flush=no      4.030 ms     799.3 GB/s  OK
+  scale_add_2d BX=32  BY=1   TX=2  TY=1   tile=1x64        flush=no      2.115 ms    1523.0 GB/s  OK
+  scale_add_2d BX=32  BY=1   TX=4  TY=1   tile=1x128       flush=no      1.255 ms    2567.6 GB/s  OK
+  scale_add_2d BX=32  BY=1   TX=1  TY=2   tile=2x32        flush=no      2.127 ms    1514.2 GB/s  OK
+  scale_add_2d BX=32  BY=1   TX=2  TY=2   tile=2x64        flush=no      1.263 ms    2551.4 GB/s  OK
+  scale_add_2d BX=32  BY=1   TX=4  TY=4   tile=4x128       flush=no      1.183 ms    2724.5 GB/s  OK
+  scale_add_2d BX=128 BY=1   TX=1  TY=1   tile=1x128       flush=no      1.315 ms    2453.8 GB/s  OK
+  scale_add_2d BX=128 BY=1   TX=1  TY=2   tile=2x128       flush=no      1.119 ms    2878.7 GB/s  OK
+  scale_add_2d BX=128 BY=1   TX=2  TY=2   tile=2x256       flush=no      1.024 ms    3146.9 GB/s  OK
+  scale_add_2d BX=128 BY=1   TX=4  TY=4   tile=4x512       flush=no      1.071 ms    3008.3 GB/s  OK
+  scale_add_2d BX=256 BY=1   TX=1  TY=1   tile=1x256       flush=no      1.120 ms    2877.3 GB/s  OK
+  scale_add_2d BX=256 BY=1   TX=1  TY=2   tile=2x256       flush=no      1.033 ms    3118.9 GB/s  OK
+  scale_add_2d BX=256 BY=1   TX=1  TY=4   tile=4x256       flush=no      1.060 ms    3042.4 GB/s  OK
+  scale_add_2d BX=16  BY=16  TX=1  TY=1   tile=16x16       flush=no      1.507 ms    2138.1 GB/s  OK
+  scale_add_2d BX=16  BY=16  TX=2  TY=1   tile=16x32       flush=no      1.336 ms    2411.6 GB/s  OK
+  scale_add_2d BX=16  BY=16  TX=1  TY=2   tile=32x16       flush=no      1.453 ms    2217.2 GB/s  OK
+  scale_add_2d BX=16  BY=16  TX=2  TY=2   tile=32x32       flush=no      1.418 ms    2272.3 GB/s  OK
+  scale_add_2d BX=16  BY=16  TX=4  TY=1   tile=16x64       flush=no      1.216 ms    2650.2 GB/s  OK
+  scale_add_2d BX=16  BY=16  TX=1  TY=4   tile=64x16       flush=no      1.466 ms    2198.1 GB/s  OK
+  scale_add_2d BX=16  BY=16  TX=4  TY=4   tile=64x64       flush=no      1.252 ms    2573.9 GB/s  OK
+  scale_add_2d BX=32  BY=32  TX=1  TY=1   tile=32x32       flush=no      1.193 ms    2700.9 GB/s  OK
+  scale_add_2d BX=32  BY=32  TX=2  TY=1   tile=32x64       flush=no      1.127 ms    2859.2 GB/s  OK
+  scale_add_2d BX=32  BY=32  TX=1  TY=2   tile=64x32       flush=no      1.171 ms    2752.6 GB/s  OK
+  scale_add_2d BX=32  BY=32  TX=2  TY=2   tile=64x64       flush=no      1.071 ms    3013.2 GB/s  OK
+  scale_add_2d BX=32  BY=4   TX=1  TY=1   tile=4x32        flush=no      1.223 ms    2635.2 GB/s  OK
+  scale_add_2d BX=32  BY=4   TX=2  TY=1   tile=4x64        flush=no      1.126 ms    2861.2 GB/s  OK
+  scale_add_2d BX=32  BY=4   TX=4  TY=1   tile=4x128       flush=no      1.005 ms    3206.7 GB/s  OK
+  scale_add_2d BX=32  BY=4   TX=1  TY=4   tile=16x32       flush=no      1.122 ms    2873.2 GB/s  OK
+  scale_add_2d BX=32  BY=4   TX=4  TY=4   tile=16x128      flush=no      1.010 ms    3192.9 GB/s  OK
+  scale_add_2d BX=32  BY=8   TX=1  TY=1   tile=8x32        flush=no      1.167 ms    2760.6 GB/s  OK
+  scale_add_2d BX=32  BY=8   TX=2  TY=1   tile=8x64        flush=no      1.039 ms    3100.9 GB/s  OK
+  scale_add_2d BX=32  BY=8   TX=1  TY=2   tile=16x32       flush=no      1.124 ms    2866.6 GB/s  OK
+  scale_add_2d BX=32  BY=8   TX=2  TY=2   tile=16x64       flush=no      1.004 ms    3209.1 GB/s  OK
+  scale_add_2d BX=32  BY=8   TX=4  TY=4   tile=32x128      flush=no      1.014 ms    3179.9 GB/s  OK
+  scale_add_2d BX=32  BY=8   TX=8  TY=1   tile=8x256       flush=no      1.002 ms    3220.4 GB/s  OK
+  scale_add_2d BX=32  BY=8   TX=1  TY=8   tile=64x32       flush=no      1.126 ms    2862.0 GB/s  OK
+  scale_add_2d BX=64  BY=4   TX=1  TY=1   tile=4x64        flush=no      1.122 ms    2872.7 GB/s  OK
+  scale_add_2d BX=64  BY=4   TX=2  TY=2   tile=8x128       flush=no      1.000 ms    3222.9 GB/s  OK
+  scale_add_2d BX=64  BY=4   TX=4  TY=4   tile=16x256      flush=no      1.012 ms    3187.8 GB/s  OK
+  scale_add_2d BX=64  BY=8   TX=1  TY=1   tile=8x64        flush=no      1.098 ms    2934.1 GB/s  OK
+  scale_add_2d BX=64  BY=8   TX=2  TY=2   tile=16x128      flush=no      0.996 ms    3235.1 GB/s  OK
+  scale_add_2d BX=64  BY=16  TX=1  TY=1   tile=16x64       flush=no      1.123 ms    2870.0 GB/s  OK
+  scale_add_2d BX=128 BY=2   TX=1  TY=1   tile=2x128       flush=no      1.127 ms    2858.8 GB/s  OK
+  scale_add_2d BX=128 BY=2   TX=2  TY=2   tile=4x256       flush=no      1.049 ms    3072.9 GB/s  OK
+  scale_add_2d BX=128 BY=4   TX=1  TY=1   tile=4x128       flush=no      1.099 ms    2931.5 GB/s  OK
+  scale_add_2d BX=128 BY=4   TX=2  TY=2   tile=8x256       flush=no      1.005 ms    3205.7 GB/s  OK
+  scale_add_2d BX=128 BY=8   TX=1  TY=1   tile=8x128       flush=no      1.103 ms    2921.4 GB/s  OK
+
+Wrote 9400 records to results/beverin/stream_peak_gpu.csv
+[E0 beverin] done. CSVs under results/beverin/

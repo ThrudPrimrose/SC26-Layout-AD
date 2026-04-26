@@ -1,0 +1,1133 @@
+[E6L1 daint] host=nid006319 threads=288 data=/capstor/scratch/cscs/ybudanaz/icon-artifacts/velocity/data_r02b05
+Loading ICON: /capstor/scratch/cscs/ybudanaz/icon-artifacts/velocity/data_r02b05/p_patch.9.data  (nproma=81920)
+ICON: nproma=81920  n_edges=163840 (valid=122880)  n_cells=81920  n_verts=81920
+Benchmark dimensions: N_e=122880 (valid edges)  N_c=81920 (cells)  N_v=81920 (verts)
+OMP threads: 288  NUMA domains: 4  L1: 32768 bytes
+  B=  8 L1%=2.0%
+  B= 16 L1%=3.9%
+  B= 32 L1%=7.8%
+Ready
+
+V1 uniform      omp_for            OK mr=0.00e+00
+V1 uniform      omp_collapse2      OK mr=6.56e-10
+V1 uniform      omp_collapse2_je   OK mr=6.56e-10
+V1 uniform      omp_numa4          OK mr=6.56e-10
+Done: nlev=256(256) dist=uniform      V=1  (N_e=122880 N_c=81920 N_v=81920)
+V2 uniform      omp_for            OK mr=0.00e+00
+V2 uniform      omp_collapse2      OK mr=6.56e-10
+V2 uniform      omp_collapse2_je   OK mr=6.56e-10
+V2 uniform      omp_numa4          OK mr=6.56e-10
+Done: nlev=256(256) dist=uniform      V=2  (N_e=122880 N_c=81920 N_v=81920)
+V3 uniform      omp_for            OK mr=4.40e-10
+V3 uniform      omp_collapse2      OK mr=0.00e+00
+V3 uniform      omp_collapse2_je   OK mr=0.00e+00
+V3 uniform      omp_numa4          OK mr=4.40e-10
+Done: nlev=256(256) dist=uniform      V=3  (N_e=122880 N_c=81920 N_v=81920)
+V4 uniform      omp_for            OK mr=3.24e-09
+V4 uniform      omp_collapse2      OK mr=3.24e-09
+V4 uniform      omp_collapse2_je   OK mr=3.24e-09
+V4 uniform      omp_numa4          OK mr=3.24e-09
+Done: nlev=256(256) dist=uniform      V=4  (N_e=122880 N_c=81920 N_v=81920)
+V1 normal_var1  omp_for            OK mr=0.00e+00
+V1 normal_var1  omp_collapse2      OK mr=5.64e-09
+V1 normal_var1  omp_collapse2_je   OK mr=5.64e-09
+V1 normal_var1  omp_numa4          OK mr=5.64e-09
+Done: nlev=256(256) dist=normal_var1  V=1  (N_e=122880 N_c=81920 N_v=81920)
+V2 normal_var1  omp_for            OK mr=0.00e+00
+V2 normal_var1  omp_collapse2      OK mr=5.64e-09
+V2 normal_var1  omp_collapse2_je   OK mr=5.64e-09
+V2 normal_var1  omp_numa4          OK mr=5.64e-09
+Done: nlev=256(256) dist=normal_var1  V=2  (N_e=122880 N_c=81920 N_v=81920)
+V3 normal_var1  omp_for            OK mr=8.83e-10
+V3 normal_var1  omp_collapse2      OK mr=0.00e+00
+V3 normal_var1  omp_collapse2_je   OK mr=0.00e+00
+V3 normal_var1  omp_numa4          OK mr=8.83e-10
+Done: nlev=256(256) dist=normal_var1  V=3  (N_e=122880 N_c=81920 N_v=81920)
+V4 normal_var1  omp_for            OK mr=2.04e-09
+V4 normal_var1  omp_collapse2      OK mr=2.04e-09
+V4 normal_var1  omp_collapse2_je   OK mr=2.04e-09
+V4 normal_var1  omp_numa4          OK mr=2.04e-09
+Done: nlev=256(256) dist=normal_var1  V=4  (N_e=122880 N_c=81920 N_v=81920)
+V1 exact        omp_for            OK mr=0.00e+00
+V1 exact        omp_collapse2      OK mr=1.50e-09
+V1 exact        omp_collapse2_je   OK mr=1.50e-09
+V1 exact        omp_numa4          OK mr=0.00e+00
+Done: nlev=256(256) dist=exact        V=1  (N_e=122880 N_c=81920 N_v=81920)
+V2 exact        omp_for            OK mr=0.00e+00
+V2 exact        omp_collapse2      OK mr=1.50e-09
+V2 exact        omp_collapse2_je   OK mr=1.50e-09
+V2 exact        omp_numa4          OK mr=0.00e+00
+Done: nlev=256(256) dist=exact        V=2  (N_e=122880 N_c=81920 N_v=81920)
+V3 exact        omp_for            OK mr=1.50e-09
+V3 exact        omp_collapse2      OK mr=0.00e+00
+V3 exact        omp_collapse2_je   OK mr=0.00e+00
+V3 exact        omp_numa4          OK mr=1.50e-09
+Done: nlev=256(256) dist=exact        V=3  (N_e=122880 N_c=81920 N_v=81920)
+V4 exact        omp_for            OK mr=1.02e-09
+V4 exact        omp_collapse2      OK mr=5.35e-10
+V4 exact        omp_collapse2_je   OK mr=5.35e-10
+V4 exact        omp_numa4          OK mr=1.02e-09
+Done: nlev=256(256) dist=exact        V=4  (N_e=122880 N_c=81920 N_v=81920)
+B8 uniform      omp_for  OK mr=0.00e+00
+B8 uniform      collapse OK mr=0.00e+00
+Done: nlev=256(256) dist=uniform      B=8
+B16 uniform      omp_for  OK mr=0.00e+00
+B16 uniform      collapse OK mr=0.00e+00
+Done: nlev=256(256) dist=uniform      B=16
+B32 uniform      omp_for  OK mr=0.00e+00
+B32 uniform      collapse OK mr=0.00e+00
+Done: nlev=256(256) dist=uniform      B=32
+B8 normal_var1  omp_for  OK mr=0.00e+00
+B8 normal_var1  collapse OK mr=0.00e+00
+Done: nlev=256(256) dist=normal_var1  B=8
+B16 normal_var1  omp_for  OK mr=0.00e+00
+B16 normal_var1  collapse OK mr=0.00e+00
+Done: nlev=256(256) dist=normal_var1  B=16
+B32 normal_var1  omp_for  OK mr=0.00e+00
+B32 normal_var1  collapse OK mr=0.00e+00
+Done: nlev=256(256) dist=normal_var1  B=32
+B8 exact        omp_for  OK mr=0.00e+00
+B8 exact        collapse OK mr=0.00e+00
+Done: nlev=256(256) dist=exact        B=8
+B16 exact        omp_for  OK mr=0.00e+00
+B16 exact        collapse OK mr=0.00e+00
+Done: nlev=256(256) dist=exact        B=16
+B32 exact        omp_for  OK mr=0.00e+00
+B32 exact        collapse OK mr=0.00e+00
+Done: nlev=256(256) dist=exact        B=32
+TX8 TY8 uniform      tiled_for  OK mr=0.00e+00
+TX8 TY8 uniform      tiled_col  OK mr=0.00e+00
+Done: nlev=256(256) dist=uniform      TX=8 TY=8
+TX8 TY16 uniform      tiled_for  OK mr=0.00e+00
+TX8 TY16 uniform      tiled_col  OK mr=0.00e+00
+Done: nlev=256(256) dist=uniform      TX=8 TY=16
+TX8 TY32 uniform      tiled_for  OK mr=0.00e+00
+TX8 TY32 uniform      tiled_col  OK mr=0.00e+00
+Done: nlev=256(256) dist=uniform      TX=8 TY=32
+TX16 TY8 uniform      tiled_for  OK mr=0.00e+00
+TX16 TY8 uniform      tiled_col  OK mr=0.00e+00
+Done: nlev=256(256) dist=uniform      TX=16 TY=8
+TX16 TY16 uniform      tiled_for  OK mr=0.00e+00
+TX16 TY16 uniform      tiled_col  OK mr=0.00e+00
+Done: nlev=256(256) dist=uniform      TX=16 TY=16
+TX16 TY32 uniform      tiled_for  OK mr=0.00e+00
+TX16 TY32 uniform      tiled_col  OK mr=0.00e+00
+Done: nlev=256(256) dist=uniform      TX=16 TY=32
+TX32 TY8 uniform      tiled_for  OK mr=0.00e+00
+TX32 TY8 uniform      tiled_col  OK mr=0.00e+00
+Done: nlev=256(256) dist=uniform      TX=32 TY=8
+TX32 TY16 uniform      tiled_for  OK mr=0.00e+00
+TX32 TY16 uniform      tiled_col  OK mr=0.00e+00
+Done: nlev=256(256) dist=uniform      TX=32 TY=16
+TX32 TY32 uniform      tiled_for  OK mr=0.00e+00
+TX32 TY32 uniform      tiled_col  OK mr=0.00e+00
+Done: nlev=256(256) dist=uniform      TX=32 TY=32
+TX8 TY8 normal_var1  tiled_for  OK mr=0.00e+00
+TX8 TY8 normal_var1  tiled_col  OK mr=0.00e+00
+Done: nlev=256(256) dist=normal_var1  TX=8 TY=8
+TX8 TY16 normal_var1  tiled_for  OK mr=0.00e+00
+TX8 TY16 normal_var1  tiled_col  OK mr=0.00e+00
+Done: nlev=256(256) dist=normal_var1  TX=8 TY=16
+TX8 TY32 normal_var1  tiled_for  OK mr=0.00e+00
+TX8 TY32 normal_var1  tiled_col  OK mr=0.00e+00
+Done: nlev=256(256) dist=normal_var1  TX=8 TY=32
+TX16 TY8 normal_var1  tiled_for  OK mr=0.00e+00
+TX16 TY8 normal_var1  tiled_col  OK mr=0.00e+00
+Done: nlev=256(256) dist=normal_var1  TX=16 TY=8
+TX16 TY16 normal_var1  tiled_for  OK mr=0.00e+00
+TX16 TY16 normal_var1  tiled_col  OK mr=0.00e+00
+Done: nlev=256(256) dist=normal_var1  TX=16 TY=16
+TX16 TY32 normal_var1  tiled_for  OK mr=0.00e+00
+TX16 TY32 normal_var1  tiled_col  OK mr=0.00e+00
+Done: nlev=256(256) dist=normal_var1  TX=16 TY=32
+TX32 TY8 normal_var1  tiled_for  OK mr=0.00e+00
+TX32 TY8 normal_var1  tiled_col  OK mr=0.00e+00
+Done: nlev=256(256) dist=normal_var1  TX=32 TY=8
+TX32 TY16 normal_var1  tiled_for  OK mr=0.00e+00
+TX32 TY16 normal_var1  tiled_col  OK mr=0.00e+00
+Done: nlev=256(256) dist=normal_var1  TX=32 TY=16
+TX32 TY32 normal_var1  tiled_for  OK mr=0.00e+00
+TX32 TY32 normal_var1  tiled_col  OK mr=0.00e+00
+Done: nlev=256(256) dist=normal_var1  TX=32 TY=32
+TX8 TY8 exact        tiled_for  OK mr=0.00e+00
+TX8 TY8 exact        tiled_col  OK mr=0.00e+00
+Done: nlev=256(256) dist=exact        TX=8 TY=8
+TX8 TY16 exact        tiled_for  OK mr=0.00e+00
+TX8 TY16 exact        tiled_col  OK mr=0.00e+00
+Done: nlev=256(256) dist=exact        TX=8 TY=16
+TX8 TY32 exact        tiled_for  OK mr=0.00e+00
+TX8 TY32 exact        tiled_col  OK mr=0.00e+00
+Done: nlev=256(256) dist=exact        TX=8 TY=32
+TX16 TY8 exact        tiled_for  OK mr=0.00e+00
+TX16 TY8 exact        tiled_col  OK mr=0.00e+00
+Done: nlev=256(256) dist=exact        TX=16 TY=8
+TX16 TY16 exact        tiled_for  OK mr=0.00e+00
+TX16 TY16 exact        tiled_col  OK mr=0.00e+00
+Done: nlev=256(256) dist=exact        TX=16 TY=16
+TX16 TY32 exact        tiled_for  OK mr=0.00e+00
+TX16 TY32 exact        tiled_col  OK mr=0.00e+00
+Done: nlev=256(256) dist=exact        TX=16 TY=32
+TX32 TY8 exact        tiled_for  OK mr=0.00e+00
+TX32 TY8 exact        tiled_col  OK mr=0.00e+00
+Done: nlev=256(256) dist=exact        TX=32 TY=8
+TX32 TY16 exact        tiled_for  OK mr=0.00e+00
+TX32 TY16 exact        tiled_col  OK mr=0.00e+00
+Done: nlev=256(256) dist=exact        TX=32 TY=16
+TX32 TY32 exact        tiled_for  OK mr=0.00e+00
+TX32 TY32 exact        tiled_col  OK mr=0.00e+00
+Done: nlev=256(256) dist=exact        TX=32 TY=32
+
+Written: z_v_grad_w_cpu.csv
+Loading ICON: /capstor/scratch/cscs/ybudanaz/icon-artifacts/velocity/data_r02b05/p_patch.9.data (nproma=81920)
+Dimensions: N_e=122880 N_c=81920 N_v=81920
+GPU: NVIDIA GH200 120GB  SM=132  Configs: V1-V5=65 V6=9 V7=10
+OK:   nlev=256(256) dist=exact        V=1 mr=0.000e+00
+Done: nlev=256(256) dist=exact        V=1
+SKIP: nlev=256(256) dist=exact        V=3 cfg=1x1_256x1     
+SKIP: nlev=256(256) dist=exact        V=3 cfg=1x1_128x1     
+SKIP: nlev=256(256) dist=exact        V=3 cfg=1x1_64x1      
+SKIP: nlev=256(256) dist=exact        V=3 cfg=2x1_128x1     
+SKIP: nlev=256(256) dist=exact        V=3 cfg=4x1_128x1     
+SKIP: nlev=256(256) dist=exact        V=3 cfg=4x1_64x1      
+SKIP: nlev=256(256) dist=exact        V=3 cfg=8x1_128x1     
+SKIP: nlev=256(256) dist=exact        V=3 cfg=8x1_64x1      
+SKIP: nlev=256(256) dist=exact        V=3 cfg=1x1_96x1      
+Done: nlev=256(256) dist=exact        V=3
+SKIP: nlev=256(256) dist=exact        V=4 cfg=1x1_256x1     
+SKIP: nlev=256(256) dist=exact        V=4 cfg=1x1_128x1     
+SKIP: nlev=256(256) dist=exact        V=4 cfg=1x1_64x1      
+SKIP: nlev=256(256) dist=exact        V=4 cfg=2x1_128x1     
+SKIP: nlev=256(256) dist=exact        V=4 cfg=4x1_128x1     
+SKIP: nlev=256(256) dist=exact        V=4 cfg=4x1_64x1      
+SKIP: nlev=256(256) dist=exact        V=4 cfg=8x1_128x1     
+SKIP: nlev=256(256) dist=exact        V=4 cfg=8x1_64x1      
+SKIP: nlev=256(256) dist=exact        V=4 cfg=1x1_96x1      
+Done: nlev=256(256) dist=exact        V=4
+SKIP: nlev=256(256) dist=exact        V=5 cfg=1x1_256x1     
+SKIP: nlev=256(256) dist=exact        V=5 cfg=1x1_128x1     
+SKIP: nlev=256(256) dist=exact        V=5 cfg=1x1_64x1      
+SKIP: nlev=256(256) dist=exact        V=5 cfg=2x1_128x1     
+SKIP: nlev=256(256) dist=exact        V=5 cfg=4x1_128x1     
+SKIP: nlev=256(256) dist=exact        V=5 cfg=4x1_64x1      
+SKIP: nlev=256(256) dist=exact        V=5 cfg=8x1_128x1     
+SKIP: nlev=256(256) dist=exact        V=5 cfg=8x1_64x1      
+SKIP: nlev=256(256) dist=exact        V=5 cfg=1x1_96x1      
+Done: nlev=256(256) dist=exact        V=5
+OK:   V=6 dist=exact        mr=0.000e+00
+Done: nlev=256(256) dist=exact        V=6
+OK:   V=7 dist=exact        mr=0.000e+00
+Done: nlev=256 dist=exact        V=7
+OK:   tiled cfg=t08x08_bx08by32    dist=exact        mr=1.501e-09
+Done: nlev=256(256) dist=exact        tiled STX=8 STY=8
+OK:   tiled cfg=t08x16_bx08by32    dist=exact        mr=1.501e-09
+Done: nlev=256(256) dist=exact        tiled STX=8 STY=16
+OK:   tiled cfg=t08x32_bx08by32    dist=exact        mr=1.501e-09
+Done: nlev=256(256) dist=exact        tiled STX=8 STY=32
+OK:   tiled cfg=t16x08_bx16by16    dist=exact        mr=1.501e-09
+Done: nlev=256(256) dist=exact        tiled STX=16 STY=8
+OK:   tiled cfg=t16x16_bx16by16    dist=exact        mr=1.501e-09
+Done: nlev=256(256) dist=exact        tiled STX=16 STY=16
+OK:   tiled cfg=t16x32_bx16by16    dist=exact        mr=1.501e-09
+Done: nlev=256(256) dist=exact        tiled STX=16 STY=32
+OK:   tiled cfg=t32x08_bx32by08    dist=exact        mr=1.501e-09
+Done: nlev=256(256) dist=exact        tiled STX=32 STY=8
+OK:   tiled cfg=t32x16_bx32by08    dist=exact        mr=1.501e-09
+Done: nlev=256(256) dist=exact        tiled STX=32 STY=16
+OK:   tiled cfg=t32x32_bx32by08    dist=exact        mr=1.501e-09
+Done: nlev=256(256) dist=exact        tiled STX=32 STY=32
+OK:   nlev=256(256) dist=uniform      V=1 mr=5.399e-09
+Done: nlev=256(256) dist=uniform      V=1
+SKIP: nlev=256(256) dist=uniform      V=3 cfg=1x1_256x1     
+SKIP: nlev=256(256) dist=uniform      V=3 cfg=1x1_128x1     
+SKIP: nlev=256(256) dist=uniform      V=3 cfg=1x1_64x1      
+SKIP: nlev=256(256) dist=uniform      V=3 cfg=2x1_128x1     
+SKIP: nlev=256(256) dist=uniform      V=3 cfg=4x1_128x1     
+SKIP: nlev=256(256) dist=uniform      V=3 cfg=4x1_64x1      
+SKIP: nlev=256(256) dist=uniform      V=3 cfg=8x1_128x1     
+SKIP: nlev=256(256) dist=uniform      V=3 cfg=8x1_64x1      
+SKIP: nlev=256(256) dist=uniform      V=3 cfg=1x1_96x1      
+Done: nlev=256(256) dist=uniform      V=3
+SKIP: nlev=256(256) dist=uniform      V=4 cfg=1x1_256x1     
+SKIP: nlev=256(256) dist=uniform      V=4 cfg=1x1_128x1     
+SKIP: nlev=256(256) dist=uniform      V=4 cfg=1x1_64x1      
+SKIP: nlev=256(256) dist=uniform      V=4 cfg=2x1_128x1     
+SKIP: nlev=256(256) dist=uniform      V=4 cfg=4x1_128x1     
+SKIP: nlev=256(256) dist=uniform      V=4 cfg=4x1_64x1      
+SKIP: nlev=256(256) dist=uniform      V=4 cfg=8x1_128x1     
+SKIP: nlev=256(256) dist=uniform      V=4 cfg=8x1_64x1      
+SKIP: nlev=256(256) dist=uniform      V=4 cfg=1x1_96x1      
+Done: nlev=256(256) dist=uniform      V=4
+SKIP: nlev=256(256) dist=uniform      V=5 cfg=1x1_256x1     
+SKIP: nlev=256(256) dist=uniform      V=5 cfg=1x1_128x1     
+SKIP: nlev=256(256) dist=uniform      V=5 cfg=1x1_64x1      
+SKIP: nlev=256(256) dist=uniform      V=5 cfg=2x1_128x1     
+SKIP: nlev=256(256) dist=uniform      V=5 cfg=4x1_128x1     
+SKIP: nlev=256(256) dist=uniform      V=5 cfg=4x1_64x1      
+SKIP: nlev=256(256) dist=uniform      V=5 cfg=8x1_128x1     
+SKIP: nlev=256(256) dist=uniform      V=5 cfg=8x1_64x1      
+SKIP: nlev=256(256) dist=uniform      V=5 cfg=1x1_96x1      
+Done: nlev=256(256) dist=uniform      V=5
+OK:   V=6 dist=uniform      mr=5.399e-09
+Done: nlev=256(256) dist=uniform      V=6
+OK:   V=7 dist=uniform      mr=5.399e-09
+Done: nlev=256 dist=uniform      V=7
+OK:   tiled cfg=t08x08_bx08by32    dist=uniform      mr=5.399e-09
+Done: nlev=256(256) dist=uniform      tiled STX=8 STY=8
+OK:   tiled cfg=t08x16_bx08by32    dist=uniform      mr=5.399e-09
+Done: nlev=256(256) dist=uniform      tiled STX=8 STY=16
+OK:   tiled cfg=t08x32_bx08by32    dist=uniform      mr=5.399e-09
+Done: nlev=256(256) dist=uniform      tiled STX=8 STY=32
+OK:   tiled cfg=t16x08_bx16by16    dist=uniform      mr=5.399e-09
+Done: nlev=256(256) dist=uniform      tiled STX=16 STY=8
+OK:   tiled cfg=t16x16_bx16by16    dist=uniform      mr=5.399e-09
+Done: nlev=256(256) dist=uniform      tiled STX=16 STY=16
+OK:   tiled cfg=t16x32_bx16by16    dist=uniform      mr=5.399e-09
+Done: nlev=256(256) dist=uniform      tiled STX=16 STY=32
+OK:   tiled cfg=t32x08_bx32by08    dist=uniform      mr=5.399e-09
+Done: nlev=256(256) dist=uniform      tiled STX=32 STY=8
+OK:   tiled cfg=t32x16_bx32by08    dist=uniform      mr=5.399e-09
+Done: nlev=256(256) dist=uniform      tiled STX=32 STY=16
+OK:   tiled cfg=t32x32_bx32by08    dist=uniform      mr=5.399e-09
+Done: nlev=256(256) dist=uniform      tiled STX=32 STY=32
+OK:   nlev=256(256) dist=normal_var1  V=1 mr=5.642e-09
+Done: nlev=256(256) dist=normal_var1  V=1
+SKIP: nlev=256(256) dist=normal_var1  V=3 cfg=1x1_256x1     
+SKIP: nlev=256(256) dist=normal_var1  V=3 cfg=1x1_128x1     
+SKIP: nlev=256(256) dist=normal_var1  V=3 cfg=1x1_64x1      
+SKIP: nlev=256(256) dist=normal_var1  V=3 cfg=2x1_128x1     
+SKIP: nlev=256(256) dist=normal_var1  V=3 cfg=4x1_128x1     
+SKIP: nlev=256(256) dist=normal_var1  V=3 cfg=4x1_64x1      
+SKIP: nlev=256(256) dist=normal_var1  V=3 cfg=8x1_128x1     
+SKIP: nlev=256(256) dist=normal_var1  V=3 cfg=8x1_64x1      
+SKIP: nlev=256(256) dist=normal_var1  V=3 cfg=1x1_96x1      
+Done: nlev=256(256) dist=normal_var1  V=3
+SKIP: nlev=256(256) dist=normal_var1  V=4 cfg=1x1_256x1     
+SKIP: nlev=256(256) dist=normal_var1  V=4 cfg=1x1_128x1     
+SKIP: nlev=256(256) dist=normal_var1  V=4 cfg=1x1_64x1      
+SKIP: nlev=256(256) dist=normal_var1  V=4 cfg=2x1_128x1     
+SKIP: nlev=256(256) dist=normal_var1  V=4 cfg=4x1_128x1     
+SKIP: nlev=256(256) dist=normal_var1  V=4 cfg=4x1_64x1      
+SKIP: nlev=256(256) dist=normal_var1  V=4 cfg=8x1_128x1     
+SKIP: nlev=256(256) dist=normal_var1  V=4 cfg=8x1_64x1      
+SKIP: nlev=256(256) dist=normal_var1  V=4 cfg=1x1_96x1      
+Done: nlev=256(256) dist=normal_var1  V=4
+SKIP: nlev=256(256) dist=normal_var1  V=5 cfg=1x1_256x1     
+SKIP: nlev=256(256) dist=normal_var1  V=5 cfg=1x1_128x1     
+SKIP: nlev=256(256) dist=normal_var1  V=5 cfg=1x1_64x1      
+SKIP: nlev=256(256) dist=normal_var1  V=5 cfg=2x1_128x1     
+SKIP: nlev=256(256) dist=normal_var1  V=5 cfg=4x1_128x1     
+SKIP: nlev=256(256) dist=normal_var1  V=5 cfg=4x1_64x1      
+SKIP: nlev=256(256) dist=normal_var1  V=5 cfg=8x1_128x1     
+SKIP: nlev=256(256) dist=normal_var1  V=5 cfg=8x1_64x1      
+SKIP: nlev=256(256) dist=normal_var1  V=5 cfg=1x1_96x1      
+Done: nlev=256(256) dist=normal_var1  V=5
+OK:   V=6 dist=normal_var1  mr=5.642e-09
+Done: nlev=256(256) dist=normal_var1  V=6
+OK:   V=7 dist=normal_var1  mr=5.642e-09
+Done: nlev=256 dist=normal_var1  V=7
+OK:   tiled cfg=t08x08_bx08by32    dist=normal_var1  mr=8.830e-10
+Done: nlev=256(256) dist=normal_var1  tiled STX=8 STY=8
+OK:   tiled cfg=t08x16_bx08by32    dist=normal_var1  mr=8.830e-10
+Done: nlev=256(256) dist=normal_var1  tiled STX=8 STY=16
+OK:   tiled cfg=t08x32_bx08by32    dist=normal_var1  mr=8.830e-10
+Done: nlev=256(256) dist=normal_var1  tiled STX=8 STY=32
+OK:   tiled cfg=t16x08_bx16by16    dist=normal_var1  mr=8.830e-10
+Done: nlev=256(256) dist=normal_var1  tiled STX=16 STY=8
+OK:   tiled cfg=t16x16_bx16by16    dist=normal_var1  mr=8.830e-10
+Done: nlev=256(256) dist=normal_var1  tiled STX=16 STY=16
+OK:   tiled cfg=t16x32_bx16by16    dist=normal_var1  mr=8.830e-10
+Done: nlev=256(256) dist=normal_var1  tiled STX=16 STY=32
+OK:   tiled cfg=t32x08_bx32by08    dist=normal_var1  mr=8.830e-10
+Done: nlev=256(256) dist=normal_var1  tiled STX=32 STY=8
+OK:   tiled cfg=t32x16_bx32by08    dist=normal_var1  mr=8.830e-10
+Done: nlev=256(256) dist=normal_var1  tiled STX=32 STY=16
+OK:   tiled cfg=t32x32_bx32by08    dist=normal_var1  mr=8.830e-10
+Done: nlev=256(256) dist=normal_var1  tiled STX=32 STY=32
+
+Written: z_v_grad_w_gpu.csv
+Loading ICON: /capstor/scratch/cscs/ybudanaz/icon-artifacts/velocity/data_r02b05/p_patch.9.data (nproma=81920)
+Dimensions: N_e=81920 N_c=81920 N_v=81920
+GPU: NVIDIA GH200 120GB  SM=132  Configs: 22 (old-style)
+OK:   nlev=256 dist=exact        V=1 mr=0.000e+00
+Done: nlev=256 dist=exact        V=1
+OK:   nlev=256 dist=exact        V=2 mr=0.000e+00
+Done: nlev=256 dist=exact        V=2
+SKIP: nlev=256 dist=exact        V=3 cfg=1x1_256x1     
+SKIP: nlev=256 dist=exact        V=3 cfg=1x1_128x1     
+SKIP: nlev=256 dist=exact        V=3 cfg=2x1_128x1     
+SKIP: nlev=256 dist=exact        V=3 cfg=4x1_128x1     
+SKIP: nlev=256 dist=exact        V=3 cfg=4x1_64x1      
+Done: nlev=256 dist=exact        V=3
+SKIP: nlev=256 dist=exact        V=4 cfg=1x1_256x1     
+SKIP: nlev=256 dist=exact        V=4 cfg=1x1_128x1     
+SKIP: nlev=256 dist=exact        V=4 cfg=2x1_128x1     
+SKIP: nlev=256 dist=exact        V=4 cfg=4x1_128x1     
+SKIP: nlev=256 dist=exact        V=4 cfg=4x1_64x1      
+Done: nlev=256 dist=exact        V=4
+OK:   nlev=256 dist=uniform      V=1 mr=1.135e-09
+Done: nlev=256 dist=uniform      V=1
+OK:   nlev=256 dist=uniform      V=2 mr=1.135e-09
+Done: nlev=256 dist=uniform      V=2
+SKIP: nlev=256 dist=uniform      V=3 cfg=1x1_256x1     
+SKIP: nlev=256 dist=uniform      V=3 cfg=1x1_128x1     
+SKIP: nlev=256 dist=uniform      V=3 cfg=2x1_128x1     
+SKIP: nlev=256 dist=uniform      V=3 cfg=4x1_128x1     
+SKIP: nlev=256 dist=uniform      V=3 cfg=4x1_64x1      
+Done: nlev=256 dist=uniform      V=3
+SKIP: nlev=256 dist=uniform      V=4 cfg=1x1_256x1     
+SKIP: nlev=256 dist=uniform      V=4 cfg=1x1_128x1     
+SKIP: nlev=256 dist=uniform      V=4 cfg=2x1_128x1     
+SKIP: nlev=256 dist=uniform      V=4 cfg=4x1_128x1     
+SKIP: nlev=256 dist=uniform      V=4 cfg=4x1_64x1      
+Done: nlev=256 dist=uniform      V=4
+OK:   nlev=256 dist=normal_var1  V=1 mr=2.339e-10
+Done: nlev=256 dist=normal_var1  V=1
+OK:   nlev=256 dist=normal_var1  V=2 mr=2.339e-10
+Done: nlev=256 dist=normal_var1  V=2
+SKIP: nlev=256 dist=normal_var1  V=3 cfg=1x1_256x1     
+SKIP: nlev=256 dist=normal_var1  V=3 cfg=1x1_128x1     
+SKIP: nlev=256 dist=normal_var1  V=3 cfg=2x1_128x1     
+SKIP: nlev=256 dist=normal_var1  V=3 cfg=4x1_128x1     
+SKIP: nlev=256 dist=normal_var1  V=3 cfg=4x1_64x1      
+Done: nlev=256 dist=normal_var1  V=3
+SKIP: nlev=256 dist=normal_var1  V=4 cfg=1x1_256x1     
+SKIP: nlev=256 dist=normal_var1  V=4 cfg=1x1_128x1     
+SKIP: nlev=256 dist=normal_var1  V=4 cfg=2x1_128x1     
+SKIP: nlev=256 dist=normal_var1  V=4 cfg=4x1_128x1     
+SKIP: nlev=256 dist=normal_var1  V=4 cfg=4x1_64x1      
+Done: nlev=256 dist=normal_var1  V=4
+
+Written: z_v_grad_w_gpu_old.csv
+
+  N=81920 nl=90 beta=0.6000 alpha=0.4000 gamma=0.050 P=4 L1=32768
+
+  V    B/tile   Target      Sched         Dist              mu    delta   D_numa    D_max     mu*D    mu*Dn      L1%
+  ---- -------- ----------- ------------- ----------- -------- -------- -------- -------- -------- -------- --------
+  V3   -        gpu_warp32  omp_collapse2 uniform        233.9   2076.6   1418.8   185307   485697   331855      n/a
+  V3   -        gpu_warp32  omp_for       normal_var4   16.766    14003   4015.0    53226   234773    67314      n/a
+  V3   -        gpu_warp32  omp_for       normal_var1   16.694    14115   4070.1    53536   235632    67945      n/a
+  V3   -        cpu_avx512  omp_for       normal_var4    7.260   5718.0   1638.2    93880    41512    11892      n/a
+  V3   -        cpu_avx512  omp_for       normal_var1    7.251   5782.5   1669.2    94184    41929    12104      n/a
+  V1   -        cpu_scalar  omp_collapse2 uniform        4.999   1958.5   1937.7   4396.8   9790.2   9686.5      n/a
+  V1   -        cpu_avx512  omp_for       sequential    24.970    205.9    205.6   4948.7   5140.4   5134.5      n/a
+  V1   -        gpu_warp32  omp_collapse2 uniform        141.7   36.947   36.420   3410.1   5233.6   5158.9      n/a
+  V1   -        gpu_warp32  omp_for       exact         20.005    8.354    7.506    813.9    167.1    150.2      n/a
+  V2   -        gpu_warp32  omp_for       uniform        141.7   36.981   36.809   3337.9   5238.4   5214.0      n/a
+  V3   -        cpu_scalar  omp_collapse2 uniform        7.625   104251    88708   229294   794906   676389      n/a
+  V3   -        cpu_scalar  omp_for       exact          0.902   17.737   10.455    985.1   15.993    9.427      n/a
+  V1   -        cpu_avx512  omp_for       uniform       39.928    256.1    256.0   5930.3    10226    10220      n/a
+  V1   -        cpu_avx512  omp_for       exact         10.509   14.057   13.554   1297.2    147.7    142.4      n/a
+  V1   -        cpu_scalar  omp_for       uniform        4.999   1958.5   1958.4   4396.8   9790.2   9789.9      n/a
+  V2   -        cpu_scalar  omp_for       normal_var4    3.268   1757.7   1757.6   3873.0   5743.5   5743.2      n/a
+  V2   -        gpu_warp32  omp_for       normal_var4   80.857   32.696   32.402   2926.2   2643.7   2619.9      n/a
+  V1   -        cpu_scalar  omp_collapse2 sequential     3.125   1837.0   1817.6   4140.2   5740.2   5679.4      n/a
+  V2   -        cpu_avx512  omp_collapse2 normal_var1   24.962    204.4    202.0   4538.8   5103.5   5042.8      n/a
+  V1   -        gpu_scalar  omp_collapse2 exact          1.011   21.409   21.269   76.868   21.653   21.512      n/a
+  V4   -        gpu_warp32  omp_collapse2 uniform        233.9   2076.6   1418.8   185264   485705   331857      n/a
+  V1   -        gpu_scalar  omp_collapse2 normal_var1    2.585    989.0    978.6   2206.4   2556.4   2529.4      n/a
+  V4   -        gpu_warp32  omp_for       uniform       17.219    27057   7804.3   103377   465888   134383      n/a
+  V2   -        gpu_scalar  omp_for       uniform        4.498   1023.1   1023.1   2248.4   4602.0   4601.8      n/a
+  V1   -        cpu_avx512  omp_for       normal_var4   24.966    205.2    205.0   4949.0   5123.1   5117.3      n/a
+  V4   -        gpu_warp32  omp_for       normal_var1   16.694    14108   4067.8    53513   235509    67907      n/a
+  V2   -        cpu_avx512  omp_for       uniform       39.928    255.5    255.4   5671.9    10203    10196      n/a
+  V1   -        gpu_warp32  omp_for       normal_var1   80.873   32.707   32.479   3052.6   2645.1   2626.7      n/a
+  V1   -        gpu_scalar  omp_for       normal_var1    2.585    989.0    989.0   2206.4   2556.4   2556.3      n/a
+  V4   -        gpu_scalar  omp_for       uniform        0.480    993.9    286.6    30417    476.9    137.5      n/a
+  V2   -        gpu_scalar  omp_collapse2 normal_var1    2.585    988.5    978.0   2179.3   2555.1   2528.1      n/a
+  V1   -        cpu_avx512  omp_collapse2 exact         10.509   14.067   13.474   1297.2    147.8    141.6      n/a
+  V4   -        gpu_scalar  omp_for       normal_var1    0.466    622.7    179.7    15768    289.9   83.653      n/a
+  V4   -        cpu_scalar  omp_collapse2 exact          6.097    729.9    623.3   2034.2   4450.4   3800.2      n/a
+  V4   -        cpu_avx512  omp_for       normal_var1    7.251   5772.3   1666.1    94154    41855    12081      n/a
+  V4   -        cpu_avx512  omp_for       uniform        7.398    10969   3164.5   183726    81145    23410      n/a
+  V4   -        cpu_scalar  omp_collapse2 sequential     6.625    60457    51441   132804   400524   340795      n/a
+  V1   -        gpu_warp32  omp_collapse2 normal_var4   80.857   32.624   32.045   3052.7   2637.9   2591.0      n/a
+  V2   -        cpu_avx512  omp_collapse2 exact         10.509   13.414   12.736   48.394    141.0    133.8      n/a
+  V4   -        gpu_warp32  omp_collapse2 normal_var1    198.9   1304.2    891.5   109179   259417   177327      n/a
+  V4   -        gpu_scalar  omp_collapse2 normal_var1    6.611    29889    20400    65934   197605   134869      n/a
+  V4   -        gpu_scalar  omp_collapse2 exact          5.785    374.0    253.7   1043.4   2163.7   1467.8      n/a
+  V1   -        gpu_scalar  omp_collapse2 normal_var4    2.632    972.4    962.1   2168.9   2559.8   2532.7      n/a
+  V1   -        cpu_avx512  omp_collapse2 normal_var4   24.966    205.2    202.8   4949.0   5123.3   5063.5      n/a
+  V4   -        cpu_avx512  omp_collapse2 normal_var1   52.233   8833.4   7516.2   195728   461390   392592      n/a
+  V4   -        gpu_warp32  omp_collapse2 sequential     202.0   1288.1    880.4   107493   260148   177816      n/a
+  V4   -        cpu_scalar  omp_collapse2 normal_var4    7.096    56486    48065   124486   400840   341081      n/a
+  V4   -        gpu_scalar  omp_collapse2 sequential     6.312    31134    21252    68398   196530   134155      n/a
+  V2   -        gpu_warp32  omp_for       exact         20.005    8.684    7.601   40.788    173.7    152.1      n/a
+  V4   -        cpu_avx512  omp_collapse2 sequential    52.998   8714.0   7414.9   192925   461826   392978      n/a
+  V4   -        cpu_avx512  omp_collapse2 normal_var4   52.071   8843.4   7525.8   196437   460480   391870      n/a
+  V3   -        gpu_scalar  omp_for       sequential     0.398    931.2    268.5    16936    370.5    106.8      n/a
+  V2   -        gpu_warp32  omp_for       normal_var1   80.873   32.800   32.506   2926.1   2652.6   2628.8      n/a
+  V2   -        gpu_warp32  omp_collapse2 normal_var4   80.857   32.718   32.072   2926.2   2645.5   2593.2      n/a
+  V2   -        cpu_avx512  omp_for       normal_var1   24.962    204.4    204.2   4538.8   5103.2   5096.5      n/a
+  V3   -        cpu_avx512  omp_for       sequential     6.284   6954.4   2003.4   108182    43702    12590      n/a
+  V4   -        gpu_warp32  omp_for       exact         16.574    164.2   96.312   1045.6   2722.1   1596.1      n/a
+  V4   -        gpu_scalar  omp_for       exact          0.464   10.187    6.034    325.7    4.731    2.803      n/a
+  V4   -        gpu_warp32  omp_for       sequential    14.781    15760   4541.6    60172   232950    67130      n/a
+  V2   -        gpu_scalar  omp_for       normal_var1    2.585    988.5    988.5   2179.3   2555.1   2555.0      n/a
+  V4   -        cpu_avx512  omp_for       sequential     6.284   6942.1   1999.8   108147    43625    12567      n/a
+  V2   -        gpu_warp32  omp_collapse2 sequential    80.851   32.966   32.320   2925.9   2665.3   2613.1      n/a
+  V2   -        gpu_scalar  omp_collapse2 normal_var4    2.632    971.9    961.6   2141.9   2558.5   2531.4      n/a
+  V2   -        cpu_avx512  omp_collapse2 normal_var4   24.966    203.9    201.5   4539.8   5091.4   5031.0      n/a
+  V2   -        gpu_scalar  omp_collapse2 uniform        4.498   1023.1   1012.3   2248.4   4602.0   4553.3      n/a
+  V2   -        cpu_avx512  omp_collapse2 sequential    24.970    204.6    202.2   4539.6   5108.8   5048.0      n/a
+  V3   -        gpu_warp32  omp_collapse2 exact          146.2    375.5    257.5   4564.2    54903    37659      n/a
+  V3   -        gpu_scalar  omp_collapse2 exact          5.785    373.7    253.5   1082.8   2162.0   1466.5      n/a
+  V2   -        gpu_warp32  omp_for       sequential    80.851   32.943   32.647   2925.8   2663.4   2639.5      n/a
+  V3   -        gpu_scalar  omp_for       normal_var4    0.468    583.2    167.2    15526    272.7   78.197      n/a
+  V2   -        cpu_avx512  omp_for       sequential    24.970    204.6    204.3   4539.6   5108.5   5101.7      n/a
+  V2   -        gpu_scalar  omp_for       sequential     2.562    992.7    992.6   2180.1   2543.0   2542.9      n/a
+  V1   -        cpu_avx512  omp_collapse2 uniform       39.928    256.1    253.3   5930.3    10226    10113      n/a
+  V1   -        gpu_scalar  omp_collapse2 uniform        4.498   1023.8   1012.9   2272.7   4604.8   4556.1      n/a
+  V4   -        gpu_warp32  omp_collapse2 exact          146.2    375.5    257.5   4459.2    54910    37661      n/a
+  V4   -        cpu_avx512  omp_collapse2 exact         40.892    484.6    411.3   4831.5    19816    16819      n/a
+  V4   -        gpu_warp32  omp_collapse2 normal_var4    198.2   1301.5    889.5   109544   258018   176348      n/a
+  V4   -        gpu_scalar  omp_collapse2 normal_var4    6.784    29057    19837    64054   197119   134569      n/a
+  V1   -        cpu_scalar  omp_for       sequential     3.125   1837.0   1836.9   4140.2   5740.2   5739.9      n/a
+  V1   -        cpu_scalar  omp_for       exact          1.802   39.066   38.990    248.0   70.413   70.276      n/a
+  V1   -        cpu_scalar  omp_for       normal_var4    3.268   1759.7   1759.6   3981.1   5750.0   5749.7      n/a
+  V2   -        cpu_scalar  omp_collapse2 normal_var1    3.170   1823.2   1803.9   4020.1   5778.8   5717.6      n/a
+  V3   -        cpu_scalar  omp_collapse2 normal_var4    7.096    56618    48177   124878   401778   341880      n/a
+  V4   -        cpu_scalar  omp_collapse2 uniform        7.625   104011    88503   228692   793075   674830      n/a
+  V3   -        cpu_scalar  omp_collapse2 sequential     6.625    60603    51565   133229   401492   341615      n/a
+  V4   -        cpu_scalar  omp_for       normal_var4    0.897   1054.8    302.8    45034    946.1    271.6      n/a
+  V3   -        cpu_scalar  omp_collapse2 normal_var1    6.924    58204    49521   128473   402986   342865      n/a
+  V3   -        cpu_scalar  omp_for       uniform        0.915   1844.6    531.9    89059   1688.3    486.8      n/a
+  V3   -        cpu_avx512  omp_for       exact          7.316   71.069   41.704   1946.7    519.9    305.1      n/a
+  V3   -        gpu_warp32  omp_collapse2 normal_var4    198.2   1301.5    889.5   109596   258010   176346      n/a
+  V2   -        cpu_scalar  omp_for       uniform        4.999   1955.8   1955.7   4299.7   9776.9   9776.5      n/a
+  V3   -        gpu_scalar  omp_collapse2 uniform        7.312    53510    36528   117663   391287   267106      n/a
+  V4   -        cpu_avx512  omp_collapse2 uniform       60.993    15078    12832   334878   919664   782642      n/a
+  V3   -        gpu_scalar  omp_collapse2 sequential     6.312    31168    21276    68503   196749   134305      n/a
+  V1   -        cpu_scalar  omp_collapse2 normal_var1    3.170   1825.2   1805.9   4128.7   5785.3   5724.0      n/a
+  V3   -        gpu_scalar  omp_for       uniform        0.480    994.6    286.8    30419    477.2    137.6      n/a
+  V1   -        cpu_scalar  omp_collapse2 exact          1.802   39.067   38.803    248.0   70.415   69.940      n/a
+  V3   -        cpu_scalar  omp_for       normal_var1    0.895   1112.8    321.3    45065    996.2    287.7      n/a
+  V3   -        gpu_scalar  omp_collapse2 normal_var1    6.611    29925    20424    66036   197838   135027      n/a
+  V1   -        cpu_avx512  omp_collapse2 sequential    24.970    205.9    203.5   4948.7   5140.6   5080.4      n/a
+  V3   -        gpu_scalar  omp_for       normal_var1    0.466    623.1    179.8    15769    290.1   83.707      n/a
+  V1   -        gpu_warp32  omp_collapse2 normal_var1   80.873   32.728   32.153   3052.6   2646.8   2600.4      n/a
+  V1   -        gpu_warp32  omp_collapse2 exact         20.005    8.374    7.470    813.9    167.5    149.4      n/a
+  V1   -        cpu_avx512  omp_collapse2 normal_var1   24.962    205.7    203.3   4948.2   5134.3   5074.2      n/a
+  V3   -        gpu_warp32  omp_for       exact         16.574    164.2   96.282   1055.9   2721.5   1595.6      n/a
+  V1   -        cpu_scalar  omp_for       normal_var1    3.170   1825.2   1825.2   4128.7   5785.3   5785.1      n/a
+  V3   -        cpu_avx512  omp_collapse2 uniform       60.993    15092    12844   335400   920527   783376      n/a
+  V1   -        gpu_warp32  omp_for       uniform        141.7   36.926   36.793   3410.1   5230.6   5211.8      n/a
+  V3   -        gpu_scalar  omp_for       exact          0.464   10.187    6.035    326.2    4.732    2.803      n/a
+  V1   -        cpu_avx512  omp_for       normal_var1   24.962    205.7    205.4   4948.2   5134.0   5128.2      n/a
+  V2   -        cpu_scalar  omp_collapse2 exact          1.802   39.050   38.772   66.621   70.385   69.884      n/a
+  V3   -        gpu_warp32  omp_collapse2 sequential     202.0   1288.1    880.4   107544   260141   177814      n/a
+  V4   -        cpu_scalar  omp_for       uniform        0.915   1841.9    531.0    89052   1685.8    486.0      n/a
+  V4   -        cpu_scalar  omp_for       normal_var1    0.895   1111.3    320.9    45060    994.8    287.2      n/a
+  V2   -        gpu_warp32  omp_collapse2 exact         20.005    8.709    7.566   40.813    174.2    151.4      n/a
+  V4   -        cpu_scalar  omp_collapse2 normal_var1    6.924    58064    49401   128062   402016   342040      n/a
+  V2   -        gpu_scalar  omp_collapse2 exact          1.011   21.418   21.271   30.747   21.662   21.514      n/a
+  V3   -        gpu_scalar  omp_collapse2 normal_var4    6.784    29091    19860    64152   197348   134726      n/a
+  V1   -        cpu_scalar  omp_collapse2 normal_var4    3.268   1759.7   1741.1   3981.1   5750.0   5689.1      n/a
+  V2   -        cpu_scalar  omp_for       exact          1.802   39.048   38.958   66.620   70.382   70.219      n/a
+  V2   -        gpu_scalar  omp_for       exact          1.011   21.417   21.371   30.746   21.662   21.615      n/a
+  V2   -        cpu_avx512  omp_for       exact         10.509   13.402   12.811   48.381    140.8    134.6      n/a
+  V1   -        gpu_warp32  omp_collapse2 sequential    80.851   32.871   32.292   3052.4   2657.6   2610.9      n/a
+  V3   -        cpu_scalar  omp_for       sequential     0.774   1587.4    456.8    49315   1228.0    353.4      n/a
+  V1   -        gpu_warp32  omp_for       normal_var4   80.857   32.603   32.375   3052.7   2636.1   2617.7      n/a
+  V2   -        cpu_scalar  omp_for       normal_var1    3.170   1823.2   1823.1   4020.1   5778.8   5778.6      n/a
+  V3   -        gpu_warp32  omp_for       sequential    14.781    15768   4543.9    60198   233068    67165      n/a
+  V2   -        cpu_scalar  omp_collapse2 normal_var4    3.268   1757.7   1739.1   3873.0   5743.5   5682.6      n/a
+  V4   -        gpu_scalar  omp_collapse2 uniform        7.312    53453    36489   117510   390872   266822      n/a
+  V4   -        cpu_scalar  omp_for       sequential     0.774   1585.2    456.1    49309   1226.3    352.9      n/a
+  V4   -        cpu_scalar  omp_for       exact          0.902   17.713   10.437    983.3   15.971    9.411      n/a
+  V3   -        cpu_avx512  omp_collapse2 normal_var4   52.071   8855.5   7536.0   196918   461110   392405      n/a
+  V2   -        cpu_scalar  omp_collapse2 sequential     3.125   1834.8   1815.4   4028.7   5733.4   5672.7      n/a
+  V4   -        cpu_avx512  omp_for       normal_var4    7.260   5708.0   1635.6    93851    41440    11874      n/a
+  V4   -        cpu_avx512  omp_for       exact          7.316   70.880   41.562   1936.0    518.6    304.1      n/a
+  V4   -        gpu_scalar  omp_for       sequential     0.398    930.7    268.3    16934    370.3    106.8      n/a
+  V2   -        gpu_scalar  omp_collapse2 sequential     2.562    992.7    982.1   2180.1   2543.0   2516.1      n/a
+  V2   -        cpu_scalar  omp_collapse2 uniform        4.999   1955.8   1935.1   4299.7   9776.9   9673.3      n/a
+  V3   -        cpu_avx512  omp_collapse2 normal_var1   52.233   8844.4   7525.5   196204   461964   393077      n/a
+  V2   -        gpu_warp32  omp_collapse2 uniform        141.7   37.003   36.436   3337.9   5241.5   5161.1      n/a
+  V2   -        cpu_avx512  omp_collapse2 uniform       39.928    255.6    252.7   5671.9    10204    10089      n/a
+  V3   -        cpu_avx512  omp_collapse2 sequential    52.998   8725.6   7424.8   193389   462440   393501      n/a
+  V1   -        gpu_scalar  omp_for       sequential     2.562    993.2    993.1   2208.0   2544.3   2544.2      n/a
+  V3   -        gpu_warp32  omp_for       uniform       17.219    27069   7807.3   103413   466098   134433      n/a
+  V1   -        gpu_scalar  omp_for       exact          1.011   21.408   21.370   76.867   21.652   21.613      n/a
+  V4   -        gpu_scalar  omp_for       normal_var4    0.468    582.8    167.1    15524    272.5   78.147      n/a
+  V3   -        cpu_scalar  omp_collapse2 exact          6.097    731.8    624.9   2191.1   4462.0   3810.1      n/a
+  V1   -        gpu_scalar  omp_collapse2 sequential     2.562    993.2    982.7   2208.0   2544.3   2517.4      n/a
+  V1   -        gpu_warp32  omp_for       sequential    80.851   32.849   32.620   3052.3   2655.9   2637.3      n/a
+  V3   -        gpu_warp32  omp_collapse2 normal_var1    198.9   1304.2    891.5   109231   259409   177325      n/a
+  V2   -        gpu_scalar  omp_for       normal_var4    2.632    971.9    971.9   2141.9   2558.5   2558.4      n/a
+  V4   -        gpu_warp32  omp_for       normal_var4   16.766    13996   4013.0    53203   234656    67281      n/a
+  V2   -        gpu_warp32  omp_collapse2 normal_var1   80.873   32.822   32.181   2926.2   2654.4   2602.6      n/a
+  V3   -        cpu_avx512  omp_collapse2 exact         40.892    484.9    411.5   5182.3    19828    16826      n/a
+  V2   -        cpu_avx512  omp_for       normal_var4   24.966    203.9    203.7   4539.8   5091.1   5084.4      n/a
+  V1   -        gpu_scalar  omp_for       uniform        4.498   1023.8   1023.7   2272.7   4604.8   4604.6      n/a
+  V3   -        cpu_scalar  omp_for       normal_var4    0.897   1056.3    303.2    45039    947.4    271.9      n/a
+  V3   -        cpu_avx512  omp_for       uniform        7.398    10989   3170.6   183774    81290    23455      n/a
+  V1   -        gpu_scalar  omp_for       normal_var4    2.632    972.4    972.4   2168.9   2559.8   2559.7      n/a
+  V2   -        cpu_scalar  omp_for       sequential     3.125   1834.8   1834.8   4028.7   5733.4   5733.1      n/a
+  -    128      cpu_scalar  omp_collapse2 uniform        554.7   29.921    9.143   626955    16598   5072.0    31.2%
+  -    128      gpu_scalar  omp_collapse2 uniform        524.0   15.968    4.745   327699   8366.7   2486.4    31.2%
+  -    128      gpu_warp32  omp_collapse2 uniform        524.0   15.968    4.745   327699   8366.7   2486.4    31.2%
+  -    128      cpu_avx512  omp_collapse2 uniform        554.7   29.921    9.143   626955    16598   5072.0    31.2%
+  -    128      gpu_warp32  omp_for       uniform        524.0   15.968    4.745   327699   8366.7   2486.4    31.2%
+  -    128      cpu_avx512  omp_for       uniform        554.7   29.921    9.143   626955    16598   5072.0    31.2%
+  -    128      cpu_scalar  omp_for       uniform        554.7   29.921    9.143   626955    16598   5072.0    31.2%
+  -    128      cpu_scalar  omp_for       exact         82.391   17.711   10.658    22474   1459.2    877.9    31.2%
+  -    128      cpu_scalar  omp_collapse2 normal_var4    319.7   26.027    8.797   544581   8320.7   2812.2    31.2%
+  -    8        cpu_scalar  omp_for       uniform       35.033    255.4   73.338   579895   8948.0   2569.2     2.0%
+  -    128      cpu_scalar  omp_for       sequential     318.9   26.021    8.743   545947   8297.9   2788.0    31.2%
+  -    16       cpu_scalar  omp_for       normal_var4   41.858   99.933   29.020   506510   4183.0   1214.7     3.9%
+  -    64       cpu_scalar  omp_for       normal_var4    161.5   32.475   10.068   539437   5245.2   1626.1    15.6%
+  -    128      cpu_scalar  omp_for       normal_var4    319.7   26.027    8.797   544581   8320.7   2812.2    31.2%
+  -    128      gpu_scalar  omp_for       uniform        524.0   15.968    4.745   327699   8366.7   2486.4    31.2%
+  -    128      cpu_scalar  omp_collapse2 normal_var1    319.6   25.974    8.772   545173   8301.0   2803.5    31.2%
+  -    8        cpu_scalar  omp_collapse2 sequential    21.046    196.6   56.685   483147   4138.6   1193.0     2.0%
+  -    128      cpu_scalar  omp_for       normal_var1    319.6   25.974    8.772   545173   8301.0   2803.5    31.2%
+  -    128      gpu_warp32  omp_for       exact         44.469   10.138    5.831    12235    450.8    259.3    31.2%
+  -    64       cpu_scalar  omp_collapse2 uniform        278.9   39.459   11.600   623983    11005   3235.3    15.6%
+  -    64       gpu_warp32  omp_for       normal_var4    144.5   19.147    5.758   299467   2766.5    831.9    15.6%
+  -    128      gpu_scalar  omp_collapse2 normal_var4    284.1   14.673    4.634   302428   4168.3   1316.4    31.2%
+  -    8        cpu_scalar  omp_for       exact          9.650   10.154    5.136    10738   98.005   49.607     2.0%
+  -    8        cpu_scalar  omp_for       normal_var4   21.841    190.2   54.748   465706   4155.0   1195.7     2.0%
+  -    64       cpu_avx512  omp_for       normal_var4    161.5   32.475   10.068   539437   5245.2   1626.1    15.6%
+  -    64       cpu_scalar  omp_collapse2 normal_var1    161.3   32.303    9.983   540129   5211.8   1610.7    15.6%
+  -    128      cpu_scalar  omp_collapse2 sequential     318.9   26.021    8.743   545947   8297.9   2788.0    31.2%
+  -    16       cpu_scalar  omp_collapse2 normal_var1   41.685    100.8   29.138   508523   4199.8   1214.6     3.9%
+  -    128      cpu_avx512  omp_collapse2 normal_var4    319.7   26.027    8.797   544581   8320.7   2812.2    31.2%
+  -    128      gpu_scalar  omp_collapse2 normal_var1    284.0   14.641    4.620   302729   4158.1   1312.3    31.2%
+  -    32       cpu_scalar  omp_for       exact         25.457   10.289    5.283    15701    261.9    134.5     7.8%
+  -    32       cpu_avx512  omp_for       exact         25.457   10.289    5.283    15701    261.9    134.5     7.8%
+  -    32       gpu_scalar  omp_for       exact         14.906    6.967    3.425   8808.6    103.8   51.029     7.8%
+  -    32       gpu_warp32  omp_for       exact         14.906    6.967    3.425   8808.6    103.8   51.029     7.8%
+  -    64       gpu_warp32  omp_collapse2 normal_var1    144.3   19.048    5.707   299873   2749.3    823.7    15.6%
+  -    128      gpu_scalar  omp_for       normal_var1    284.0   14.641    4.620   302729   4158.1   1312.3    31.2%
+  -    64       cpu_scalar  omp_collapse2 exact         44.856   13.277    7.360    18287    595.5    330.0    15.6%
+  -    128      cpu_avx512  omp_for       exact         82.391   17.711   10.658    22474   1459.2    877.9    31.2%
+  -    16       cpu_scalar  omp_collapse2 uniform       70.016    129.9   37.260   604927   9097.9   2608.8     3.9%
+  -    128      gpu_scalar  omp_for       exact         44.469   10.138    5.831    12235    450.8    259.3    31.2%
+  -    16       cpu_avx512  omp_collapse2 uniform       70.016    129.9   37.260   604927   9097.9   2608.8     3.9%
+  -    8        cpu_scalar  omp_for       sequential    21.046    196.6   56.685   483147   4138.6   1193.0     2.0%
+  -    16       gpu_scalar  omp_collapse2 uniform       66.858   72.110   20.657   316195   4821.1   1381.1     3.9%
+  -    128      gpu_warp32  omp_collapse2 normal_var4    284.1   14.673    4.634   302428   4168.3   1316.4    31.2%
+  -    64       cpu_scalar  omp_for       exact         44.856   13.277    7.360    18287    595.5    330.0    15.6%
+  -    128      gpu_warp32  omp_for       sequential     283.3   14.672    4.603   303285   4156.6   1303.9    31.2%
+  -    64       gpu_scalar  omp_for       normal_var4    144.5   19.147    5.758   299467   2766.5    831.9    15.6%
+  -    32       cpu_scalar  omp_collapse2 sequential    81.040   54.413   16.058   533272   4409.7   1301.4     7.8%
+  -    64       gpu_warp32  omp_collapse2 uniform        265.1   21.582    6.271   326147   5721.3   1662.6    15.6%
+  -    32       gpu_warp32  omp_collapse2 sequential    72.752   32.791    9.583   296071   2385.6    697.2     7.8%
+  -    64       cpu_scalar  omp_for       sequential     160.7   32.381   10.035   542051   5204.6   1612.8    15.6%
+  -    32       gpu_scalar  omp_collapse2 sequential    72.752   32.791    9.583   296071   2385.6    697.2     7.8%
+  -    64       cpu_scalar  omp_for       normal_var1    161.3   32.303    9.983   540129   5211.8   1610.7    15.6%
+  -    64       gpu_warp32  omp_for       sequential     143.7   19.107    5.739   301103   2746.2    824.8    15.6%
+  -    64       gpu_scalar  omp_for       sequential     143.7   19.107    5.739   301103   2746.2    824.8    15.6%
+  -    128      gpu_scalar  omp_for       sequential     283.3   14.672    4.603   303285   4156.6   1303.9    31.2%
+  -    128      gpu_warp32  omp_for       normal_var4    284.1   14.673    4.634   302428   4168.3   1316.4    31.2%
+  -    32       cpu_scalar  omp_for       uniform        139.8   67.583   19.543   617706   9449.8   2732.6     7.8%
+  -    16       cpu_scalar  omp_for       sequential    41.071    101.8   29.609   516244   4180.4   1216.1     3.9%
+  -    32       gpu_scalar  omp_for       uniform        133.3   37.374   10.772   322870   4982.4   1436.1     7.8%
+  -    128      cpu_avx512  omp_for       sequential     318.9   26.021    8.743   545947   8297.9   2788.0    31.2%
+  -    16       gpu_warp32  omp_for       sequential    36.974   61.632   17.873   286253   2278.8    660.8     3.9%
+  -    128      gpu_warp32  omp_collapse2 normal_var1    284.0   14.641    4.620   302729   4158.1   1312.3    31.2%
+  -    32       gpu_warp32  omp_for       uniform        133.3   37.374   10.772   322870   4982.4   1436.1     7.8%
+  -    16       gpu_scalar  omp_for       sequential    36.974   61.632   17.873   286253   2278.8    660.8     3.9%
+  -    32       cpu_scalar  omp_for       normal_var1   81.657   53.981   16.017   529428   4407.9   1307.9     7.8%
+  -    16       cpu_avx512  omp_for       sequential    41.071    101.8   29.609   516244   4180.4   1216.1     3.9%
+  -    64       gpu_scalar  omp_collapse2 uniform        265.1   21.582    6.271   326147   5721.3   1662.6    15.6%
+  -    128      cpu_avx512  omp_for       normal_var4    319.7   26.027    8.797   544581   8320.7   2812.2    31.2%
+  -    8        cpu_scalar  omp_for       normal_var1   21.672    191.9   55.113   469248   4158.4   1194.4     2.0%
+  -    32       cpu_avx512  omp_for       normal_var1   81.657   53.981   16.017   529428   4407.9   1307.9     7.8%
+  -    64       cpu_avx512  omp_collapse2 uniform        278.9   39.459   11.600   623983    11005   3235.3    15.6%
+  -    128      gpu_warp32  omp_for       normal_var1    284.0   14.641    4.620   302729   4158.1   1312.3    31.2%
+  -    128      gpu_scalar  omp_for       normal_var4    284.1   14.673    4.634   302428   4168.3   1316.4    31.2%
+  -    8        gpu_warp32  omp_for       uniform       17.516    136.8   39.268   144981   2395.9    687.8     2.0%
+  -    8        cpu_avx512  omp_for       normal_var1   21.672    191.9   55.113   469248   4158.4   1194.4     2.0%
+  -    128      cpu_avx512  omp_collapse2 normal_var1    319.6   25.974    8.772   545173   8301.0   2803.5    31.2%
+  -    16       cpu_scalar  omp_collapse2 exact         15.223   10.340    4.964    12909    157.4   75.517     3.9%
+  -    64       cpu_avx512  omp_collapse2 normal_var1    161.3   32.303    9.983   540129   5211.8   1610.7    15.6%
+  -    16       gpu_scalar  omp_for       normal_var4   37.750   60.309   17.468   280267   2276.6    659.4     3.9%
+  -    16       cpu_scalar  omp_collapse2 sequential    41.071    101.8   29.609   516244   4180.4   1216.1     3.9%
+  -    128      cpu_avx512  omp_for       normal_var1    319.6   25.974    8.772   545173   8301.0   2803.5    31.2%
+  -    16       cpu_scalar  omp_for       exact         15.223   10.340    4.964    12909    157.4   75.517     3.9%
+  -    128      gpu_warp32  omp_collapse2 sequential     283.3   14.672    4.603   303285   4156.6   1303.9    31.2%
+  -    32       cpu_scalar  omp_collapse2 uniform        139.8   67.583   19.543   617706   9449.8   2732.6     7.8%
+  -    32       cpu_scalar  omp_collapse2 normal_var1   81.657   53.981   16.017   529428   4407.9   1307.9     7.8%
+  -    16       gpu_warp32  omp_collapse2 sequential    36.974   61.632   17.873   286253   2278.8    660.8     3.9%
+  -    32       cpu_scalar  omp_collapse2 normal_var4   81.819   53.715   15.777   528301   4394.9   1290.9     7.8%
+  -    8        cpu_scalar  omp_collapse2 exact          9.650   10.154    5.136    10738   98.005   49.607     2.0%
+  -    32       cpu_avx512  omp_collapse2 uniform        139.8   67.583   19.543   617706   9449.8   2732.6     7.8%
+  -    16       gpu_warp32  omp_for       exact          9.528    7.654    3.751   7445.2   72.918   35.750     3.9%
+  -    32       gpu_warp32  omp_collapse2 normal_var4   73.501   32.311    9.393   292987   2374.9    690.4     7.8%
+  -    8        gpu_warp32  omp_collapse2 exact          4.825    6.386    3.251   2685.6   30.818   15.700     2.0%
+  -    128      cpu_avx512  omp_collapse2 sequential     318.9   26.021    8.743   545947   8297.9   2788.0    31.2%
+  -    8        cpu_avx512  omp_collapse2 exact          9.650   10.154    5.136    10738   98.005   49.607     2.0%
+  -    16       cpu_avx512  omp_for       normal_var4   41.858   99.933   29.020   506510   4183.0   1214.7     3.9%
+  -    16       gpu_warp32  omp_for       normal_var4   37.750   60.309   17.468   280267   2276.6    659.4     3.9%
+  -    8        gpu_warp32  omp_collapse2 sequential    10.523    110.0   31.706   120793   1157.5    333.6     2.0%
+  -    128      cpu_scalar  omp_collapse2 exact         82.391   17.711   10.658    22474   1459.2    877.9    31.2%
+  -    128      gpu_scalar  omp_collapse2 sequential     283.3   14.672    4.603   303285   4156.6   1303.9    31.2%
+  -    8        cpu_avx512  omp_collapse2 sequential    21.046    196.6   56.685   483147   4138.6   1193.0     2.0%
+  -    8        gpu_scalar  omp_collapse2 sequential    10.523    110.0   31.706   120793   1157.5    333.6     2.0%
+  -    64       cpu_scalar  omp_collapse2 normal_var4    161.5   32.475   10.068   539437   5245.2   1626.1    15.6%
+  -    64       gpu_scalar  omp_collapse2 normal_var1    144.3   19.048    5.707   299873   2749.3    823.7    15.6%
+  -    64       cpu_scalar  omp_collapse2 sequential     160.7   32.381   10.035   542051   5204.6   1612.8    15.6%
+  -    128      gpu_warp32  omp_collapse2 exact         44.469   10.138    5.831    12235    450.8    259.3    31.2%
+  -    64       gpu_scalar  omp_collapse2 normal_var4    144.5   19.147    5.758   299467   2766.5    831.9    15.6%
+  -    64       gpu_scalar  omp_collapse2 sequential     143.7   19.107    5.739   301103   2746.2    824.8    15.6%
+  -    8        cpu_scalar  omp_collapse2 uniform       35.033    255.4   73.338   579895   8948.0   2569.2     2.0%
+  -    16       gpu_scalar  omp_collapse2 normal_var1   37.579   60.855   17.543   281508   2286.9    659.3     3.9%
+  -    8        cpu_avx512  omp_for       exact          9.650   10.154    5.136    10738   98.005   49.607     2.0%
+  -    64       cpu_avx512  omp_collapse2 sequential     160.7   32.381   10.035   542051   5204.6   1612.8    15.6%
+  -    8        gpu_warp32  omp_for       exact          4.825    6.386    3.251   2685.6   30.818   15.700     2.0%
+  -    64       gpu_warp32  omp_collapse2 exact         25.018    8.139    4.259    10082    203.6    106.5    15.6%
+  -    64       cpu_avx512  omp_collapse2 exact         44.856   13.277    7.360    18287    595.5    330.0    15.6%
+  -    8        gpu_scalar  omp_collapse2 uniform       17.516    136.8   39.268   144981   2395.9    687.8     2.0%
+  -    8        cpu_scalar  omp_collapse2 normal_var4   21.841    190.2   54.748   465706   4155.0   1195.7     2.0%
+  -    8        cpu_scalar  omp_collapse2 normal_var1   21.672    191.9   55.113   469248   4158.4   1194.4     2.0%
+  -    8        cpu_avx512  omp_collapse2 uniform       35.033    255.4   73.338   579895   8948.0   2569.2     2.0%
+  -    16       cpu_scalar  omp_for       normal_var1   41.685    100.8   29.138   508523   4199.8   1214.6     3.9%
+  -    64       gpu_scalar  omp_collapse2 exact         25.018    8.139    4.259    10082    203.6    106.5    15.6%
+  -    8        gpu_scalar  omp_for       exact          4.825    6.386    3.251   2685.6   30.818   15.700     2.0%
+  -    8        gpu_warp32  omp_collapse2 normal_var1   10.836    107.0   30.704   117318   1159.2    332.7     2.0%
+  -    16       gpu_warp32  omp_collapse2 normal_var1   37.579   60.855   17.543   281508   2286.9    659.3     3.9%
+  -    16       cpu_avx512  omp_collapse2 normal_var1   41.685    100.8   29.138   508523   4199.8   1214.6     3.9%
+  -    16       cpu_scalar  omp_for       uniform       70.016    129.9   37.260   604927   9097.9   2608.8     3.9%
+  -    16       cpu_scalar  omp_collapse2 normal_var4   41.858   99.933   29.020   506510   4183.0   1214.7     3.9%
+  -    8        gpu_warp32  omp_for       normal_var4   10.920    106.0   30.479   116433   1157.6    332.8     2.0%
+  -    16       gpu_warp32  omp_collapse2 uniform       66.858   72.110   20.657   316195   4821.1   1381.1     3.9%
+  -    8        gpu_warp32  omp_collapse2 normal_var4   10.920    106.0   30.479   116433   1157.6    332.8     2.0%
+  -    8        gpu_scalar  omp_for       normal_var4   10.920    106.0   30.479   116433   1157.6    332.8     2.0%
+  -    16       gpu_scalar  omp_for       normal_var1   37.579   60.855   17.543   281508   2286.9    659.3     3.9%
+  -    8        cpu_avx512  omp_for       normal_var4   21.841    190.2   54.748   465706   4155.0   1195.7     2.0%
+  -    8        cpu_avx512  omp_for       uniform       35.033    255.4   73.338   579895   8948.0   2569.2     2.0%
+  -    8        gpu_scalar  omp_for       uniform       17.516    136.8   39.268   144981   2395.9    687.8     2.0%
+  -    8        gpu_scalar  omp_collapse2 normal_var1   10.836    107.0   30.704   117318   1159.2    332.7     2.0%
+  -    8        cpu_avx512  omp_collapse2 normal_var4   21.841    190.2   54.748   465706   4155.0   1195.7     2.0%
+  -    16       cpu_avx512  omp_collapse2 normal_var4   41.858   99.933   29.020   506510   4183.0   1214.7     3.9%
+  -    16       cpu_avx512  omp_for       normal_var1   41.685    100.8   29.138   508523   4199.8   1214.6     3.9%
+  -    16       cpu_avx512  omp_for       uniform       70.016    129.9   37.260   604927   9097.9   2608.8     3.9%
+  -    16       gpu_scalar  omp_for       uniform       66.858   72.110   20.657   316195   4821.1   1381.1     3.9%
+  -    8        gpu_warp32  omp_for       sequential    10.523    110.0   31.706   120793   1157.5    333.6     2.0%
+  -    8        gpu_scalar  omp_for       sequential    10.523    110.0   31.706   120793   1157.5    333.6     2.0%
+  -    64       gpu_scalar  omp_for       exact         25.018    8.139    4.259    10082    203.6    106.5    15.6%
+  -    64       gpu_warp32  omp_for       exact         25.018    8.139    4.259    10082    203.6    106.5    15.6%
+  -    64       cpu_avx512  omp_for       exact         44.856   13.277    7.360    18287    595.5    330.0    15.6%
+  -    8        cpu_avx512  omp_for       sequential    21.046    196.6   56.685   483147   4138.6   1193.0     2.0%
+  -    32       cpu_avx512  omp_collapse2 sequential    81.040   54.413   16.058   533272   4409.7   1301.4     7.8%
+  -    32       cpu_scalar  omp_collapse2 exact         25.457   10.289    5.283    15701    261.9    134.5     7.8%
+  -    64       cpu_scalar  omp_for       uniform        278.9   39.459   11.600   623983    11005   3235.3    15.6%
+  -    64       gpu_scalar  omp_for       normal_var1    144.3   19.048    5.707   299873   2749.3    823.7    15.6%
+  -    64       gpu_warp32  omp_for       normal_var1    144.3   19.048    5.707   299873   2749.3    823.7    15.6%
+  -    32       gpu_scalar  omp_collapse2 exact         14.906    6.967    3.425   8808.6    103.8   51.029     7.8%
+  -    64       cpu_avx512  omp_for       sequential     160.7   32.381   10.035   542051   5204.6   1612.8    15.6%
+  -    64       cpu_avx512  omp_for       normal_var1    161.3   32.303    9.983   540129   5211.8   1610.7    15.6%
+  -    32       cpu_avx512  omp_for       uniform        139.8   67.583   19.543   617706   9449.8   2732.6     7.8%
+  -    32       gpu_warp32  omp_for       normal_var1   73.352   32.482    9.536   293671   2382.6    699.5     7.8%
+  -    8        gpu_warp32  omp_for       normal_var1   10.836    107.0   30.704   117318   1159.2    332.7     2.0%
+  -    32       cpu_scalar  omp_for       normal_var4   81.819   53.715   15.777   528301   4394.9   1290.9     7.8%
+  -    8        gpu_scalar  omp_for       normal_var1   10.836    107.0   30.704   117318   1159.2    332.7     2.0%
+  -    32       gpu_scalar  omp_for       normal_var1   73.352   32.482    9.536   293671   2382.6    699.5     7.8%
+  -    32       cpu_scalar  omp_for       sequential    81.040   54.413   16.058   533272   4409.7   1301.4     7.8%
+  -    16       gpu_warp32  omp_collapse2 exact          9.528    7.654    3.751   7445.2   72.918   35.750     3.9%
+  -    16       gpu_scalar  omp_collapse2 exact          9.528    7.654    3.751   7445.2   72.918   35.750     3.9%
+  -    32       gpu_scalar  omp_for       sequential    72.752   32.791    9.583   296071   2385.6    697.2     7.8%
+  -    32       gpu_warp32  omp_for       sequential    72.752   32.791    9.583   296071   2385.6    697.2     7.8%
+  -    32       cpu_avx512  omp_for       sequential    81.040   54.413   16.058   533272   4409.7   1301.4     7.8%
+  -    16       gpu_scalar  omp_collapse2 sequential    36.974   61.632   17.873   286253   2278.8    660.8     3.9%
+  -    16       cpu_avx512  omp_collapse2 exact         15.223   10.340    4.964    12909    157.4   75.517     3.9%
+  -    16       gpu_scalar  omp_for       exact          9.528    7.654    3.751   7445.2   72.918   35.750     3.9%
+  -    32       gpu_warp32  omp_collapse2 uniform        133.3   37.374   10.772   322870   4982.4   1436.1     7.8%
+  -    16       cpu_avx512  omp_collapse2 sequential    41.071    101.8   29.609   516244   4180.4   1216.1     3.9%
+  -    32       gpu_scalar  omp_collapse2 normal_var1   73.352   32.482    9.536   293671   2382.6    699.5     7.8%
+  -    32       gpu_warp32  omp_collapse2 normal_var1   73.352   32.482    9.536   293671   2382.6    699.5     7.8%
+  -    32       cpu_avx512  omp_collapse2 normal_var1   81.657   53.981   16.017   529428   4407.9   1307.9     7.8%
+  -    16       cpu_avx512  omp_for       exact         15.223   10.340    4.964    12909    157.4   75.517     3.9%
+  -    32       cpu_avx512  omp_collapse2 normal_var4   81.819   53.715   15.777   528301   4394.9   1290.9     7.8%
+  -    32       gpu_scalar  omp_collapse2 normal_var4   73.501   32.311    9.393   292987   2374.9    690.4     7.8%
+  -    32       gpu_scalar  omp_collapse2 uniform        133.3   37.374   10.772   322870   4982.4   1436.1     7.8%
+  -    8        gpu_scalar  omp_collapse2 exact          4.825    6.386    3.251   2685.6   30.818   15.700     2.0%
+  -    128      gpu_scalar  omp_collapse2 exact         44.469   10.138    5.831    12235    450.8    259.3    31.2%
+  -    64       gpu_warp32  omp_collapse2 sequential     143.7   19.107    5.739   301103   2746.2    824.8    15.6%
+  -    128      cpu_avx512  omp_collapse2 exact         82.391   17.711   10.658    22474   1459.2    877.9    31.2%
+  -    64       gpu_warp32  omp_collapse2 normal_var4    144.5   19.147    5.758   299467   2766.5    831.9    15.6%
+  -    64       cpu_avx512  omp_collapse2 normal_var4    161.5   32.475   10.068   539437   5245.2   1626.1    15.6%
+  -    16       gpu_warp32  omp_for       normal_var1   37.579   60.855   17.543   281508   2286.9    659.3     3.9%
+  -    8        gpu_warp32  omp_collapse2 uniform       17.516    136.8   39.268   144981   2395.9    687.8     2.0%
+  -    8        gpu_scalar  omp_collapse2 normal_var4   10.920    106.0   30.479   116433   1157.6    332.8     2.0%
+  -    16       gpu_warp32  omp_collapse2 normal_var4   37.750   60.309   17.468   280267   2276.6    659.4     3.9%
+  -    8        cpu_avx512  omp_collapse2 normal_var1   21.672    191.9   55.113   469248   4158.4   1194.4     2.0%
+  -    16       gpu_warp32  omp_for       uniform       66.858   72.110   20.657   316195   4821.1   1381.1     3.9%
+  -    16       gpu_scalar  omp_collapse2 normal_var4   37.750   60.309   17.468   280267   2276.6    659.4     3.9%
+  -    64       gpu_warp32  omp_for       uniform        265.1   21.582    6.271   326147   5721.3   1662.6    15.6%
+  -    64       gpu_scalar  omp_for       uniform        265.1   21.582    6.271   326147   5721.3   1662.6    15.6%
+  -    32       cpu_avx512  omp_collapse2 exact         25.457   10.289    5.283    15701    261.9    134.5     7.8%
+  -    32       gpu_warp32  omp_collapse2 exact         14.906    6.967    3.425   8808.6    103.8   51.029     7.8%
+  -    64       cpu_avx512  omp_for       uniform        278.9   39.459   11.600   623983    11005   3235.3    15.6%
+  -    32       gpu_warp32  omp_for       normal_var4   73.501   32.311    9.393   292987   2374.9    690.4     7.8%
+  -    32       gpu_scalar  omp_for       normal_var4   73.501   32.311    9.393   292987   2374.9    690.4     7.8%
+  -    32       cpu_avx512  omp_for       normal_var4   81.819   53.715   15.777   528301   4394.9   1290.9     7.8%
+
+
+  N=81920 nl=90 beta=0.6000 alpha=0.4000 gamma=0.050 P=4 L1=16384
+
+  V    B/tile   Target      Sched         Dist              mu    delta   D_numa    D_max     mu*D    mu*Dn      L1%
+  ---- -------- ----------- ------------- ----------- -------- -------- -------- -------- -------- -------- --------
+  V3   -        gpu_warp32  omp_collapse2 uniform        233.9   2076.6   1418.8   185307   485697   331855      n/a
+  V1   -        cpu_scalar  omp_collapse2 normal_var4    3.268   1759.7   1741.1   3981.1   5750.0   5689.1      n/a
+  V3   -        cpu_scalar  omp_for       exact          0.902   17.737   10.455    985.1   15.993    9.427      n/a
+  V2   -        cpu_scalar  omp_for       exact          1.802   39.048   38.958   66.620   70.382   70.219      n/a
+  V2   -        gpu_warp32  omp_for       exact         20.005    8.684    7.601   40.788    173.7    152.1      n/a
+  V2   -        gpu_scalar  omp_for       exact          1.011   21.417   21.371   30.746   21.662   21.615      n/a
+  V1   -        cpu_scalar  omp_collapse2 normal_var1    3.170   1825.2   1805.9   4128.7   5785.3   5724.0      n/a
+  V2   -        gpu_warp32  omp_for       normal_var4   80.857   32.696   32.402   2926.2   2643.7   2619.9      n/a
+  V2   -        gpu_scalar  omp_collapse2 normal_var1    2.585    988.5    978.0   2179.3   2555.1   2528.1      n/a
+  V2   -        cpu_scalar  omp_for       uniform        4.999   1955.8   1955.7   4299.7   9776.9   9776.5      n/a
+  V1   -        cpu_avx512  omp_for       uniform       39.928    256.1    256.0   5930.3    10226    10220      n/a
+  V1   -        cpu_avx512  omp_for       sequential    24.970    205.9    205.6   4948.7   5140.4   5134.5      n/a
+  V2   -        cpu_avx512  omp_collapse2 normal_var1   24.962    204.4    202.0   4538.8   5103.5   5042.8      n/a
+  V2   -        cpu_scalar  omp_for       sequential     3.125   1834.8   1834.8   4028.7   5733.4   5733.1      n/a
+  V1   -        gpu_scalar  omp_for       sequential     2.562    993.2    993.1   2208.0   2544.3   2544.2      n/a
+  V4   -        gpu_warp32  omp_collapse2 uniform        233.9   2076.6   1418.8   185264   485705   331857      n/a
+  V1   -        gpu_warp32  omp_for       exact         20.005    8.354    7.506    813.9    167.1    150.2      n/a
+  V1   -        cpu_avx512  omp_collapse2 sequential    24.970    205.9    203.5   4948.7   5140.6   5080.4      n/a
+  V1   -        cpu_scalar  omp_collapse2 uniform        4.999   1958.5   1937.7   4396.8   9790.2   9686.5      n/a
+  V1   -        cpu_avx512  omp_for       exact         10.509   14.057   13.554   1297.2    147.7    142.4      n/a
+  V2   -        cpu_scalar  omp_collapse2 normal_var4    3.268   1757.7   1739.1   3873.0   5743.5   5682.6      n/a
+  V1   -        gpu_scalar  omp_collapse2 normal_var1    2.585    989.0    978.6   2206.4   2556.4   2529.4      n/a
+  V2   -        gpu_warp32  omp_for       sequential    80.851   32.943   32.647   2925.8   2663.4   2639.5      n/a
+  V1   -        gpu_warp32  omp_collapse2 sequential    80.851   32.871   32.292   3052.4   2657.6   2610.9      n/a
+  V1   -        gpu_scalar  omp_for       normal_var1    2.585    989.0    989.0   2206.4   2556.4   2556.3      n/a
+  V2   -        gpu_scalar  omp_for       normal_var1    2.585    988.5    988.5   2179.3   2555.1   2555.0      n/a
+  V1   -        gpu_warp32  omp_collapse2 uniform        141.7   36.947   36.420   3410.1   5233.6   5158.9      n/a
+  V2   -        cpu_avx512  omp_for       sequential    24.970    204.6    204.3   4539.6   5108.5   5101.7      n/a
+  V1   -        cpu_scalar  omp_for       uniform        4.999   1958.5   1958.4   4396.8   9790.2   9789.9      n/a
+  V3   -        cpu_scalar  omp_collapse2 normal_var4    7.096    56618    48177   124878   401778   341880      n/a
+  V1   -        gpu_scalar  omp_collapse2 exact          1.011   21.409   21.269   76.868   21.653   21.512      n/a
+  V1   -        cpu_avx512  omp_collapse2 exact         10.509   14.067   13.474   1297.2    147.8    141.6      n/a
+  V1   -        gpu_warp32  omp_collapse2 exact         20.005    8.374    7.470    813.9    167.5    149.4      n/a
+  V2   -        gpu_warp32  omp_collapse2 normal_var4   80.857   32.718   32.072   2926.2   2645.5   2593.2      n/a
+  V1   -        cpu_avx512  omp_collapse2 uniform       39.928    256.1    253.3   5930.3    10226    10113      n/a
+  V3   -        gpu_warp32  omp_for       uniform       17.219    27069   7807.3   103413   466098   134433      n/a
+  V3   -        cpu_scalar  omp_for       normal_var4    0.897   1056.3    303.2    45039    947.4    271.9      n/a
+  V4   -        cpu_scalar  omp_collapse2 exact          6.097    729.9    623.3   2034.2   4450.4   3800.2      n/a
+  V3   -        gpu_warp32  omp_for       sequential    14.781    15768   4543.9    60198   233068    67165      n/a
+  V4   -        cpu_scalar  omp_collapse2 normal_var4    7.096    56486    48065   124486   400840   341081      n/a
+  V3   -        cpu_avx512  omp_for       uniform        7.398    10989   3170.6   183774    81290    23455      n/a
+  V4   -        cpu_avx512  omp_collapse2 normal_var1   52.233   8833.4   7516.2   195728   461390   392592      n/a
+  V4   -        gpu_warp32  omp_collapse2 normal_var1    198.9   1304.2    891.5   109179   259417   177327      n/a
+  V4   -        gpu_warp32  omp_collapse2 exact          146.2    375.5    257.5   4459.2    54910    37661      n/a
+  V2   -        gpu_scalar  omp_collapse2 sequential     2.562    992.7    982.1   2180.1   2543.0   2516.1      n/a
+  V2   -        gpu_warp32  omp_collapse2 sequential    80.851   32.966   32.320   2925.9   2665.3   2613.1      n/a
+  V2   -        cpu_avx512  omp_collapse2 sequential    24.970    204.6    202.2   4539.6   5108.8   5048.0      n/a
+  V3   -        gpu_warp32  omp_for       normal_var1   16.694    14115   4070.1    53536   235632    67945      n/a
+  V4   -        cpu_avx512  omp_collapse2 exact         40.892    484.6    411.3   4831.5    19816    16819      n/a
+  V4   -        cpu_avx512  omp_collapse2 normal_var4   52.071   8843.4   7525.8   196437   460480   391870      n/a
+  V4   -        gpu_warp32  omp_collapse2 normal_var4    198.2   1301.5    889.5   109544   258018   176348      n/a
+  V3   -        cpu_scalar  omp_collapse2 uniform        7.625   104251    88708   229294   794906   676389      n/a
+  V3   -        cpu_avx512  omp_for       sequential     6.284   6954.4   2003.4   108182    43702    12590      n/a
+  V3   -        gpu_scalar  omp_for       normal_var1    0.466    623.1    179.8    15769    290.1   83.707      n/a
+  V2   -        gpu_warp32  omp_collapse2 exact         20.005    8.709    7.566   40.813    174.2    151.4      n/a
+  V4   -        gpu_warp32  omp_collapse2 sequential     202.0   1288.1    880.4   107493   260148   177816      n/a
+  V4   -        cpu_avx512  omp_collapse2 sequential    52.998   8714.0   7414.9   192925   461826   392978      n/a
+  V3   -        cpu_avx512  omp_for       normal_var1    7.251   5782.5   1669.2    94184    41929    12104      n/a
+  V3   -        cpu_avx512  omp_collapse2 exact         40.892    484.9    411.5   5182.3    19828    16826      n/a
+  V3   -        gpu_warp32  omp_collapse2 exact          146.2    375.5    257.5   4564.2    54903    37659      n/a
+  V4   -        gpu_warp32  omp_for       exact         16.574    164.2   96.312   1045.6   2722.1   1596.1      n/a
+  V4   -        cpu_avx512  omp_for       exact          7.316   70.880   41.562   1936.0    518.6    304.1      n/a
+  V4   -        gpu_warp32  omp_for       sequential    14.781    15760   4541.6    60172   232950    67130      n/a
+  V4   -        gpu_scalar  omp_for       exact          0.464   10.187    6.034    325.7    4.731    2.803      n/a
+  V4   -        gpu_warp32  omp_for       uniform       17.219    27057   7804.3   103377   465888   134383      n/a
+  V4   -        cpu_avx512  omp_for       uniform        7.398    10969   3164.5   183726    81145    23410      n/a
+  V1   -        gpu_warp32  omp_for       normal_var4   80.857   32.603   32.375   3052.7   2636.1   2617.7      n/a
+  V1   -        cpu_avx512  omp_for       normal_var4   24.966    205.2    205.0   4949.0   5123.1   5117.3      n/a
+  V1   -        gpu_scalar  omp_for       normal_var4    2.632    972.4    972.4   2168.9   2559.8   2559.7      n/a
+  V1   -        gpu_warp32  omp_collapse2 normal_var4   80.857   32.624   32.045   3052.7   2637.9   2591.0      n/a
+  V1   -        cpu_avx512  omp_collapse2 normal_var4   24.966    205.2    202.8   4949.0   5123.3   5063.5      n/a
+  V2   -        cpu_avx512  omp_for       exact         10.509   13.402   12.811   48.381    140.8    134.6      n/a
+  V1   -        gpu_scalar  omp_collapse2 normal_var4    2.632    972.4    962.1   2168.9   2559.8   2532.7      n/a
+  V1   -        gpu_warp32  omp_collapse2 normal_var1   80.873   32.728   32.153   3052.6   2646.8   2600.4      n/a
+  V2   -        gpu_warp32  omp_for       uniform        141.7   36.981   36.809   3337.9   5238.4   5214.0      n/a
+  V1   -        cpu_avx512  omp_collapse2 normal_var1   24.962    205.7    203.3   4948.2   5134.3   5074.2      n/a
+  V2   -        gpu_scalar  omp_for       uniform        4.498   1023.1   1023.1   2248.4   4602.0   4601.8      n/a
+  V2   -        gpu_scalar  omp_for       sequential     2.562    992.7    992.6   2180.1   2543.0   2542.9      n/a
+  V1   -        cpu_scalar  omp_for       exact          1.802   39.066   38.990    248.0   70.413   70.276      n/a
+  V2   -        cpu_avx512  omp_for       uniform       39.928    255.5    255.4   5671.9    10203    10196      n/a
+  V1   -        gpu_scalar  omp_collapse2 uniform        4.498   1023.8   1012.9   2272.7   4604.8   4556.1      n/a
+  V2   -        gpu_scalar  omp_collapse2 normal_var4    2.632    971.9    961.6   2141.9   2558.5   2531.4      n/a
+  V2   -        cpu_avx512  omp_collapse2 normal_var4   24.966    203.9    201.5   4539.8   5091.4   5031.0      n/a
+  V4   -        cpu_scalar  omp_collapse2 uniform        7.625   104011    88503   228692   793075   674830      n/a
+  V3   -        cpu_avx512  omp_for       normal_var4    7.260   5718.0   1638.2    93880    41512    11892      n/a
+  V3   -        gpu_warp32  omp_for       normal_var4   16.766    14003   4015.0    53226   234773    67314      n/a
+  V1   -        cpu_scalar  omp_collapse2 sequential     3.125   1837.0   1817.6   4140.2   5740.2   5679.4      n/a
+  V3   -        gpu_scalar  omp_for       normal_var4    0.468    583.2    167.2    15526    272.7   78.197      n/a
+  V2   -        cpu_scalar  omp_for       normal_var4    3.268   1757.7   1757.6   3873.0   5743.5   5743.2      n/a
+  V4   -        gpu_scalar  omp_collapse2 exact          5.785    374.0    253.7   1043.4   2163.7   1467.8      n/a
+  V4   -        gpu_scalar  omp_collapse2 normal_var4    6.784    29057    19837    64054   197119   134569      n/a
+  V1   -        cpu_scalar  omp_for       sequential     3.125   1837.0   1836.9   4140.2   5740.2   5739.9      n/a
+  V2   -        cpu_scalar  omp_collapse2 normal_var1    3.170   1823.2   1803.9   4020.1   5778.8   5717.6      n/a
+  V3   -        gpu_scalar  omp_collapse2 uniform        7.312    53510    36528   117663   391287   267106      n/a
+  V3   -        cpu_scalar  omp_collapse2 normal_var1    6.924    58204    49521   128473   402986   342865      n/a
+  V3   -        cpu_scalar  omp_collapse2 sequential     6.625    60603    51565   133229   401492   341615      n/a
+  V4   -        cpu_scalar  omp_for       normal_var4    0.897   1054.8    302.8    45034    946.1    271.6      n/a
+  V3   -        gpu_warp32  omp_collapse2 normal_var4    198.2   1301.5    889.5   109596   258010   176346      n/a
+  V1   -        cpu_scalar  omp_for       normal_var1    3.170   1825.2   1825.2   4128.7   5785.3   5785.1      n/a
+  V3   -        gpu_warp32  omp_collapse2 normal_var1    198.9   1304.2    891.5   109231   259409   177325      n/a
+  V4   -        cpu_scalar  omp_for       normal_var1    0.895   1111.3    320.9    45060    994.8    287.2      n/a
+  V2   -        cpu_scalar  omp_for       normal_var1    3.170   1823.2   1823.1   4020.1   5778.8   5778.6      n/a
+  V4   -        cpu_avx512  omp_for       normal_var1    7.251   5772.3   1666.1    94154    41855    12081      n/a
+  V2   -        gpu_scalar  omp_for       normal_var4    2.632    971.9    971.9   2141.9   2558.5   2558.4      n/a
+  V2   -        gpu_warp32  omp_collapse2 normal_var1   80.873   32.822   32.181   2926.2   2654.4   2602.6      n/a
+  V1   -        gpu_warp32  omp_for       normal_var1   80.873   32.707   32.479   3052.6   2645.1   2626.7      n/a
+  V1   -        gpu_scalar  omp_for       exact          1.011   21.408   21.370   76.867   21.652   21.613      n/a
+  V1   -        cpu_scalar  omp_collapse2 exact          1.802   39.067   38.803    248.0   70.415   69.940      n/a
+  V1   -        gpu_warp32  omp_for       sequential    80.851   32.849   32.620   3052.3   2655.9   2637.3      n/a
+  V1   -        gpu_scalar  omp_collapse2 sequential     2.562    993.2    982.7   2208.0   2544.3   2517.4      n/a
+  V2   -        cpu_avx512  omp_for       normal_var4   24.966    203.9    203.7   4539.8   5091.1   5084.4      n/a
+  V1   -        cpu_avx512  omp_for       normal_var1   24.962    205.7    205.4   4948.2   5134.0   5128.2      n/a
+  V2   -        cpu_avx512  omp_for       normal_var1   24.962    204.4    204.2   4538.8   5103.2   5096.5      n/a
+  V2   -        gpu_warp32  omp_for       normal_var1   80.873   32.800   32.506   2926.1   2652.6   2628.8      n/a
+  V2   -        cpu_scalar  omp_collapse2 uniform        4.999   1955.8   1935.1   4299.7   9776.9   9673.3      n/a
+  V3   -        gpu_warp32  omp_for       exact         16.574    164.2   96.282   1055.9   2721.5   1595.6      n/a
+  V2   -        gpu_warp32  omp_collapse2 uniform        141.7   37.003   36.436   3337.9   5241.5   5161.1      n/a
+  V1   -        gpu_scalar  omp_for       uniform        4.498   1023.8   1023.7   2272.7   4604.8   4604.6      n/a
+  V2   -        gpu_scalar  omp_collapse2 uniform        4.498   1023.1   1012.3   2248.4   4602.0   4553.3      n/a
+  V3   -        cpu_avx512  omp_collapse2 uniform       60.993    15092    12844   335400   920527   783376      n/a
+  V2   -        cpu_avx512  omp_collapse2 uniform       39.928    255.6    252.7   5671.9    10204    10089      n/a
+  V3   -        cpu_scalar  omp_for       uniform        0.915   1844.6    531.9    89059   1688.3    486.8      n/a
+  V3   -        cpu_avx512  omp_for       exact          7.316   71.069   41.704   1946.7    519.9    305.1      n/a
+  V4   -        cpu_scalar  omp_collapse2 normal_var1    6.924    58064    49401   128062   402016   342040      n/a
+  V3   -        gpu_scalar  omp_for       exact          0.464   10.187    6.035    326.2    4.732    2.803      n/a
+  V2   -        cpu_scalar  omp_collapse2 sequential     3.125   1834.8   1815.4   4028.7   5733.4   5672.7      n/a
+  V3   -        cpu_scalar  omp_for       sequential     0.774   1587.4    456.8    49315   1228.0    353.4      n/a
+  V3   -        gpu_scalar  omp_for       uniform        0.480    994.6    286.8    30419    477.2    137.6      n/a
+  V3   -        cpu_scalar  omp_for       normal_var1    0.895   1112.8    321.3    45065    996.2    287.7      n/a
+  V4   -        gpu_scalar  omp_collapse2 normal_var1    6.611    29889    20400    65934   197605   134869      n/a
+  V2   -        cpu_scalar  omp_collapse2 exact          1.802   39.050   38.772   66.621   70.385   69.884      n/a
+  V4   -        cpu_scalar  omp_collapse2 sequential     6.625    60457    51441   132804   400524   340795      n/a
+  V1   -        gpu_warp32  omp_for       uniform        141.7   36.926   36.793   3410.1   5230.6   5211.8      n/a
+  V3   -        gpu_scalar  omp_for       sequential     0.398    931.2    268.5    16936    370.5    106.8      n/a
+  V2   -        gpu_scalar  omp_collapse2 exact          1.011   21.418   21.271   30.747   21.662   21.514      n/a
+  V4   -        gpu_scalar  omp_collapse2 sequential     6.312    31134    21252    68398   196530   134155      n/a
+  V3   -        cpu_avx512  omp_collapse2 normal_var4   52.071   8855.5   7536.0   196918   461110   392405      n/a
+  V4   -        gpu_scalar  omp_collapse2 uniform        7.312    53453    36489   117510   390872   266822      n/a
+  V2   -        cpu_avx512  omp_collapse2 exact         10.509   13.414   12.736   48.394    141.0    133.8      n/a
+  V4   -        cpu_avx512  omp_for       normal_var4    7.260   5708.0   1635.6    93851    41440    11874      n/a
+  V3   -        gpu_scalar  omp_collapse2 normal_var4    6.784    29091    19860    64152   197348   134726      n/a
+  V3   -        cpu_scalar  omp_collapse2 exact          6.097    731.8    624.9   2191.1   4462.0   3810.1      n/a
+  V4   -        cpu_avx512  omp_collapse2 uniform       60.993    15078    12832   334878   919664   782642      n/a
+  V3   -        gpu_warp32  omp_collapse2 sequential     202.0   1288.1    880.4   107544   260141   177814      n/a
+  V4   -        gpu_warp32  omp_for       normal_var4   16.766    13996   4013.0    53203   234656    67281      n/a
+  V4   -        cpu_scalar  omp_for       exact          0.902   17.713   10.437    983.3   15.971    9.411      n/a
+  V4   -        cpu_scalar  omp_for       sequential     0.774   1585.2    456.1    49309   1226.3    352.9      n/a
+  V3   -        gpu_scalar  omp_collapse2 exact          5.785    373.7    253.5   1082.8   2162.0   1466.5      n/a
+  V4   -        cpu_scalar  omp_for       uniform        0.915   1841.9    531.0    89052   1685.8    486.0      n/a
+  V3   -        gpu_scalar  omp_collapse2 normal_var1    6.611    29925    20424    66036   197838   135027      n/a
+  V4   -        gpu_scalar  omp_for       sequential     0.398    930.7    268.3    16934    370.3    106.8      n/a
+  V4   -        cpu_avx512  omp_for       sequential     6.284   6942.1   1999.8   108147    43625    12567      n/a
+  V4   -        gpu_scalar  omp_for       uniform        0.480    993.9    286.6    30417    476.9    137.5      n/a
+  V4   -        gpu_warp32  omp_for       normal_var1   16.694    14108   4067.8    53513   235509    67907      n/a
+  V3   -        gpu_scalar  omp_collapse2 sequential     6.312    31168    21276    68503   196749   134305      n/a
+  V4   -        gpu_scalar  omp_for       normal_var4    0.468    582.8    167.1    15524    272.5   78.147      n/a
+  V3   -        cpu_avx512  omp_collapse2 sequential    52.998   8725.6   7424.8   193389   462440   393501      n/a
+  V4   -        gpu_scalar  omp_for       normal_var1    0.466    622.7    179.7    15768    289.9   83.653      n/a
+  V1   -        cpu_scalar  omp_for       normal_var4    3.268   1759.7   1759.6   3981.1   5750.0   5749.7      n/a
+  V3   -        cpu_avx512  omp_collapse2 normal_var1   52.233   8844.4   7525.5   196204   461964   393077      n/a
+  -    128      cpu_scalar  omp_collapse2 uniform        554.7   29.921    9.143   626955    16598   5072.0    62.5%
+  -    128      gpu_scalar  omp_collapse2 uniform        524.0   15.968    4.745   327699   8366.7   2486.4    62.5%
+  -    128      cpu_avx512  omp_collapse2 uniform        554.7   29.921    9.143   626955    16598   5072.0    62.5%
+  -    128      gpu_warp32  omp_collapse2 uniform        524.0   15.968    4.745   327699   8366.7   2486.4    62.5%
+  -    128      gpu_warp32  omp_for       uniform        524.0   15.968    4.745   327699   8366.7   2486.4    62.5%
+  -    128      cpu_scalar  omp_for       uniform        554.7   29.921    9.143   626955    16598   5072.0    62.5%
+  -    128      cpu_avx512  omp_for       uniform        554.7   29.921    9.143   626955    16598   5072.0    62.5%
+  -    128      cpu_scalar  omp_for       exact         82.391   17.711   10.658    22474   1459.2    877.9    62.5%
+  -    8        cpu_scalar  omp_for       uniform       35.033    255.4   73.338   579895   8948.0   2569.2     3.9%
+  -    64       cpu_scalar  omp_for       normal_var4    161.5   32.475   10.068   539437   5245.2   1626.1    31.2%
+  -    16       cpu_scalar  omp_for       normal_var4   41.858   99.933   29.020   506510   4183.0   1214.7     7.8%
+  -    128      gpu_scalar  omp_for       uniform        524.0   15.968    4.745   327699   8366.7   2486.4    62.5%
+  -    8        cpu_scalar  omp_collapse2 sequential    21.046    196.6   56.685   483147   4138.6   1193.0     3.9%
+  -    128      cpu_scalar  omp_collapse2 normal_var4    319.7   26.027    8.797   544581   8320.7   2812.2    62.5%
+  -    8        cpu_scalar  omp_for       normal_var4   21.841    190.2   54.748   465706   4155.0   1195.7     3.9%
+  -    128      cpu_scalar  omp_for       sequential     318.9   26.021    8.743   545947   8297.9   2788.0    62.5%
+  -    8        cpu_scalar  omp_for       sequential    21.046    196.6   56.685   483147   4138.6   1193.0     3.9%
+  -    128      gpu_warp32  omp_for       exact         44.469   10.138    5.831    12235    450.8    259.3    62.5%
+  -    8        cpu_scalar  omp_for       exact          9.650   10.154    5.136    10738   98.005   49.607     3.9%
+  -    128      cpu_scalar  omp_collapse2 normal_var1    319.6   25.974    8.772   545173   8301.0   2803.5    62.5%
+  -    128      cpu_scalar  omp_for       normal_var4    319.7   26.027    8.797   544581   8320.7   2812.2    62.5%
+  -    64       cpu_scalar  omp_for       sequential     160.7   32.381   10.035   542051   5204.6   1612.8    31.2%
+  -    128      cpu_scalar  omp_for       normal_var1    319.6   25.974    8.772   545173   8301.0   2803.5    62.5%
+  -    64       gpu_warp32  omp_for       normal_var4    144.5   19.147    5.758   299467   2766.5    831.9    31.2%
+  -    128      gpu_warp32  omp_for       sequential     283.3   14.672    4.603   303285   4156.6   1303.9    62.5%
+  -    64       cpu_scalar  omp_collapse2 normal_var1    161.3   32.303    9.983   540129   5211.8   1610.7    31.2%
+  -    16       cpu_scalar  omp_collapse2 normal_var1   41.685    100.8   29.138   508523   4199.8   1214.6     7.8%
+  -    64       gpu_warp32  omp_for       sequential     143.7   19.107    5.739   301103   2746.2    824.8    31.2%
+  -    128      cpu_scalar  omp_collapse2 sequential     318.9   26.021    8.743   545947   8297.9   2788.0    62.5%
+  -    64       cpu_scalar  omp_collapse2 uniform        278.9   39.459   11.600   623983    11005   3235.3    31.2%
+  -    32       cpu_scalar  omp_collapse2 sequential    81.040   54.413   16.058   533272   4409.7   1301.4    15.6%
+  -    128      cpu_avx512  omp_for       normal_var1    319.6   25.974    8.772   545173   8301.0   2803.5    62.5%
+  -    16       cpu_scalar  omp_for       sequential    41.071    101.8   29.609   516244   4180.4   1216.1     7.8%
+  -    64       cpu_scalar  omp_for       exact         44.856   13.277    7.360    18287    595.5    330.0    31.2%
+  -    64       cpu_avx512  omp_for       exact         44.856   13.277    7.360    18287    595.5    330.0    31.2%
+  -    64       gpu_warp32  omp_for       normal_var1    144.3   19.048    5.707   299873   2749.3    823.7    31.2%
+  -    64       gpu_scalar  omp_for       normal_var1    144.3   19.048    5.707   299873   2749.3    823.7    31.2%
+  -    64       cpu_avx512  omp_for       uniform        278.9   39.459   11.600   623983    11005   3235.3    31.2%
+  -    64       cpu_scalar  omp_for       normal_var1    161.3   32.303    9.983   540129   5211.8   1610.7    31.2%
+  -    8        cpu_scalar  omp_collapse2 uniform       35.033    255.4   73.338   579895   8948.0   2569.2     3.9%
+  -    64       cpu_scalar  omp_for       uniform        278.9   39.459   11.600   623983    11005   3235.3    31.2%
+  -    32       gpu_warp32  omp_collapse2 sequential    72.752   32.791    9.583   296071   2385.6    697.2    15.6%
+  -    64       gpu_warp32  omp_for       exact         25.018    8.139    4.259    10082    203.6    106.5    31.2%
+  -    64       gpu_scalar  omp_for       exact         25.018    8.139    4.259    10082    203.6    106.5    31.2%
+  -    32       cpu_scalar  omp_collapse2 exact         25.457   10.289    5.283    15701    261.9    134.5    15.6%
+  -    8        gpu_warp32  omp_collapse2 uniform       17.516    136.8   39.268   144981   2395.9    687.8     3.9%
+  -    8        cpu_avx512  omp_collapse2 uniform       35.033    255.4   73.338   579895   8948.0   2569.2     3.9%
+  -    8        cpu_avx512  omp_for       exact          9.650   10.154    5.136    10738   98.005   49.607     3.9%
+  -    16       gpu_scalar  omp_collapse2 normal_var1   37.579   60.855   17.543   281508   2286.9    659.3     7.8%
+  -    16       cpu_scalar  omp_collapse2 normal_var4   41.858   99.933   29.020   506510   4183.0   1214.7     7.8%
+  -    16       cpu_avx512  omp_collapse2 normal_var1   41.685    100.8   29.138   508523   4199.8   1214.6     7.8%
+  -    32       gpu_scalar  omp_collapse2 exact         14.906    6.967    3.425   8808.6    103.8   51.029    15.6%
+  -    128      cpu_avx512  omp_for       exact         82.391   17.711   10.658    22474   1459.2    877.9    62.5%
+  -    128      gpu_scalar  omp_for       exact         44.469   10.138    5.831    12235    450.8    259.3    62.5%
+  -    64       cpu_avx512  omp_for       normal_var4    161.5   32.475   10.068   539437   5245.2   1626.1    31.2%
+  -    16       cpu_scalar  omp_collapse2 uniform       70.016    129.9   37.260   604927   9097.9   2608.8     7.8%
+  -    16       gpu_warp32  omp_collapse2 normal_var4   37.750   60.309   17.468   280267   2276.6    659.4     7.8%
+  -    128      gpu_warp32  omp_collapse2 normal_var4    284.1   14.673    4.634   302428   4168.3   1316.4    62.5%
+  -    128      gpu_warp32  omp_collapse2 normal_var1    284.0   14.641    4.620   302729   4158.1   1312.3    62.5%
+  -    16       gpu_scalar  omp_for       normal_var4   37.750   60.309   17.468   280267   2276.6    659.4     7.8%
+  -    16       cpu_avx512  omp_collapse2 normal_var4   41.858   99.933   29.020   506510   4183.0   1214.7     7.8%
+  -    16       gpu_scalar  omp_collapse2 normal_var4   37.750   60.309   17.468   280267   2276.6    659.4     7.8%
+  -    128      gpu_scalar  omp_collapse2 normal_var4    284.1   14.673    4.634   302428   4168.3   1316.4    62.5%
+  -    128      gpu_warp32  omp_for       normal_var4    284.1   14.673    4.634   302428   4168.3   1316.4    62.5%
+  -    16       cpu_avx512  omp_collapse2 uniform       70.016    129.9   37.260   604927   9097.9   2608.8     7.8%
+  -    64       gpu_scalar  omp_for       normal_var4    144.5   19.147    5.758   299467   2766.5    831.9    31.2%
+  -    8        cpu_scalar  omp_for       normal_var1   21.672    191.9   55.113   469248   4158.4   1194.4     3.9%
+  -    128      gpu_scalar  omp_for       sequential     283.3   14.672    4.603   303285   4156.6   1303.9    62.5%
+  -    16       cpu_avx512  omp_for       normal_var4   41.858   99.933   29.020   506510   4183.0   1214.7     7.8%
+  -    128      cpu_avx512  omp_collapse2 normal_var4    319.7   26.027    8.797   544581   8320.7   2812.2    62.5%
+  -    8        gpu_warp32  omp_collapse2 sequential    10.523    110.0   31.706   120793   1157.5    333.6     3.9%
+  -    8        gpu_warp32  omp_for       normal_var1   10.836    107.0   30.704   117318   1159.2    332.7     3.9%
+  -    8        cpu_avx512  omp_for       normal_var1   21.672    191.9   55.113   469248   4158.4   1194.4     3.9%
+  -    32       cpu_scalar  omp_for       exact         25.457   10.289    5.283    15701    261.9    134.5    15.6%
+  -    128      gpu_scalar  omp_for       normal_var4    284.1   14.673    4.634   302428   4168.3   1316.4    62.5%
+  -    64       gpu_scalar  omp_for       sequential     143.7   19.107    5.739   301103   2746.2    824.8    31.2%
+  -    64       cpu_scalar  omp_collapse2 exact         44.856   13.277    7.360    18287    595.5    330.0    31.2%
+  -    128      gpu_warp32  omp_for       normal_var1    284.0   14.641    4.620   302729   4158.1   1312.3    62.5%
+  -    128      cpu_avx512  omp_for       sequential     318.9   26.021    8.743   545947   8297.9   2788.0    62.5%
+  -    128      gpu_scalar  omp_collapse2 normal_var1    284.0   14.641    4.620   302729   4158.1   1312.3    62.5%
+  -    32       gpu_scalar  omp_for       exact         14.906    6.967    3.425   8808.6    103.8   51.029    15.6%
+  -    128      cpu_avx512  omp_for       normal_var4    319.7   26.027    8.797   544581   8320.7   2812.2    62.5%
+  -    16       cpu_scalar  omp_collapse2 exact         15.223   10.340    4.964    12909    157.4   75.517     7.8%
+  -    128      gpu_scalar  omp_for       normal_var1    284.0   14.641    4.620   302729   4158.1   1312.3    62.5%
+  -    8        gpu_scalar  omp_for       normal_var4   10.920    106.0   30.479   116433   1157.6    332.8     3.9%
+  -    32       cpu_scalar  omp_for       uniform        139.8   67.583   19.543   617706   9449.8   2732.6    15.6%
+  -    64       cpu_avx512  omp_for       sequential     160.7   32.381   10.035   542051   5204.6   1612.8    31.2%
+  -    128      gpu_warp32  omp_collapse2 sequential     283.3   14.672    4.603   303285   4156.6   1303.9    62.5%
+  -    64       gpu_warp32  omp_collapse2 normal_var1    144.3   19.048    5.707   299873   2749.3    823.7    31.2%
+  -    32       gpu_warp32  omp_for       uniform        133.3   37.374   10.772   322870   4982.4   1436.1    15.6%
+  -    32       cpu_scalar  omp_for       sequential    81.040   54.413   16.058   533272   4409.7   1301.4    15.6%
+  -    32       gpu_scalar  omp_for       uniform        133.3   37.374   10.772   322870   4982.4   1436.1    15.6%
+  -    32       cpu_scalar  omp_for       normal_var1   81.657   53.981   16.017   529428   4407.9   1307.9    15.6%
+  -    128      cpu_avx512  omp_collapse2 normal_var1    319.6   25.974    8.772   545173   8301.0   2803.5    62.5%
+  -    32       cpu_avx512  omp_for       uniform        139.8   67.583   19.543   617706   9449.8   2732.6    15.6%
+  -    32       cpu_scalar  omp_for       normal_var4   81.819   53.715   15.777   528301   4394.9   1290.9    15.6%
+  -    16       cpu_scalar  omp_for       exact         15.223   10.340    4.964    12909    157.4   75.517     7.8%
+  -    16       gpu_warp32  omp_for       normal_var4   37.750   60.309   17.468   280267   2276.6    659.4     7.8%
+  -    16       cpu_scalar  omp_collapse2 sequential    41.071    101.8   29.609   516244   4180.4   1216.1     7.8%
+  -    16       cpu_scalar  omp_for       uniform       70.016    129.9   37.260   604927   9097.9   2608.8     7.8%
+  -    64       gpu_scalar  omp_collapse2 uniform        265.1   21.582    6.271   326147   5721.3   1662.6    31.2%
+  -    64       cpu_scalar  omp_collapse2 sequential     160.7   32.381   10.035   542051   5204.6   1612.8    31.2%
+  -    32       cpu_avx512  omp_for       normal_var4   81.819   53.715   15.777   528301   4394.9   1290.9    15.6%
+  -    64       gpu_warp32  omp_collapse2 uniform        265.1   21.582    6.271   326147   5721.3   1662.6    31.2%
+  -    64       cpu_avx512  omp_collapse2 normal_var1    161.3   32.303    9.983   540129   5211.8   1610.7    31.2%
+  -    64       gpu_scalar  omp_collapse2 normal_var1    144.3   19.048    5.707   299873   2749.3    823.7    31.2%
+  -    16       gpu_scalar  omp_collapse2 sequential    36.974   61.632   17.873   286253   2278.8    660.8     7.8%
+  -    64       cpu_scalar  omp_collapse2 normal_var4    161.5   32.475   10.068   539437   5245.2   1626.1    31.2%
+  -    64       gpu_scalar  omp_collapse2 sequential     143.7   19.107    5.739   301103   2746.2    824.8    31.2%
+  -    64       cpu_avx512  omp_collapse2 sequential     160.7   32.381   10.035   542051   5204.6   1612.8    31.2%
+  -    16       cpu_avx512  omp_for       uniform       70.016    129.9   37.260   604927   9097.9   2608.8     7.8%
+  -    128      gpu_scalar  omp_collapse2 sequential     283.3   14.672    4.603   303285   4156.6   1303.9    62.5%
+  -    64       cpu_avx512  omp_collapse2 uniform        278.9   39.459   11.600   623983    11005   3235.3    31.2%
+  -    16       cpu_scalar  omp_for       normal_var1   41.685    100.8   29.138   508523   4199.8   1214.6     7.8%
+  -    128      cpu_avx512  omp_collapse2 sequential     318.9   26.021    8.743   545947   8297.9   2788.0    62.5%
+  -    8        gpu_warp32  omp_for       uniform       17.516    136.8   39.268   144981   2395.9    687.8     3.9%
+  -    128      cpu_scalar  omp_collapse2 exact         82.391   17.711   10.658    22474   1459.2    877.9    62.5%
+  -    8        cpu_avx512  omp_collapse2 sequential    21.046    196.6   56.685   483147   4138.6   1193.0     3.9%
+  -    64       gpu_warp32  omp_for       uniform        265.1   21.582    6.271   326147   5721.3   1662.6    31.2%
+  -    16       gpu_scalar  omp_for       normal_var1   37.579   60.855   17.543   281508   2286.9    659.3     7.8%
+  -    128      gpu_warp32  omp_collapse2 exact         44.469   10.138    5.831    12235    450.8    259.3    62.5%
+  -    8        gpu_scalar  omp_for       uniform       17.516    136.8   39.268   144981   2395.9    687.8     3.9%
+  -    8        gpu_scalar  omp_collapse2 sequential    10.523    110.0   31.706   120793   1157.5    333.6     3.9%
+  -    8        gpu_scalar  omp_for       sequential    10.523    110.0   31.706   120793   1157.5    333.6     3.9%
+  -    8        gpu_warp32  omp_for       sequential    10.523    110.0   31.706   120793   1157.5    333.6     3.9%
+  -    64       gpu_scalar  omp_for       uniform        265.1   21.582    6.271   326147   5721.3   1662.6    31.2%
+  -    8        cpu_avx512  omp_for       uniform       35.033    255.4   73.338   579895   8948.0   2569.2     3.9%
+  -    32       gpu_scalar  omp_collapse2 sequential    72.752   32.791    9.583   296071   2385.6    697.2    15.6%
+  -    32       cpu_avx512  omp_collapse2 sequential    81.040   54.413   16.058   533272   4409.7   1301.4    15.6%
+  -    8        gpu_warp32  omp_for       normal_var4   10.920    106.0   30.479   116433   1157.6    332.8     3.9%
+  -    8        gpu_scalar  omp_for       exact          4.825    6.386    3.251   2685.6   30.818   15.700     3.9%
+  -    32       gpu_warp32  omp_collapse2 exact         14.906    6.967    3.425   8808.6    103.8   51.029    15.6%
+  -    16       cpu_avx512  omp_for       sequential    41.071    101.8   29.609   516244   4180.4   1216.1     7.8%
+  -    64       cpu_avx512  omp_for       normal_var1    161.3   32.303    9.983   540129   5211.8   1610.7    31.2%
+  -    8        cpu_scalar  omp_collapse2 normal_var4   21.841    190.2   54.748   465706   4155.0   1195.7     3.9%
+  -    8        cpu_avx512  omp_for       sequential    21.046    196.6   56.685   483147   4138.6   1193.0     3.9%
+  -    8        cpu_scalar  omp_collapse2 exact          9.650   10.154    5.136    10738   98.005   49.607     3.9%
+  -    8        gpu_scalar  omp_collapse2 uniform       17.516    136.8   39.268   144981   2395.9    687.8     3.9%
+  -    8        gpu_warp32  omp_for       exact          4.825    6.386    3.251   2685.6   30.818   15.700     3.9%
+  -    32       cpu_avx512  omp_collapse2 exact         25.457   10.289    5.283    15701    261.9    134.5    15.6%
+  -    16       gpu_scalar  omp_for       sequential    36.974   61.632   17.873   286253   2278.8    660.8     7.8%
+  -    16       gpu_warp32  omp_collapse2 normal_var1   37.579   60.855   17.543   281508   2286.9    659.3     7.8%
+  -    8        cpu_avx512  omp_for       normal_var4   21.841    190.2   54.748   465706   4155.0   1195.7     3.9%
+  -    16       gpu_warp32  omp_collapse2 uniform       66.858   72.110   20.657   316195   4821.1   1381.1     7.8%
+  -    16       gpu_warp32  omp_for       sequential    36.974   61.632   17.873   286253   2278.8    660.8     7.8%
+  -    8        cpu_scalar  omp_collapse2 normal_var1   21.672    191.9   55.113   469248   4158.4   1194.4     3.9%
+  -    8        gpu_scalar  omp_collapse2 normal_var4   10.920    106.0   30.479   116433   1157.6    332.8     3.9%
+  -    16       gpu_scalar  omp_collapse2 uniform       66.858   72.110   20.657   316195   4821.1   1381.1     7.8%
+  -    8        cpu_avx512  omp_collapse2 normal_var4   21.841    190.2   54.748   465706   4155.0   1195.7     3.9%
+  -    8        gpu_scalar  omp_for       normal_var1   10.836    107.0   30.704   117318   1159.2    332.7     3.9%
+  -    8        cpu_avx512  omp_collapse2 exact          9.650   10.154    5.136    10738   98.005   49.607     3.9%
+  -    8        gpu_warp32  omp_collapse2 exact          4.825    6.386    3.251   2685.6   30.818   15.700     3.9%
+  -    8        cpu_avx512  omp_collapse2 normal_var1   21.672    191.9   55.113   469248   4158.4   1194.4     3.9%
+  -    8        gpu_warp32  omp_collapse2 normal_var1   10.836    107.0   30.704   117318   1159.2    332.7     3.9%
+  -    32       cpu_scalar  omp_collapse2 normal_var4   81.819   53.715   15.777   528301   4394.9   1290.9    15.6%
+  -    32       cpu_scalar  omp_collapse2 normal_var1   81.657   53.981   16.017   529428   4407.9   1307.9    15.6%
+  -    32       gpu_warp32  omp_for       exact         14.906    6.967    3.425   8808.6    103.8   51.029    15.6%
+  -    32       cpu_scalar  omp_collapse2 uniform        139.8   67.583   19.543   617706   9449.8   2732.6    15.6%
+  -    32       cpu_avx512  omp_for       exact         25.457   10.289    5.283    15701    261.9    134.5    15.6%
+  -    32       cpu_avx512  omp_collapse2 normal_var4   81.819   53.715   15.777   528301   4394.9   1290.9    15.6%
+  -    64       gpu_warp32  omp_collapse2 exact         25.018    8.139    4.259    10082    203.6    106.5    31.2%
+  -    32       gpu_warp32  omp_collapse2 normal_var1   73.352   32.482    9.536   293671   2382.6    699.5    15.6%
+  -    32       cpu_avx512  omp_collapse2 normal_var1   81.657   53.981   16.017   529428   4407.9   1307.9    15.6%
+  -    64       gpu_scalar  omp_collapse2 exact         25.018    8.139    4.259    10082    203.6    106.5    31.2%
+  -    64       cpu_avx512  omp_collapse2 exact         44.856   13.277    7.360    18287    595.5    330.0    31.2%
+  -    16       gpu_warp32  omp_collapse2 exact          9.528    7.654    3.751   7445.2   72.918   35.750     7.8%
+  -    16       gpu_scalar  omp_collapse2 exact          9.528    7.654    3.751   7445.2   72.918   35.750     7.8%
+  -    32       gpu_warp32  omp_for       sequential    72.752   32.791    9.583   296071   2385.6    697.2    15.6%
+  -    32       gpu_scalar  omp_for       sequential    72.752   32.791    9.583   296071   2385.6    697.2    15.6%
+  -    16       cpu_avx512  omp_collapse2 exact         15.223   10.340    4.964    12909    157.4   75.517     7.8%
+  -    32       cpu_avx512  omp_for       sequential    81.040   54.413   16.058   533272   4409.7   1301.4    15.6%
+  -    32       gpu_warp32  omp_for       normal_var4   73.501   32.311    9.393   292987   2374.9    690.4    15.6%
+  -    32       gpu_warp32  omp_for       normal_var1   73.352   32.482    9.536   293671   2382.6    699.5    15.6%
+  -    32       gpu_scalar  omp_for       normal_var4   73.501   32.311    9.393   292987   2374.9    690.4    15.6%
+  -    32       cpu_avx512  omp_for       normal_var1   81.657   53.981   16.017   529428   4407.9   1307.9    15.6%
+  -    32       gpu_scalar  omp_for       normal_var1   73.352   32.482    9.536   293671   2382.6    699.5    15.6%
+  -    16       gpu_warp32  omp_for       exact          9.528    7.654    3.751   7445.2   72.918   35.750     7.8%
+  -    16       gpu_scalar  omp_for       exact          9.528    7.654    3.751   7445.2   72.918   35.750     7.8%
+  -    16       cpu_avx512  omp_collapse2 sequential    41.071    101.8   29.609   516244   4180.4   1216.1     7.8%
+  -    16       gpu_warp32  omp_collapse2 sequential    36.974   61.632   17.873   286253   2278.8    660.8     7.8%
+  -    64       gpu_warp32  omp_collapse2 sequential     143.7   19.107    5.739   301103   2746.2    824.8    31.2%
+  -    16       gpu_warp32  omp_for       uniform       66.858   72.110   20.657   316195   4821.1   1381.1     7.8%
+  -    64       gpu_warp32  omp_collapse2 normal_var4    144.5   19.147    5.758   299467   2766.5    831.9    31.2%
+  -    16       gpu_scalar  omp_for       uniform       66.858   72.110   20.657   316195   4821.1   1381.1     7.8%
+  -    64       gpu_scalar  omp_collapse2 normal_var4    144.5   19.147    5.758   299467   2766.5    831.9    31.2%
+  -    16       cpu_avx512  omp_for       exact         15.223   10.340    4.964    12909    157.4   75.517     7.8%
+  -    64       cpu_avx512  omp_collapse2 normal_var4    161.5   32.475   10.068   539437   5245.2   1626.1    31.2%
+  -    16       gpu_warp32  omp_for       normal_var1   37.579   60.855   17.543   281508   2286.9    659.3     7.8%
+  -    128      gpu_scalar  omp_collapse2 exact         44.469   10.138    5.831    12235    450.8    259.3    62.5%
+  -    16       cpu_avx512  omp_for       normal_var1   41.685    100.8   29.138   508523   4199.8   1214.6     7.8%
+  -    128      cpu_avx512  omp_collapse2 exact         82.391   17.711   10.658    22474   1459.2    877.9    62.5%
+  -    8        gpu_scalar  omp_collapse2 exact          4.825    6.386    3.251   2685.6   30.818   15.700     3.9%
+  -    8        gpu_warp32  omp_collapse2 normal_var4   10.920    106.0   30.479   116433   1157.6    332.8     3.9%
+  -    8        gpu_scalar  omp_collapse2 normal_var1   10.836    107.0   30.704   117318   1159.2    332.7     3.9%
+  -    32       gpu_scalar  omp_collapse2 normal_var4   73.501   32.311    9.393   292987   2374.9    690.4    15.6%
+  -    32       gpu_warp32  omp_collapse2 normal_var4   73.501   32.311    9.393   292987   2374.9    690.4    15.6%
+  -    32       gpu_warp32  omp_collapse2 uniform        133.3   37.374   10.772   322870   4982.4   1436.1    15.6%
+  -    32       cpu_avx512  omp_collapse2 uniform        139.8   67.583   19.543   617706   9449.8   2732.6    15.6%
+  -    32       gpu_scalar  omp_collapse2 normal_var1   73.352   32.482    9.536   293671   2382.6    699.5    15.6%
+  -    32       gpu_scalar  omp_collapse2 uniform        133.3   37.374   10.772   322870   4982.4   1436.1    15.6%
+
+[E6L1 daint] done. CSVs under results/daint/

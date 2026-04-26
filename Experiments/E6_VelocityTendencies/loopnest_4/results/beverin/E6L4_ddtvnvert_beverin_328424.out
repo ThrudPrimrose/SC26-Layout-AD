@@ -1,0 +1,56 @@
+[E6L4 beverin] host=nid002926 threads=96 data=/capstor/scratch/cscs/ybudanaz/beverin/icon-artifacts/velocity/data_r02b05
+OK   V=1 dist=uniform max_rel=7.720e-11
+OK   V=2 dist=uniform max_rel=7.720e-11
+OK   V=3 dist=uniform max_rel=7.720e-11
+OK   V=4 dist=uniform max_rel=7.720e-11
+OK   V=1 dist=normal_var1 max_rel=7.720e-11
+OK   V=2 dist=normal_var1 max_rel=7.720e-11
+OK   V=3 dist=normal_var1 max_rel=7.720e-11
+OK   V=4 dist=normal_var1 max_rel=7.720e-11
+OK   V=1 dist=exact max_rel=7.720e-11
+OK   V=2 dist=exact max_rel=7.720e-11
+OK   V=3 dist=exact max_rel=7.720e-11
+OK   V=4 dist=exact max_rel=7.720e-11
+OK   B=8 dist=uniform max_rel=7.720e-11
+OK   B=16 dist=uniform max_rel=7.720e-11
+OK   B=32 dist=uniform max_rel=7.720e-11
+OK   B=8 dist=normal_var1 max_rel=7.720e-11
+OK   B=16 dist=normal_var1 max_rel=7.720e-11
+OK   B=32 dist=normal_var1 max_rel=7.720e-11
+OK   B=8 dist=exact max_rel=7.720e-11
+OK   B=16 dist=exact max_rel=7.720e-11
+OK   B=32 dist=exact max_rel=7.720e-11
+OK   TX=8 TY=8 dist=uniform max_rel=7.720e-11
+OK   TX=8 TY=16 dist=uniform max_rel=7.720e-11
+OK   TX=8 TY=32 dist=uniform max_rel=7.720e-11
+OK   TX=16 TY=8 dist=uniform max_rel=7.720e-11
+OK   TX=16 TY=16 dist=uniform max_rel=7.720e-11
+OK   TX=16 TY=32 dist=uniform max_rel=7.720e-11
+OK   TX=32 TY=8 dist=uniform max_rel=7.720e-11
+OK   TX=32 TY=16 dist=uniform max_rel=7.720e-11
+OK   TX=32 TY=32 dist=uniform max_rel=7.720e-11
+OK   TX=8 TY=8 dist=normal_var1 max_rel=7.720e-11
+OK   TX=8 TY=16 dist=normal_var1 max_rel=7.720e-11
+OK   TX=8 TY=32 dist=normal_var1 max_rel=7.720e-11
+OK   TX=16 TY=8 dist=normal_var1 max_rel=7.720e-11
+OK   TX=16 TY=16 dist=normal_var1 max_rel=7.720e-11
+OK   TX=16 TY=32 dist=normal_var1 max_rel=7.720e-11
+OK   TX=32 TY=8 dist=normal_var1 max_rel=7.720e-11
+OK   TX=32 TY=16 dist=normal_var1 max_rel=7.720e-11
+OK   TX=32 TY=32 dist=normal_var1 max_rel=7.720e-11
+OK   TX=8 TY=8 dist=exact max_rel=7.720e-11
+OK   TX=8 TY=16 dist=exact max_rel=7.720e-11
+OK   TX=8 TY=32 dist=exact max_rel=7.720e-11
+OK   TX=16 TY=8 dist=exact max_rel=7.720e-11
+OK   TX=16 TY=16 dist=exact max_rel=7.720e-11
+OK   TX=16 TY=32 dist=exact max_rel=7.720e-11
+OK   TX=32 TY=8 dist=exact max_rel=7.720e-11
+OK   TX=32 TY=16 dist=exact max_rel=7.720e-11
+OK   TX=32 TY=32 dist=exact max_rel=7.720e-11
+
+  [ln4] N=81920 nl=90 (partial vert [nl/8, 7*nl/8)) beta=1.0000 alpha=0.0120 gamma=1.800 P=4
+
+
+  [ln4] N=81920 nl=90 (partial vert [nl/8, 7*nl/8)) beta=1.0000 alpha=0.0120 gamma=1.800 P=4
+
+[E6L4 beverin] done. CSVs under results/beverin/

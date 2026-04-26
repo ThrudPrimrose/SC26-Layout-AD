@@ -5,21 +5,24 @@
     "ch",
     "f",
     "s",
-    "n"
+    "n",
+    "lm"
   ],
   "group_labels": {
     "cv": "COMPUTE_VERT   (2D/3D work arrays written in jk-outer loops)",
     "ch": "COMPUTE_HORIZ  (work arrays written by horizontal stencils)",
     "f": "FIELDS         (prognostic + diagnostic state)",
     "s": "STENCIL        (read-only metric + interp coefficients)",
-    "n": "CONN           (edge/vertex/cell index connectivity tables)"
+    "n": "CONN           (edge/vertex/cell index connectivity tables)",
+    "lm": "LEVMASK        (level-mask 2D arrays; current (nblks,nlev), preferred (nlev,nblks))"
   },
   "group_axis": {
     "cv": "IC",
     "ch": "IC",
     "f": "IC",
     "s": "IC",
-    "n": "IN"
+    "n": "IN",
+    "lm": "IC"
   },
   "arrays": {
     "cv": [
@@ -34,10 +37,12 @@
     ],
     "ch": [
       "cfl_clipping",
-      "levelmask",
-      "levmask",
       "z_w_concorr_mc",
       "z_w_concorr_me"
+    ],
+    "lm": [
+      "levelmask",
+      "levmask"
     ],
     "f": [
       "p_diag%ddt_vn_apc_pc",
