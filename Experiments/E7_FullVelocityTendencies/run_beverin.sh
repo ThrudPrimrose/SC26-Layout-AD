@@ -111,8 +111,14 @@ for CFG in ${CONFIGS}; do
           --timesteps "${TS}" \
           --output-dir "${out_dir}"
     } 2>&1 | tee -a "${txt}"
+    rc=${PIPESTATUS[0]:-0}
+    if (( rc != 0 )); then
+      echo "[E7 beverin] WARN: ${CFG} ts=${TS} aborted (rc=${rc}); continuing" >&2
+      echo "=== ABORTED rc=${rc} ===" >> "${txt}"
+    fi
     if [[ "${VERIFY}" -eq 0 ]]; then
       find "${out_dir}" -maxdepth 1 \( -name '*.got' -o -name '*.want' \) -delete
+      find "${out_dir}" -maxdepth 1 -name 'core*' -delete
     fi
   done
 done

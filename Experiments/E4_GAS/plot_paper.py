@@ -298,7 +298,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--amd-dir", default="results/beverin")
     ap.add_argument("--nv-dir",  default="results/daint")
-    ap.add_argument("--with-cpu", action="store_true")
+    ap.add_argument("--with-cpu", action=argparse.BooleanOptionalAction, default=True)
     ap.add_argument("--add-peak", action="store_true", default=True)
     args = ap.parse_args()
 

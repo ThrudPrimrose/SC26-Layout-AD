@@ -121,6 +121,11 @@ for CFG in ${CONFIGS}; do
     mkdir -p "${out_dir}"
     txt="${out_dir}/run.txt"
     echo "[E7 daint] running ${CFG} TS=${TS} reps=${REPS} warmup=${WARMUP} -> ${txt}"
+    # Capture the binary's exit status explicitly: the bench can throw
+    # std::out_of_range (or any other unhandled C++ exception) during
+    # its load phase before producing useful timings, and we want to
+    # log + skip that timestep without aborting the rest of the sweep.
+    # PIPESTATUS[0] is the binary's exit; tee always succeeds.
     {
       echo "=== ${CFG} ts=${TS} reps=${REPS} warmup=${WARMUP} ==="
       "${bin}" \
@@ -130,8 +135,16 @@ for CFG in ${CONFIGS}; do
           --timesteps "${TS}" \
           --output-dir "${out_dir}"
     } 2>&1 | tee -a "${txt}"
+    rc=${PIPESTATUS[0]:-0}
+    if (( rc != 0 )); then
+      echo "[E7 daint] WARN: ${CFG} ts=${TS} aborted (rc=${rc}); continuing" >&2
+      echo "=== ABORTED rc=${rc} ===" >> "${txt}"
+    fi
     if [[ "${VERIFY}" -eq 0 ]]; then
+      # Always reclaim got/want and any core dump from this run, even
+      # on abort -- they can be O(GB) and we don't keep them.
       find "${out_dir}" -maxdepth 1 \( -name '*.got' -o -name '*.want' \) -delete
+      find "${out_dir}" -maxdepth 1 -name 'core*' -delete
     fi
   done
 done
