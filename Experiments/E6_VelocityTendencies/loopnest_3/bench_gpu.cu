@@ -434,7 +434,7 @@ int main(int argc, char *argv[]) {
       for (int txi = 0; txi < N_TILE_X; txi++) {
         int TX = TILE_X_VALUES[txi];
         if (N_e % TX != 0) continue;
-        for (int tyi = 0; tyi < 4; tyi++) {
+        for (int tyi = 0; tyi < 3; tyi++) {
           int TY = TILE_Y_VALUES[tyi + 1];
           if (nlev % TY != 0) continue;
           BenchData bd; bd.alloc(N_e, nlev); bd.fill(nlev);
