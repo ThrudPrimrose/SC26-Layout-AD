@@ -43,6 +43,12 @@ import shutil
 import subprocess
 from pathlib import Path
 
+# Switch the DaCe checkout to f2dace/staging *before* importing dace --
+# generate_baselines runs StructToContainerGroups which only ships on
+# f2dace/staging, and on yakup/dev `import dace` may even fail.
+from utils.dace_branch import F2DACE_BRANCH, F2DACE_COMMIT, ensure_branch
+ensure_branch(F2DACE_BRANCH, commit=F2DACE_COMMIT)
+
 import dace
 from dace import data
 from dace.transformation.passes import RemoveUnusedSymbols, StructToContainerGroups

@@ -24,6 +24,9 @@ Run:
 import argparse
 from pathlib import Path
 
+from utils.dace_branch import YAKUP_DEV_BRANCH, ensure_branch
+ensure_branch(YAKUP_DEV_BRANCH)
+
 import dace
 from dace.transformation.passes.lift_trivial_if import LiftTrivialIf
 from dace.transformation.passes.offset_loop_and_maps import OffsetLoopsAndMaps

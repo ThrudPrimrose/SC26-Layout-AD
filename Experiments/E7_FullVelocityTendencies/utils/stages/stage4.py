@@ -43,6 +43,9 @@ from pathlib import Path
 # emission if needed.
 os.environ.setdefault("__DACE_NO_SYNC", "1")
 
+from utils.dace_branch import YAKUP_DEV_BRANCH, ensure_branch
+ensure_branch(YAKUP_DEV_BRANCH)
+
 import dace
 
 from utils.passes.offload_velocity_to_gpu import OffloadVelocityToGPU
@@ -134,7 +137,8 @@ def optimization_action(sdfg: dace.SDFG) -> dace.SDFG:
     # is invoked once per timestep from a long-lived host loop;
     # ``SDFG`` lifetime would re-alloc per call, ``Persistent`` keeps
     # the buffers warm and skips the malloc traffic.
-    promoted = _promote_transients_persistent(sdfg)
+    #promoted = _promote_transients_persistent(sdfg)
+    promoted = False
     if promoted:
         print(f"Stage #{STAGE_ID}: promoted {promoted} transient(s) to "
               f"AllocationLifetime.Persistent")

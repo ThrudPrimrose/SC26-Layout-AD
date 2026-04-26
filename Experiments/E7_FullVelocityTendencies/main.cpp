@@ -253,6 +253,16 @@ int main(int argc, char *argv[]) {
 
     acerr() << "All data read..." << std::endl;
 
+    // p_patch.{nlev,nlevp1,nshift,id} aren't in the .data dump (the
+    // serializer only writes nblks_{c,e,v} + cells/edges/verts), but
+    // stage1's frozen ABI passes all 7 top-level p_patch fields to the
+    // kernel. Set them from the dataset's namelist.
+    // r02b05: num_lev = 90, single (root) patch, no vertical nesting.
+    p_patch.nlev = 90;
+    p_patch.nlevp1 = 91;
+    p_patch.nshift = 0;
+    p_patch.id = 1;
+
     if (ldeepatmo != 0) {
       throw std::runtime_error("ldeepatmo is not 0");
     }

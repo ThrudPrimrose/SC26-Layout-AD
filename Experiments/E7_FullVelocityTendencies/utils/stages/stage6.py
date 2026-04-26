@@ -23,6 +23,9 @@ import copy
 from pathlib import Path
 from typing import Dict, List
 
+from utils.dace_branch import YAKUP_DEV_BRANCH, ensure_branch
+ensure_branch(YAKUP_DEV_BRANCH)
+
 import dace
 
 from utils.passes.fuse_full_and_endpoint import fuse_full_and_endpoint

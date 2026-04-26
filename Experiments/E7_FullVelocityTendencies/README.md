@@ -117,7 +117,7 @@ E7_FullVelocityTendencies/
 ├── codegen/stageN/                          per-stage outputs                      (gitignored)
 ├── data_r02b05/                             populated by tools/download_data.sh    (gitignored)
 ├── utils/, src/, include/, main.cpp,        snapshot of VelocityTendenciesPipeline
-│   generate_baselines.py, compile_baselines.py, tests/
+│   f90_to_sdfg.py, generate_baselines.py, tests/
 ├── tools/
 │   ├── download_data.sh                     PolyBox nproma=20480 fetcher
 │   ├── regenerate_baselines.sh              optional F90 → stage 5 driver
