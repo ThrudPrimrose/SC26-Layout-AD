@@ -49,8 +49,8 @@ static constexpr int NLEVS[] = {256};
 static constexpr int N_NLEVS = 1;
 static constexpr int WARMUP         = 5;
 static constexpr int NRUNS          = 100;
-static constexpr int BLOCK_SIZES[] = {8, 16, 32, 48, 64, 96, 128};
-static constexpr int N_BLOCK_SIZES = 7;
+static constexpr int BLOCK_SIZES[] = {8, 16, 32};
+static constexpr int N_BLOCK_SIZES = 3;
 static constexpr int NUMA_DOMAINS   = 4;
 
 static constexpr double DT_LINIT_UBC = 0.125;

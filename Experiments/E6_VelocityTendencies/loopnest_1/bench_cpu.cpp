@@ -148,11 +148,9 @@ static void cpu_blocked_col(
     }
 }
 static kern_t bfor_tbl[] = {cpu_blocked_for<8>, cpu_blocked_for<16>,
-                            cpu_blocked_for<32>, cpu_blocked_for<64>,
-                            cpu_blocked_for<128>};
+                            cpu_blocked_for<32>};
 static kern_t bcol_tbl[] = {cpu_blocked_col<8>, cpu_blocked_col<16>,
-                            cpu_blocked_col<32>, cpu_blocked_col<64>,
-                            cpu_blocked_col<128>};
+                            cpu_blocked_col<32>};
 
 /* ---- Reference (serial) ---- */
 template <int V>
@@ -275,23 +273,20 @@ static void cpu_ref_tiled(
 #define TFOR(a,b) cpu_tiled_for<a,b>
 #define TCOL(a,b) cpu_tiled_col<a,b>
 #define TREF(a,b) cpu_ref_tiled<a,b>
-static kern_t tfor_tbl[4][4] = {
-  {TFOR(8,8),  TFOR(8,16),  TFOR(8,32),  TFOR(8,64) },
-  {TFOR(16,8), TFOR(16,16), TFOR(16,32), TFOR(16,64)},
-  {TFOR(32,8), TFOR(32,16), TFOR(32,32), TFOR(32,64)},
-  {TFOR(64,8), TFOR(64,16), TFOR(64,32), TFOR(64,64)},
+static kern_t tfor_tbl[3][3] = {
+  {TFOR(8,8),  TFOR(8,16),  TFOR(8,32) },
+  {TFOR(16,8), TFOR(16,16), TFOR(16,32)},
+  {TFOR(32,8), TFOR(32,16), TFOR(32,32)},
 };
-static kern_t tcol_tbl[4][4] = {
-  {TCOL(8,8),  TCOL(8,16),  TCOL(8,32),  TCOL(8,64) },
-  {TCOL(16,8), TCOL(16,16), TCOL(16,32), TCOL(16,64)},
-  {TCOL(32,8), TCOL(32,16), TCOL(32,32), TCOL(32,64)},
-  {TCOL(64,8), TCOL(64,16), TCOL(64,32), TCOL(64,64)},
+static kern_t tcol_tbl[3][3] = {
+  {TCOL(8,8),  TCOL(8,16),  TCOL(8,32) },
+  {TCOL(16,8), TCOL(16,16), TCOL(16,32)},
+  {TCOL(32,8), TCOL(32,16), TCOL(32,32)},
 };
-static kern_t tref_tbl[4][4] = {
-  {TREF(8,8),  TREF(8,16),  TREF(8,32),  TREF(8,64) },
-  {TREF(16,8), TREF(16,16), TREF(16,32), TREF(16,64)},
-  {TREF(32,8), TREF(32,16), TREF(32,32), TREF(32,64)},
-  {TREF(64,8), TREF(64,16), TREF(64,32), TREF(64,64)},
+static kern_t tref_tbl[3][3] = {
+  {TREF(8,8),  TREF(8,16),  TREF(8,32) },
+  {TREF(16,8), TREF(16,16), TREF(16,32)},
+  {TREF(32,8), TREF(32,16), TREF(32,32)},
 };
 #undef TFOR
 #undef TCOL
@@ -441,7 +436,7 @@ static void run_blocked(FILE *f, int bi, BenchData &bd, int nlev_end,
 static void run_tiled(FILE *f, int tx_i, int ty_i, BenchData &bd, int nlev_end,
                       const char *dl, double *hr) {
   int TX = TILE_X_VALUES[tx_i];
-  int TY = TILE_Y_VALUES[ty_i + 1];  /* ty_i=0..3 -> TILE_Y_VALUES[1..4]  */
+  int TY = TILE_Y_VALUES[ty_i + 1];  /* ty_i=0..2 -> TILE_Y_VALUES[1..3]  */
   int Ne=bd.N_e, Nc=bd.N_c, Nv=bd.N_v, nl=bd.nlev;
 
   memset(hr, 0, bd.sz_e*sizeof(double));
@@ -658,7 +653,7 @@ int main(int argc, char *argv[]) {
     }
 
     /* Tiled synthetic: (TILE_X × TILE_Y) storage layout sweep.
-     * ty_i = 0..3 maps to TILE_Y_VALUES[1..4] (skipping MATCH_NLEV sentinel;
+     * ty_i = 0..2 maps to TILE_Y_VALUES[1..3] (skipping MATCH_NLEV sentinel;
      * that case is already covered by the single-axis blocked path above). */
     for (int di=0; di<2; di++) {
       rng.seed(42);
@@ -669,7 +664,7 @@ int main(int argc, char *argv[]) {
         if (N_e % TX != 0) { printf("SKIP TX=%d !| N_e=%d\n", TX, N_e); continue; }
         if (N_c % TX != 0) { printf("SKIP TX=%d !| N_c=%d\n", TX, N_c); continue; }
         if (N_v % TX != 0) { printf("SKIP TX=%d !| N_v=%d\n", TX, N_v); continue; }
-        for (int ty_i=0; ty_i<4; ty_i++) {
+        for (int ty_i=0; ty_i<3; ty_i++) {
           int TY = TILE_Y_VALUES[ty_i + 1];
           if (nlev_base % TY != 0) {
             printf("SKIP TY=%d !| nlev=%d\n", TY, nlev_base); continue;
@@ -695,7 +690,7 @@ int main(int argc, char *argv[]) {
         if (N_e % TX != 0) { printf("SKIP TX=%d !| N_e=%d\n", TX, N_e); continue; }
         if (N_c % TX != 0) { printf("SKIP TX=%d !| N_c=%d\n", TX, N_c); continue; }
         if (N_v % TX != 0) { printf("SKIP TX=%d !| N_v=%d\n", TX, N_v); continue; }
-        for (int ty_i=0; ty_i<4; ty_i++) {
+        for (int ty_i=0; ty_i<3; ty_i++) {
           int TY = TILE_Y_VALUES[ty_i + 1];
           if (nlev_base % TY != 0) {
             printf("SKIP TY=%d !| nlev=%d\n", TY, nlev_base); continue;
