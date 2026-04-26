@@ -107,14 +107,6 @@ static void launch_blocked(int bi, int bxi, double *d_lvout, const double *d_lvm
     case 2*100+1: gpu_blocked<32, 128><<<G,T>>>(ARGS_FULL); break;
     case 2*100+2: gpu_blocked<32, 256><<<G,T>>>(ARGS_FULL); break;
     case 2*100+3: gpu_blocked<32, 512><<<G,T>>>(ARGS_FULL); break;
-    case 3*100+0: gpu_blocked<64, 64 ><<<G,T>>>(ARGS_FULL); break;
-    case 3*100+1: gpu_blocked<64, 128><<<G,T>>>(ARGS_FULL); break;
-    case 3*100+2: gpu_blocked<64, 256><<<G,T>>>(ARGS_FULL); break;
-    case 3*100+3: gpu_blocked<64, 512><<<G,T>>>(ARGS_FULL); break;
-    case 4*100+0: gpu_blocked<128,64 ><<<G,T>>>(ARGS_FULL); break;
-    case 4*100+1: gpu_blocked<128,128><<<G,T>>>(ARGS_FULL); break;
-    case 4*100+2: gpu_blocked<128,256><<<G,T>>>(ARGS_FULL); break;
-    case 4*100+3: gpu_blocked<128,512><<<G,T>>>(ARGS_FULL); break;
   }
 }
 
@@ -133,10 +125,9 @@ static void launch_tiled(int txi, int tyi, int bxi, double *d_lvout, const doubl
     case 3: gpu_tiled<TX_,TY_,512><<<G,T>>>(ARGS_FULL); break; \
   }
   switch (txi*4 + tyi) {
-    case 0*4+0: T4(8,  8)  break; case 0*4+1: T4(8,  16) break; case 0*4+2: T4(8,  32) break; case 0*4+3: T4(8,  64) break;
-    case 1*4+0: T4(16, 8)  break; case 1*4+1: T4(16, 16) break; case 1*4+2: T4(16, 32) break; case 1*4+3: T4(16, 64) break;
-    case 2*4+0: T4(32, 8)  break; case 2*4+1: T4(32, 16) break; case 2*4+2: T4(32, 32) break; case 2*4+3: T4(32, 64) break;
-    case 3*4+0: T4(64, 8)  break; case 3*4+1: T4(64, 16) break; case 3*4+2: T4(64, 32) break; case 3*4+3: T4(64, 64) break;
+    case 0*4+0: T4(8,  8)  break; case 0*4+1: T4(8,  16) break; case 0*4+2: T4(8,  32) break;
+    case 1*4+0: T4(16, 8)  break; case 1*4+1: T4(16, 16) break; case 1*4+2: T4(16, 32) break;
+    case 2*4+0: T4(32, 8)  break; case 2*4+1: T4(32, 16) break; case 2*4+2: T4(32, 32) break;
   }
 #undef T4
 }
@@ -363,7 +354,7 @@ int main(int argc, char *argv[]) {
       for (int txi = 0; txi < N_TILE_X; txi++) {
         int TX = TILE_X_VALUES[txi];
         if (N_e % TX != 0) continue;
-        for (int tyi = 0; tyi < 4; tyi++) {
+        for (int tyi = 0; tyi < 3; tyi++) {
           int TY = TILE_Y_VALUES[tyi + 1];
           if (nlev % TY != 0) continue;
           BenchData bd; bd.alloc(N_e, nlev); bd.fill(nlev);

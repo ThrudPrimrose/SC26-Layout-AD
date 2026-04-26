@@ -37,8 +37,8 @@ static constexpr int NLEVS[] = {256};
 static constexpr int N_NLEVS = 1;
 static constexpr int WARMUP = 5;
 static constexpr int NRUNS = 100;
-static constexpr int BLOCK_SIZES[] = {8, 16, 32, 48, 64, 96, 128};
-static constexpr int N_BLOCK_SIZES = 7;
+static constexpr int BLOCK_SIZES[] = {8, 16, 32};
+static constexpr int N_BLOCK_SIZES = 3;
 static constexpr int NUMA_DOMAINS = 4;
 
 /* ----------------------------------------------------------------- */
@@ -51,10 +51,10 @@ static constexpr int NUMA_DOMAINS = 4;
 /*  TILE_Y=0 is a sentinel meaning "single Y-tile of height nlev",   */
 /*  i.e. the existing single-axis blocked layout (IC_blocked).       */
 /* ----------------------------------------------------------------- */
-static constexpr int TILE_X_VALUES[]   = {8, 16, 32, 64, 128};
-static constexpr int N_TILE_X          = 5;
-static constexpr int TILE_Y_VALUES[]   = {0, 8, 16, 32, 64, 128};
-static constexpr int N_TILE_Y          = 6;
+static constexpr int TILE_X_VALUES[]   = {8, 16, 32};
+static constexpr int N_TILE_X          = 3;
+static constexpr int TILE_Y_VALUES[]   = {0, 8, 16, 32};
+static constexpr int N_TILE_Y          = 4;
 static constexpr int TILE_Y_MATCH_NLEV = 0;
 
 #ifdef __CUDACC__

@@ -167,35 +167,29 @@ static KFn kfun_unblocked[4][3] = {
 static KFn krfun_unblocked[4] = {
   cpu_ref_unblocked<1>, cpu_ref_unblocked<2>, cpu_ref_unblocked<3>, cpu_ref_unblocked<4>
 };
-static KFn kfun_blocked[5][2] = {
+static KFn kfun_blocked[3][2] = {
   {cpu_blocked_je_outer<8>,   cpu_blocked_collapse2<8>  },
   {cpu_blocked_je_outer<16>,  cpu_blocked_collapse2<16> },
   {cpu_blocked_je_outer<32>,  cpu_blocked_collapse2<32> },
-  {cpu_blocked_je_outer<64>,  cpu_blocked_collapse2<64> },
-  {cpu_blocked_je_outer<128>, cpu_blocked_collapse2<128>}
 };
-static KFn krfun_blocked[5] = {
-  cpu_ref_blocked<8>, cpu_ref_blocked<16>, cpu_ref_blocked<32>,
-  cpu_ref_blocked<64>, cpu_ref_blocked<128>
+static KFn krfun_blocked[3] = {
+  cpu_ref_blocked<8>, cpu_ref_blocked<16>, cpu_ref_blocked<32>
 };
-/* (TX,TY) table: rows = {8,16,32,64}, cols = {8,16,32,64} */
-static KFn kfun_tiled_je[4][4] = {
-  {cpu_tiled_je_outer<8,8>,  cpu_tiled_je_outer<8,16>,  cpu_tiled_je_outer<8,32>,  cpu_tiled_je_outer<8,64> },
-  {cpu_tiled_je_outer<16,8>, cpu_tiled_je_outer<16,16>, cpu_tiled_je_outer<16,32>, cpu_tiled_je_outer<16,64>},
-  {cpu_tiled_je_outer<32,8>, cpu_tiled_je_outer<32,16>, cpu_tiled_je_outer<32,32>, cpu_tiled_je_outer<32,64>},
-  {cpu_tiled_je_outer<64,8>, cpu_tiled_je_outer<64,16>, cpu_tiled_je_outer<64,32>, cpu_tiled_je_outer<64,64>}
+/* (TX,TY) table: rows = {8,16,32}, cols = {8,16,32} */
+static KFn kfun_tiled_je[3][3] = {
+  {cpu_tiled_je_outer<8,8>,  cpu_tiled_je_outer<8,16>,  cpu_tiled_je_outer<8,32> },
+  {cpu_tiled_je_outer<16,8>, cpu_tiled_je_outer<16,16>, cpu_tiled_je_outer<16,32>},
+  {cpu_tiled_je_outer<32,8>, cpu_tiled_je_outer<32,16>, cpu_tiled_je_outer<32,32>},
 };
-static KFn kfun_tiled_co[4][4] = {
-  {cpu_tiled_collapse2<8,8>,  cpu_tiled_collapse2<8,16>,  cpu_tiled_collapse2<8,32>,  cpu_tiled_collapse2<8,64> },
-  {cpu_tiled_collapse2<16,8>, cpu_tiled_collapse2<16,16>, cpu_tiled_collapse2<16,32>, cpu_tiled_collapse2<16,64>},
-  {cpu_tiled_collapse2<32,8>, cpu_tiled_collapse2<32,16>, cpu_tiled_collapse2<32,32>, cpu_tiled_collapse2<32,64>},
-  {cpu_tiled_collapse2<64,8>, cpu_tiled_collapse2<64,16>, cpu_tiled_collapse2<64,32>, cpu_tiled_collapse2<64,64>}
+static KFn kfun_tiled_co[3][3] = {
+  {cpu_tiled_collapse2<8,8>,  cpu_tiled_collapse2<8,16>,  cpu_tiled_collapse2<8,32> },
+  {cpu_tiled_collapse2<16,8>, cpu_tiled_collapse2<16,16>, cpu_tiled_collapse2<16,32>},
+  {cpu_tiled_collapse2<32,8>, cpu_tiled_collapse2<32,16>, cpu_tiled_collapse2<32,32>},
 };
-static KFn krfun_tiled[4][4] = {
-  {cpu_ref_tiled<8,8>,  cpu_ref_tiled<8,16>,  cpu_ref_tiled<8,32>,  cpu_ref_tiled<8,64> },
-  {cpu_ref_tiled<16,8>, cpu_ref_tiled<16,16>, cpu_ref_tiled<16,32>, cpu_ref_tiled<16,64>},
-  {cpu_ref_tiled<32,8>, cpu_ref_tiled<32,16>, cpu_ref_tiled<32,32>, cpu_ref_tiled<32,64>},
-  {cpu_ref_tiled<64,8>, cpu_ref_tiled<64,16>, cpu_ref_tiled<64,32>, cpu_ref_tiled<64,64>}
+static KFn krfun_tiled[3][3] = {
+  {cpu_ref_tiled<8,8>,  cpu_ref_tiled<8,16>,  cpu_ref_tiled<8,32> },
+  {cpu_ref_tiled<16,8>, cpu_ref_tiled<16,16>, cpu_ref_tiled<16,32>},
+  {cpu_ref_tiled<32,8>, cpu_ref_tiled<32,16>, cpu_ref_tiled<32,32>},
 };
 
 /* ========================== misc helpers =========================== */
@@ -415,7 +409,7 @@ int main(int argc, char *argv[]) {
       for (int tx_i = 0; tx_i < N_TILE_X; tx_i++) {
         int TX = TILE_X_VALUES[tx_i];
         if (N_e % TX != 0) { printf("SKIP TX=%d !| N_e=%d\n", TX, N_e); continue; }
-        for (int ty_i = 0; ty_i < 4; ty_i++) {
+        for (int ty_i = 0; ty_i < 3; ty_i++) {
           int TY = TILE_Y_VALUES[ty_i + 1];
           if (nlev % TY != 0) { printf("SKIP TY=%d !| nlev=%d\n", TY, nlev); continue; }
           BenchData bd; bd.alloc(N_e, nlev); bd.fill(nlev);
