@@ -1,0 +1,1708 @@
+[E3 daint] host=nid006371 threads=288
+-- System info --
+  CPU: unknown
+  Cores: 64
+
+-- STREAM copy bandwidth --
+  Empirical BW: 483.5 GB/s
+
+-- Compile --
+  Compiling kernels: g++ -O3 -ffast-math -fno-trapping-math -fno-math-errno -march=native -mtune=native -fno-vect-cost-model -fopenmp -o ./transpose_cpu transpose_cpu.cpp -lnuma
+  Compiling HPTT: g++ -O3 -ffast-math -fno-trapping-math -fno-math-errno -march=native -mtune=native -fno-vect-cost-model -fopenmp -I/capstor/scratch/cscs/ybudanaz/include -L/capstor/scratch/cscs/ybudanaz/lib -Wl,-rpath,/capstor/scratch/cscs/ybudanaz/lib -o ./transpose_hptt transpose_hptt.cpp -lhptt -lnuma
+
+-- Sweep: N=16384 reps=100 warmup=5 threads=288 --
+  naive N=16384 TB=64 SB=32 MT=8 thr=288 numa=0 nodes=36
+naive N=16384 TB=64 SB=32 MT=8 thr=288 | med 45.0542 ms (47.7 GB/s) p5 44.7350 p95 46.7801 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  naive_c2 N=16384 TB=64 SB=32 MT=8 thr=288 numa=0 nodes=36
+naive_c2 N=16384 TB=64 SB=32 MT=8 thr=288 | med 52.6202 ms (40.8 GB/s) p5 52.2780 p95 53.8831 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  tiled N=16384 TB=16 SB=32 MT=8 thr=288 numa=0 nodes=36
+tiled N=16384 TB=16 SB=32 MT=8 thr=288 | med 11.7168 ms (183.3 GB/s) p5 11.5860 p95 13.4399 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  tiled N=16384 TB=32 SB=32 MT=8 thr=288 numa=0 nodes=36
+tiled N=16384 TB=32 SB=32 MT=8 thr=288 | med 13.7811 ms (155.8 GB/s) p5 13.5460 p95 15.4321 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  tiled N=16384 TB=64 SB=32 MT=8 thr=288 numa=0 nodes=36
+tiled N=16384 TB=64 SB=32 MT=8 thr=288 | med 10.4010 ms (206.5 GB/s) p5 10.3152 p95 11.6930 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  tiled N=16384 TB=128 SB=32 MT=8 thr=288 numa=0 nodes=36
+tiled N=16384 TB=128 SB=32 MT=8 thr=288 | med 14.2131 ms (151.1 GB/s) p5 14.0660 p95 15.8310 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  tiled_c2 N=16384 TB=16 SB=32 MT=8 thr=288 numa=0 nodes=36
+tiled_c2 N=16384 TB=16 SB=32 MT=8 thr=288 | med 9.6681 ms (222.1 GB/s) p5 9.6009 p95 11.1301 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  tiled_c2 N=16384 TB=32 SB=32 MT=8 thr=288 numa=0 nodes=36
+tiled_c2 N=16384 TB=32 SB=32 MT=8 thr=288 | med 10.5300 ms (203.9 GB/s) p5 10.4439 p95 12.9950 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  tiled_c2 N=16384 TB=64 SB=32 MT=8 thr=288 numa=0 nodes=36
+tiled_c2 N=16384 TB=64 SB=32 MT=8 thr=288 | med 9.6211 ms (223.2 GB/s) p5 9.5389 p95 11.8749 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  tiled_c2 N=16384 TB=128 SB=32 MT=8 thr=288 numa=0 nodes=36
+tiled_c2 N=16384 TB=128 SB=32 MT=8 thr=288 | med 9.9001 ms (216.9 GB/s) p5 9.7840 p95 11.7710 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_naive N=16384 TB=64 SB=8 MT=8 thr=288 numa=0 nodes=36
+blk_naive N=16384 TB=64 SB=8 MT=8 thr=288 | med 198.2870 ms (10.8 GB/s) p5 184.1879 p95 229.0339 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_naive N=16384 TB=64 SB=16 MT=8 thr=288 numa=0 nodes=36
+blk_naive N=16384 TB=64 SB=16 MT=8 thr=288 | med 83.7770 ms (25.6 GB/s) p5 82.6459 p95 85.7151 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_naive N=16384 TB=64 SB=32 MT=8 thr=288 numa=0 nodes=36
+blk_naive N=16384 TB=64 SB=32 MT=8 thr=288 | med 81.6319 ms (26.3 GB/s) p5 79.1080 p95 85.7852 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_naive N=16384 TB=64 SB=64 MT=8 thr=288 numa=0 nodes=36
+blk_naive N=16384 TB=64 SB=64 MT=8 thr=288 | med 48.9500 ms (43.9 GB/s) p5 47.9538 p95 50.1580 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_naive N=16384 TB=64 SB=128 MT=8 thr=288 numa=0 nodes=36
+blk_naive N=16384 TB=64 SB=128 MT=8 thr=288 | med 58.4660 ms (36.7 GB/s) p5 57.8408 p95 60.0770 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_naive N=16384 TB=64 SB=256 MT=8 thr=288 numa=0 nodes=36
+blk_naive N=16384 TB=64 SB=256 MT=8 thr=288 | med 61.8572 ms (34.7 GB/s) p5 61.3861 p95 63.4961 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_naive N=16384 TB=64 SB=512 MT=8 thr=288 numa=0 nodes=36
+blk_naive N=16384 TB=64 SB=512 MT=8 thr=288 | med 40.6470 ms (52.8 GB/s) p5 40.2141 p95 41.1639 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_naive_c2 N=16384 TB=64 SB=8 MT=8 thr=288 numa=0 nodes=36
+blk_naive_c2 N=16384 TB=64 SB=8 MT=8 thr=288 | med 1277.8521 ms (1.7 GB/s) p5 1156.5061 p95 1376.8282 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_naive_c2 N=16384 TB=64 SB=16 MT=8 thr=288 numa=0 nodes=36
+blk_naive_c2 N=16384 TB=64 SB=16 MT=8 thr=288 | med 108.3460 ms (19.8 GB/s) p5 107.6729 p95 115.7939 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_naive_c2 N=16384 TB=64 SB=32 MT=8 thr=288 numa=0 nodes=36
+blk_naive_c2 N=16384 TB=64 SB=32 MT=8 thr=288 | med 80.4760 ms (26.7 GB/s) p5 77.8949 p95 83.5900 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_naive_c2 N=16384 TB=64 SB=64 MT=8 thr=288 numa=0 nodes=36
+blk_naive_c2 N=16384 TB=64 SB=64 MT=8 thr=288 | med 35.3999 ms (60.7 GB/s) p5 34.9791 p95 37.5640 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_naive_c2 N=16384 TB=64 SB=128 MT=8 thr=288 numa=0 nodes=36
+blk_naive_c2 N=16384 TB=64 SB=128 MT=8 thr=288 | med 45.4550 ms (47.2 GB/s) p5 44.6761 p95 46.8261 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_naive_c2 N=16384 TB=64 SB=256 MT=8 thr=288 numa=0 nodes=36
+blk_naive_c2 N=16384 TB=64 SB=256 MT=8 thr=288 | med 50.0669 ms (42.9 GB/s) p5 49.2439 p95 50.7700 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_naive_c2 N=16384 TB=64 SB=512 MT=8 thr=288 numa=0 nodes=36
+blk_naive_c2 N=16384 TB=64 SB=512 MT=8 thr=288 | med 50.8759 ms (42.2 GB/s) p5 49.8970 p95 52.2542 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_tiled N=16384 TB=64 SB=8 MT=8 thr=288 numa=0 nodes=36
+blk_tiled N=16384 TB=64 SB=8 MT=8 thr=288 | med 12.2280 ms (175.6 GB/s) p5 12.0800 p95 12.7971 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_tiled N=16384 TB=64 SB=16 MT=8 thr=288 numa=0 nodes=36
+blk_tiled N=16384 TB=64 SB=16 MT=8 thr=288 | med 11.1279 ms (193.0 GB/s) p5 10.7851 p95 11.9071 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_tiled N=16384 TB=64 SB=32 MT=8 thr=288 numa=0 nodes=36
+blk_tiled N=16384 TB=64 SB=32 MT=8 thr=288 | med 9.5780 ms (224.2 GB/s) p5 9.0909 p95 11.6310 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_tiled N=16384 TB=64 SB=64 MT=8 thr=288 numa=0 nodes=36
+blk_tiled N=16384 TB=64 SB=64 MT=8 thr=288 | med 12.0821 ms (177.7 GB/s) p5 11.9629 p95 14.7378 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_tiled N=16384 TB=64 SB=128 MT=8 thr=288 numa=0 nodes=36
+blk_tiled N=16384 TB=64 SB=128 MT=8 thr=288 | med 8.2140 ms (261.4 GB/s) p5 7.8859 p95 10.2961 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_tiled N=16384 TB=64 SB=256 MT=8 thr=288 numa=0 nodes=36
+blk_tiled N=16384 TB=64 SB=256 MT=8 thr=288 | med 11.6801 ms (183.9 GB/s) p5 11.5299 p95 12.0320 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_tiled N=16384 TB=64 SB=512 MT=8 thr=288 numa=0 nodes=36
+blk_tiled N=16384 TB=64 SB=512 MT=8 thr=288 | med 11.7421 ms (182.9 GB/s) p5 11.6310 p95 11.9910 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_tiled_c2 N=16384 TB=64 SB=8 MT=8 thr=288 numa=0 nodes=36
+blk_tiled_c2 N=16384 TB=64 SB=8 MT=8 thr=288 | med 11.8120 ms (181.8 GB/s) p5 11.6591 p95 12.1241 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_tiled_c2 N=16384 TB=64 SB=16 MT=8 thr=288 numa=0 nodes=36
+blk_tiled_c2 N=16384 TB=64 SB=16 MT=8 thr=288 | med 10.8430 ms (198.1 GB/s) p5 10.5290 p95 12.3580 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_tiled_c2 N=16384 TB=64 SB=32 MT=8 thr=288 numa=0 nodes=36
+blk_tiled_c2 N=16384 TB=64 SB=32 MT=8 thr=288 | med 9.5229 ms (225.5 GB/s) p5 9.4061 p95 10.9260 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_tiled_c2 N=16384 TB=64 SB=64 MT=8 thr=288 numa=0 nodes=36
+blk_tiled_c2 N=16384 TB=64 SB=64 MT=8 thr=288 | med 9.6729 ms (222.0 GB/s) p5 9.6102 p95 12.2900 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_tiled_c2 N=16384 TB=64 SB=128 MT=8 thr=288 numa=0 nodes=36
+blk_tiled_c2 N=16384 TB=64 SB=128 MT=8 thr=288 | med 11.3652 ms (189.0 GB/s) p5 11.2998 p95 12.3761 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_tiled_c2 N=16384 TB=64 SB=256 MT=8 thr=288 numa=0 nodes=36
+blk_tiled_c2 N=16384 TB=64 SB=256 MT=8 thr=288 | med 10.7081 ms (200.5 GB/s) p5 10.6158 p95 11.9441 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_tiled_c2 N=16384 TB=64 SB=512 MT=8 thr=288 numa=0 nodes=36
+blk_tiled_c2 N=16384 TB=64 SB=512 MT=8 thr=288 | med 12.4891 ms (171.9 GB/s) p5 12.3751 p95 15.1050 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned N=16384 TB=64 SB=8 MT=8 thr=288 numa=0 nodes=36
+blk_aligned N=16384 TB=64 SB=8 MT=8 thr=288 | med 19.9249 ms (107.8 GB/s) p5 19.6860 p95 21.2409 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned N=16384 TB=64 SB=16 MT=8 thr=288 numa=0 nodes=36
+blk_aligned N=16384 TB=64 SB=16 MT=8 thr=288 | med 14.0769 ms (152.6 GB/s) p5 13.9151 p95 17.2570 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned N=16384 TB=64 SB=32 MT=8 thr=288 numa=0 nodes=36
+blk_aligned N=16384 TB=64 SB=32 MT=8 thr=288 | med 8.3199 ms (258.1 GB/s) p5 8.1742 p95 10.5612 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned N=16384 TB=64 SB=64 MT=8 thr=288 numa=0 nodes=36
+blk_aligned N=16384 TB=64 SB=64 MT=8 thr=288 | med 12.0161 ms (178.7 GB/s) p5 11.8721 p95 13.3939 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned N=16384 TB=64 SB=128 MT=8 thr=288 numa=0 nodes=36
+blk_aligned N=16384 TB=64 SB=128 MT=8 thr=288 | med 12.7029 ms (169.1 GB/s) p5 12.6660 p95 12.8469 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned N=16384 TB=64 SB=256 MT=8 thr=288 numa=0 nodes=36
+blk_aligned N=16384 TB=64 SB=256 MT=8 thr=288 | med 22.2020 ms (96.7 GB/s) p5 21.8899 p95 25.6469 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned N=16384 TB=64 SB=512 MT=8 thr=288 numa=0 nodes=36
+blk_aligned N=16384 TB=64 SB=512 MT=8 thr=288 | med 22.1231 ms (97.1 GB/s) p5 21.9822 p95 22.5770 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_c2 N=16384 TB=64 SB=8 MT=8 thr=288 numa=0 nodes=36
+blk_aligned_c2 N=16384 TB=64 SB=8 MT=8 thr=288 | med 16.8421 ms (127.5 GB/s) p5 16.6941 p95 18.8301 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_c2 N=16384 TB=64 SB=16 MT=8 thr=288 numa=0 nodes=36
+blk_aligned_c2 N=16384 TB=64 SB=16 MT=8 thr=288 | med 11.2870 ms (190.3 GB/s) p5 11.1990 p95 13.6039 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_c2 N=16384 TB=64 SB=32 MT=8 thr=288 numa=0 nodes=36
+blk_aligned_c2 N=16384 TB=64 SB=32 MT=8 thr=288 | med 9.7251 ms (220.8 GB/s) p5 9.5880 p95 12.7180 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_c2 N=16384 TB=64 SB=64 MT=8 thr=288 numa=0 nodes=36
+blk_aligned_c2 N=16384 TB=64 SB=64 MT=8 thr=288 | med 10.6940 ms (200.8 GB/s) p5 10.5040 p95 12.8460 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_c2 N=16384 TB=64 SB=128 MT=8 thr=288 numa=0 nodes=36
+blk_aligned_c2 N=16384 TB=64 SB=128 MT=8 thr=288 | med 10.0660 ms (213.3 GB/s) p5 10.0410 p95 13.2391 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_c2 N=16384 TB=64 SB=256 MT=8 thr=288 numa=0 nodes=36
+blk_aligned_c2 N=16384 TB=64 SB=256 MT=8 thr=288 | med 8.6989 ms (246.9 GB/s) p5 8.6691 p95 10.3650 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_c2 N=16384 TB=64 SB=512 MT=8 thr=288 numa=0 nodes=36
+blk_aligned_c2 N=16384 TB=64 SB=512 MT=8 thr=288 | med 12.4760 ms (172.1 GB/s) p5 12.3889 p95 14.3301 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_mt N=16384 TB=64 SB=8 MT=4 thr=288 numa=0 nodes=36
+blk_aligned_mt N=16384 TB=64 SB=8 MT=4 thr=288 | med 16.2530 ms (132.1 GB/s) p5 16.1769 p95 18.3680 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_mt N=16384 TB=64 SB=8 MT=8 thr=288 numa=0 nodes=36
+blk_aligned_mt N=16384 TB=64 SB=8 MT=8 thr=288 | med 20.2641 ms (106.0 GB/s) p5 19.9800 p95 21.7929 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  FAIL blk_aligned_mt SB=8 MT=16: OPENMP DISPLAY ENVIRONMENT BEGIN
+   _OPENMP='201611'
+  [host] OMP_AFFINITY_FORMAT='OMP: pid %P tid %i thread %n bound to
+  FAIL blk_aligned_mt SB=8 MT=32: OPENMP DISPLAY ENVIRONMENT BEGIN
+   _OPENMP='201611'
+  [host] OMP_AFFINITY_FORMAT='OMP: pid %P tid %i thread %n bound to
+  blk_aligned_mt N=16384 TB=64 SB=16 MT=4 thr=288 numa=0 nodes=36
+blk_aligned_mt N=16384 TB=64 SB=16 MT=4 thr=288 | med 12.1171 ms (177.2 GB/s) p5 11.9419 p95 13.4699 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_mt N=16384 TB=64 SB=16 MT=8 thr=288 numa=0 nodes=36
+blk_aligned_mt N=16384 TB=64 SB=16 MT=8 thr=288 | med 10.3979 ms (206.5 GB/s) p5 10.1969 p95 12.0780 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_mt N=16384 TB=64 SB=16 MT=16 thr=288 numa=0 nodes=36
+blk_aligned_mt N=16384 TB=64 SB=16 MT=16 thr=288 | med 12.5380 ms (171.3 GB/s) p5 12.1920 p95 14.6708 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  FAIL blk_aligned_mt SB=16 MT=32: OPENMP DISPLAY ENVIRONMENT BEGIN
+   _OPENMP='201611'
+  [host] OMP_AFFINITY_FORMAT='OMP: pid %P tid %i thread %n bound to
+  blk_aligned_mt N=16384 TB=64 SB=32 MT=4 thr=288 numa=0 nodes=36
+blk_aligned_mt N=16384 TB=64 SB=32 MT=4 thr=288 | med 11.8401 ms (181.4 GB/s) p5 11.7080 p95 13.6290 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_mt N=16384 TB=64 SB=32 MT=8 thr=288 numa=0 nodes=36
+blk_aligned_mt N=16384 TB=64 SB=32 MT=8 thr=288 | med 9.6741 ms (222.0 GB/s) p5 9.1770 p95 10.3791 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_mt N=16384 TB=64 SB=32 MT=16 thr=288 numa=0 nodes=36
+blk_aligned_mt N=16384 TB=64 SB=32 MT=16 thr=288 | med 10.2570 ms (209.4 GB/s) p5 9.5658 p95 10.5560 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_mt N=16384 TB=64 SB=32 MT=32 thr=288 numa=0 nodes=36
+blk_aligned_mt N=16384 TB=64 SB=32 MT=32 thr=288 | med 9.3381 ms (230.0 GB/s) p5 9.2151 p95 10.0091 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_mt N=16384 TB=64 SB=64 MT=4 thr=288 numa=0 nodes=36
+blk_aligned_mt N=16384 TB=64 SB=64 MT=4 thr=288 | med 10.1960 ms (210.6 GB/s) p5 10.1252 p95 11.4820 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_mt N=16384 TB=64 SB=64 MT=8 thr=288 numa=0 nodes=36
+blk_aligned_mt N=16384 TB=64 SB=64 MT=8 thr=288 | med 10.0570 ms (213.5 GB/s) p5 9.8629 p95 11.6100 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_mt N=16384 TB=64 SB=64 MT=16 thr=288 numa=0 nodes=36
+blk_aligned_mt N=16384 TB=64 SB=64 MT=16 thr=288 | med 10.3819 ms (206.8 GB/s) p5 10.1769 p95 11.4899 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_mt N=16384 TB=64 SB=64 MT=32 thr=288 numa=0 nodes=36
+blk_aligned_mt N=16384 TB=64 SB=64 MT=32 thr=288 | med 11.2300 ms (191.2 GB/s) p5 10.8650 p95 12.4860 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_mt N=16384 TB=64 SB=128 MT=4 thr=288 numa=0 nodes=36
+blk_aligned_mt N=16384 TB=64 SB=128 MT=4 thr=288 | med 11.2641 ms (190.6 GB/s) p5 11.2259 p95 12.9271 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_mt N=16384 TB=64 SB=128 MT=8 thr=288 numa=0 nodes=36
+blk_aligned_mt N=16384 TB=64 SB=128 MT=8 thr=288 | med 13.1028 ms (163.9 GB/s) p5 13.0239 p95 13.2780 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_mt N=16384 TB=64 SB=128 MT=16 thr=288 numa=0 nodes=36
+blk_aligned_mt N=16384 TB=64 SB=128 MT=16 thr=288 | med 13.0000 ms (165.2 GB/s) p5 12.9080 p95 13.4060 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_mt N=16384 TB=64 SB=128 MT=32 thr=288 numa=0 nodes=36
+blk_aligned_mt N=16384 TB=64 SB=128 MT=32 thr=288 | med 16.7429 ms (128.3 GB/s) p5 16.4840 p95 20.6661 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_mt N=16384 TB=64 SB=256 MT=4 thr=288 numa=0 nodes=36
+blk_aligned_mt N=16384 TB=64 SB=256 MT=4 thr=288 | med 18.5909 ms (115.5 GB/s) p5 18.1541 p95 21.9109 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_mt N=16384 TB=64 SB=256 MT=8 thr=288 numa=0 nodes=36
+blk_aligned_mt N=16384 TB=64 SB=256 MT=8 thr=288 | med 27.0879 ms (79.3 GB/s) p5 26.1290 p95 31.2910 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_mt N=16384 TB=64 SB=256 MT=16 thr=288 numa=0 nodes=36
+blk_aligned_mt N=16384 TB=64 SB=256 MT=16 thr=288 | med 25.1431 ms (85.4 GB/s) p5 23.3610 p95 28.1360 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_mt N=16384 TB=64 SB=256 MT=32 thr=288 numa=0 nodes=36
+blk_aligned_mt N=16384 TB=64 SB=256 MT=32 thr=288 | med 13.6030 ms (157.9 GB/s) p5 13.4959 p95 16.5420 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_mt N=16384 TB=64 SB=512 MT=4 thr=288 numa=0 nodes=36
+blk_aligned_mt N=16384 TB=64 SB=512 MT=4 thr=288 | med 18.8930 ms (113.7 GB/s) p5 18.7559 p95 19.7480 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_mt N=16384 TB=64 SB=512 MT=8 thr=288 numa=0 nodes=36
+blk_aligned_mt N=16384 TB=64 SB=512 MT=8 thr=288 | med 79.6108 ms (27.0 GB/s) p5 78.7880 p95 81.3119 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_mt N=16384 TB=64 SB=512 MT=16 thr=288 numa=0 nodes=36
+blk_aligned_mt N=16384 TB=64 SB=512 MT=16 thr=288 | med 86.7360 ms (24.8 GB/s) p5 86.3800 p95 89.1430 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_mt N=16384 TB=64 SB=512 MT=32 thr=288 numa=0 nodes=36
+blk_aligned_mt N=16384 TB=64 SB=512 MT=32 thr=288 | med 15.9788 ms (134.4 GB/s) p5 15.9121 p95 18.0781 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_mt_c2 N=16384 TB=64 SB=8 MT=4 thr=288 numa=0 nodes=36
+blk_aligned_mt_c2 N=16384 TB=64 SB=8 MT=4 thr=288 | med 15.4831 ms (138.7 GB/s) p5 15.4021 p95 16.6500 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_mt_c2 N=16384 TB=64 SB=8 MT=8 thr=288 numa=0 nodes=36
+blk_aligned_mt_c2 N=16384 TB=64 SB=8 MT=8 thr=288 | med 16.7210 ms (128.4 GB/s) p5 16.6640 p95 18.5149 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  FAIL blk_aligned_mt_c2 SB=8 MT=16: OPENMP DISPLAY ENVIRONMENT BEGIN
+   _OPENMP='201611'
+  [host] OMP_AFFINITY_FORMAT='OMP: pid %P tid %i thread %n bound to
+  FAIL blk_aligned_mt_c2 SB=8 MT=32: OPENMP DISPLAY ENVIRONMENT BEGIN
+   _OPENMP='201611'
+  [host] OMP_AFFINITY_FORMAT='OMP: pid %P tid %i thread %n bound to
+  blk_aligned_mt_c2 N=16384 TB=64 SB=16 MT=4 thr=288 numa=0 nodes=36
+blk_aligned_mt_c2 N=16384 TB=64 SB=16 MT=4 thr=288 | med 8.7211 ms (246.2 GB/s) p5 8.6329 p95 10.1058 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_mt_c2 N=16384 TB=64 SB=16 MT=8 thr=288 numa=0 nodes=36
+blk_aligned_mt_c2 N=16384 TB=64 SB=16 MT=8 thr=288 | med 11.8170 ms (181.7 GB/s) p5 11.7819 p95 13.8521 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_mt_c2 N=16384 TB=64 SB=16 MT=16 thr=288 numa=0 nodes=36
+blk_aligned_mt_c2 N=16384 TB=64 SB=16 MT=16 thr=288 | med 12.2540 ms (175.2 GB/s) p5 12.2159 p95 13.8190 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  FAIL blk_aligned_mt_c2 SB=16 MT=32: OPENMP DISPLAY ENVIRONMENT BEGIN
+   _OPENMP='201611'
+  [host] OMP_AFFINITY_FORMAT='OMP: pid %P tid %i thread %n bound to
+  blk_aligned_mt_c2 N=16384 TB=64 SB=32 MT=4 thr=288 numa=0 nodes=36
+blk_aligned_mt_c2 N=16384 TB=64 SB=32 MT=4 thr=288 | med 8.8341 ms (243.1 GB/s) p5 8.7919 p95 10.0038 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_mt_c2 N=16384 TB=64 SB=32 MT=8 thr=288 numa=0 nodes=36
+blk_aligned_mt_c2 N=16384 TB=64 SB=32 MT=8 thr=288 | med 7.6251 ms (281.6 GB/s) p5 7.5290 p95 8.6689 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_mt_c2 N=16384 TB=64 SB=32 MT=16 thr=288 numa=0 nodes=36
+blk_aligned_mt_c2 N=16384 TB=64 SB=32 MT=16 thr=288 | med 9.3951 ms (228.6 GB/s) p5 9.3241 p95 11.2631 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_mt_c2 N=16384 TB=64 SB=32 MT=32 thr=288 numa=0 nodes=36
+blk_aligned_mt_c2 N=16384 TB=64 SB=32 MT=32 thr=288 | med 9.4531 ms (227.2 GB/s) p5 9.4090 p95 10.4380 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_mt_c2 N=16384 TB=64 SB=64 MT=4 thr=288 numa=0 nodes=36
+blk_aligned_mt_c2 N=16384 TB=64 SB=64 MT=4 thr=288 | med 10.1779 ms (211.0 GB/s) p5 10.1280 p95 11.2331 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_mt_c2 N=16384 TB=64 SB=64 MT=8 thr=288 numa=0 nodes=36
+blk_aligned_mt_c2 N=16384 TB=64 SB=64 MT=8 thr=288 | med 9.2649 ms (231.8 GB/s) p5 9.1980 p95 10.2191 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_mt_c2 N=16384 TB=64 SB=64 MT=16 thr=288 numa=0 nodes=36
+blk_aligned_mt_c2 N=16384 TB=64 SB=64 MT=16 thr=288 | med 9.3622 ms (229.4 GB/s) p5 9.2931 p95 10.3762 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_mt_c2 N=16384 TB=64 SB=64 MT=32 thr=288 numa=0 nodes=36
+blk_aligned_mt_c2 N=16384 TB=64 SB=64 MT=32 thr=288 | med 7.0140 ms (306.2 GB/s) p5 6.9590 p95 8.3461 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_mt_c2 N=16384 TB=64 SB=128 MT=4 thr=288 numa=0 nodes=36
+blk_aligned_mt_c2 N=16384 TB=64 SB=128 MT=4 thr=288 | med 11.2140 ms (191.5 GB/s) p5 11.1251 p95 11.7691 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_mt_c2 N=16384 TB=64 SB=128 MT=8 thr=288 numa=0 nodes=36
+blk_aligned_mt_c2 N=16384 TB=64 SB=128 MT=8 thr=288 | med 7.0901 ms (302.9 GB/s) p5 7.0510 p95 8.0462 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_mt_c2 N=16384 TB=64 SB=128 MT=16 thr=288 numa=0 nodes=36
+blk_aligned_mt_c2 N=16384 TB=64 SB=128 MT=16 thr=288 | med 9.2032 ms (233.3 GB/s) p5 9.1209 p95 10.9589 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_mt_c2 N=16384 TB=64 SB=128 MT=32 thr=288 numa=0 nodes=36
+blk_aligned_mt_c2 N=16384 TB=64 SB=128 MT=32 thr=288 | med 9.3069 ms (230.7 GB/s) p5 9.2781 p95 11.1799 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_mt_c2 N=16384 TB=64 SB=256 MT=4 thr=288 numa=0 nodes=36
+blk_aligned_mt_c2 N=16384 TB=64 SB=256 MT=4 thr=288 | med 9.2320 ms (232.6 GB/s) p5 9.1681 p95 10.7491 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_mt_c2 N=16384 TB=64 SB=256 MT=8 thr=288 numa=0 nodes=36
+blk_aligned_mt_c2 N=16384 TB=64 SB=256 MT=8 thr=288 | med 9.3760 ms (229.0 GB/s) p5 9.3210 p95 11.0459 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_mt_c2 N=16384 TB=64 SB=256 MT=16 thr=288 numa=0 nodes=36
+blk_aligned_mt_c2 N=16384 TB=64 SB=256 MT=16 thr=288 | med 9.0830 ms (236.4 GB/s) p5 9.0132 p95 10.3130 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_mt_c2 N=16384 TB=64 SB=256 MT=32 thr=288 numa=0 nodes=36
+blk_aligned_mt_c2 N=16384 TB=64 SB=256 MT=32 thr=288 | med 9.3129 ms (230.6 GB/s) p5 9.2759 p95 11.2379 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_mt_c2 N=16384 TB=64 SB=512 MT=4 thr=288 numa=0 nodes=36
+blk_aligned_mt_c2 N=16384 TB=64 SB=512 MT=4 thr=288 | med 11.7319 ms (183.0 GB/s) p5 11.6901 p95 12.8489 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_mt_c2 N=16384 TB=64 SB=512 MT=8 thr=288 numa=0 nodes=36
+blk_aligned_mt_c2 N=16384 TB=64 SB=512 MT=8 thr=288 | med 13.8710 ms (154.8 GB/s) p5 13.7260 p95 15.3241 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_mt_c2 N=16384 TB=64 SB=512 MT=16 thr=288 numa=0 nodes=36
+blk_aligned_mt_c2 N=16384 TB=64 SB=512 MT=16 thr=288 | med 13.1361 ms (163.5 GB/s) p5 13.0401 p95 16.2890 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_mt_c2 N=16384 TB=64 SB=512 MT=32 thr=288 numa=0 nodes=36
+blk_aligned_mt_c2 N=16384 TB=64 SB=512 MT=32 thr=288 | med 8.1539 ms (263.4 GB/s) p5 8.0290 p95 9.0151 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf N=16384 TB=16 SB=32 MT=8 thr=288 numa=0 nodes=36
+locbuf N=16384 TB=16 SB=32 MT=8 thr=288 | med 9.5150 ms (225.7 GB/s) p5 8.9791 p95 10.9060 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf N=16384 TB=32 SB=32 MT=8 thr=288 numa=0 nodes=36
+locbuf N=16384 TB=32 SB=32 MT=8 thr=288 | med 8.8930 ms (241.5 GB/s) p5 8.7380 p95 9.9771 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf N=16384 TB=64 SB=32 MT=8 thr=288 numa=0 nodes=36
+locbuf N=16384 TB=64 SB=32 MT=8 thr=288 | med 9.2001 ms (233.4 GB/s) p5 9.0492 p95 9.4700 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf N=16384 TB=128 SB=32 MT=8 thr=288 numa=0 nodes=36
+locbuf N=16384 TB=128 SB=32 MT=8 thr=288 | med 9.0799 ms (236.5 GB/s) p5 8.8630 p95 10.3109 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_c2 N=16384 TB=16 SB=32 MT=8 thr=288 numa=0 nodes=36
+locbuf_c2 N=16384 TB=16 SB=32 MT=8 thr=288 | med 7.1831 ms (299.0 GB/s) p5 7.0710 p95 9.3799 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_c2 N=16384 TB=32 SB=32 MT=8 thr=288 numa=0 nodes=36
+locbuf_c2 N=16384 TB=32 SB=32 MT=8 thr=288 | med 7.4871 ms (286.8 GB/s) p5 7.4129 p95 9.3169 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_c2 N=16384 TB=64 SB=32 MT=8 thr=288 numa=0 nodes=36
+locbuf_c2 N=16384 TB=64 SB=32 MT=8 thr=288 | med 9.3019 ms (230.9 GB/s) p5 9.2158 p95 11.1861 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_c2 N=16384 TB=128 SB=32 MT=8 thr=288 numa=0 nodes=36
+locbuf_c2 N=16384 TB=128 SB=32 MT=8 thr=288 | med 8.1229 ms (264.4 GB/s) p5 7.9401 p95 9.2959 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_2buf N=16384 TB=16 SB=32 MT=8 thr=288 numa=0 nodes=36
+locbuf_2buf N=16384 TB=16 SB=32 MT=8 thr=288 | med 8.4791 ms (253.3 GB/s) p5 8.2710 p95 10.4089 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_2buf N=16384 TB=32 SB=32 MT=8 thr=288 numa=0 nodes=36
+locbuf_2buf N=16384 TB=32 SB=32 MT=8 thr=288 | med 9.2790 ms (231.4 GB/s) p5 9.0511 p95 9.9690 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_2buf N=16384 TB=64 SB=32 MT=8 thr=288 numa=0 nodes=36
+locbuf_2buf N=16384 TB=64 SB=32 MT=8 thr=288 | med 9.6409 ms (222.7 GB/s) p5 9.5301 p95 9.8200 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_2buf N=16384 TB=128 SB=32 MT=8 thr=288 numa=0 nodes=36
+locbuf_2buf N=16384 TB=128 SB=32 MT=8 thr=288 | med 10.7729 ms (199.3 GB/s) p5 10.6301 p95 11.4999 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_2buf_c2 N=16384 TB=16 SB=32 MT=8 thr=288 numa=0 nodes=36
+locbuf_2buf_c2 N=16384 TB=16 SB=32 MT=8 thr=288 | med 9.8779 ms (217.4 GB/s) p5 9.7599 p95 12.0869 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_2buf_c2 N=16384 TB=32 SB=32 MT=8 thr=288 numa=0 nodes=36
+locbuf_2buf_c2 N=16384 TB=32 SB=32 MT=8 thr=288 | med 8.0719 ms (266.0 GB/s) p5 7.9799 p95 8.8248 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_2buf_c2 N=16384 TB=64 SB=32 MT=8 thr=288 numa=0 nodes=36
+locbuf_2buf_c2 N=16384 TB=64 SB=32 MT=8 thr=288 | med 8.5859 ms (250.1 GB/s) p5 8.4591 p95 9.6540 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_2buf_c2 N=16384 TB=128 SB=32 MT=8 thr=288 numa=0 nodes=36
+locbuf_2buf_c2 N=16384 TB=128 SB=32 MT=8 thr=288 | med 9.7609 ms (220.0 GB/s) p5 9.6540 p95 11.6441 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk N=16384 TB=64 SB=8 MT=8 thr=288 numa=0 nodes=36
+locbuf_blk N=16384 TB=64 SB=8 MT=8 thr=288 | med 8.8589 ms (242.4 GB/s) p5 8.6188 p95 9.9392 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk N=16384 TB=64 SB=16 MT=8 thr=288 numa=0 nodes=36
+locbuf_blk N=16384 TB=64 SB=16 MT=8 thr=288 | med 5.6310 ms (381.4 GB/s) p5 5.4600 p95 6.1171 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk N=16384 TB=64 SB=32 MT=8 thr=288 numa=0 nodes=36
+locbuf_blk N=16384 TB=64 SB=32 MT=8 thr=288 | med 7.6160 ms (282.0 GB/s) p5 7.3891 p95 9.9781 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk N=16384 TB=64 SB=64 MT=8 thr=288 numa=0 nodes=36
+locbuf_blk N=16384 TB=64 SB=64 MT=8 thr=288 | med 8.7500 ms (245.4 GB/s) p5 8.4109 p95 9.4650 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk N=16384 TB=64 SB=128 MT=8 thr=288 numa=0 nodes=36
+locbuf_blk N=16384 TB=64 SB=128 MT=8 thr=288 | med 8.8189 ms (243.5 GB/s) p5 8.6069 p95 10.3562 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk N=16384 TB=64 SB=256 MT=8 thr=288 numa=0 nodes=36
+locbuf_blk N=16384 TB=64 SB=256 MT=8 thr=288 | med 13.7501 ms (156.2 GB/s) p5 13.0970 p95 16.0310 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk N=16384 TB=64 SB=512 MT=8 thr=288 numa=0 nodes=36
+locbuf_blk N=16384 TB=64 SB=512 MT=8 thr=288 | med 11.5480 ms (186.0 GB/s) p5 11.4691 p95 11.7500 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_c2 N=16384 TB=64 SB=8 MT=8 thr=288 numa=0 nodes=36
+locbuf_blk_c2 N=16384 TB=64 SB=8 MT=8 thr=288 | med 8.0769 ms (265.9 GB/s) p5 7.7860 p95 9.7098 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_c2 N=16384 TB=64 SB=16 MT=8 thr=288 numa=0 nodes=36
+locbuf_blk_c2 N=16384 TB=64 SB=16 MT=8 thr=288 | med 7.8580 ms (273.3 GB/s) p5 7.6029 p95 9.9609 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_c2 N=16384 TB=64 SB=32 MT=8 thr=288 numa=0 nodes=36
+locbuf_blk_c2 N=16384 TB=64 SB=32 MT=8 thr=288 | med 6.6688 ms (322.0 GB/s) p5 6.3472 p95 7.9119 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_c2 N=16384 TB=64 SB=64 MT=8 thr=288 numa=0 nodes=36
+locbuf_blk_c2 N=16384 TB=64 SB=64 MT=8 thr=288 | med 8.1651 ms (263.0 GB/s) p5 8.0302 p95 9.8379 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_c2 N=16384 TB=64 SB=128 MT=8 thr=288 numa=0 nodes=36
+locbuf_blk_c2 N=16384 TB=64 SB=128 MT=8 thr=288 | med 8.1339 ms (264.0 GB/s) p5 8.0011 p95 9.4240 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_c2 N=16384 TB=64 SB=256 MT=8 thr=288 numa=0 nodes=36
+locbuf_blk_c2 N=16384 TB=64 SB=256 MT=8 thr=288 | med 7.8690 ms (272.9 GB/s) p5 7.4680 p95 9.5739 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_c2 N=16384 TB=64 SB=512 MT=8 thr=288 numa=0 nodes=36
+locbuf_blk_c2 N=16384 TB=64 SB=512 MT=8 thr=288 | med 7.5181 ms (285.6 GB/s) p5 7.0682 p95 9.5940 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_mt N=16384 TB=64 SB=8 MT=4 thr=288 numa=0 nodes=36
+locbuf_blk_mt N=16384 TB=64 SB=8 MT=4 thr=288 | med 8.2090 ms (261.6 GB/s) p5 8.1019 p95 10.2620 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_mt N=16384 TB=64 SB=8 MT=8 thr=288 numa=0 nodes=36
+locbuf_blk_mt N=16384 TB=64 SB=8 MT=8 thr=288 | med 6.9380 ms (309.5 GB/s) p5 6.8660 p95 8.9202 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  FAIL locbuf_blk_mt SB=8 MT=16: OPENMP DISPLAY ENVIRONMENT BEGIN
+   _OPENMP='201611'
+  [host] OMP_AFFINITY_FORMAT='OMP: pid %P tid %i thread %n bound to
+  FAIL locbuf_blk_mt SB=8 MT=32: OPENMP DISPLAY ENVIRONMENT BEGIN
+   _OPENMP='201611'
+  [host] OMP_AFFINITY_FORMAT='OMP: pid %P tid %i thread %n bound to
+  locbuf_blk_mt N=16384 TB=64 SB=16 MT=4 thr=288 numa=0 nodes=36
+locbuf_blk_mt N=16384 TB=64 SB=16 MT=4 thr=288 | med 10.0720 ms (213.2 GB/s) p5 10.0150 p95 11.9882 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_mt N=16384 TB=64 SB=16 MT=8 thr=288 numa=0 nodes=36
+locbuf_blk_mt N=16384 TB=64 SB=16 MT=8 thr=288 | med 13.2031 ms (162.6 GB/s) p5 12.8930 p95 13.8211 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_mt N=16384 TB=64 SB=16 MT=16 thr=288 numa=0 nodes=36
+locbuf_blk_mt N=16384 TB=64 SB=16 MT=16 thr=288 | med 7.5109 ms (285.9 GB/s) p5 7.4241 p95 8.2340 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  FAIL locbuf_blk_mt SB=16 MT=32: OPENMP DISPLAY ENVIRONMENT BEGIN
+   _OPENMP='201611'
+  [host] OMP_AFFINITY_FORMAT='OMP: pid %P tid %i thread %n bound to
+  locbuf_blk_mt N=16384 TB=64 SB=32 MT=4 thr=288 numa=0 nodes=36
+locbuf_blk_mt N=16384 TB=64 SB=32 MT=4 thr=288 | med 9.4609 ms (227.0 GB/s) p5 9.4180 p95 10.4370 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_mt N=16384 TB=64 SB=32 MT=8 thr=288 numa=0 nodes=36
+locbuf_blk_mt N=16384 TB=64 SB=32 MT=8 thr=288 | med 12.0280 ms (178.5 GB/s) p5 11.8690 p95 13.9601 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_mt N=16384 TB=64 SB=32 MT=16 thr=288 numa=0 nodes=36
+locbuf_blk_mt N=16384 TB=64 SB=32 MT=16 thr=288 | med 8.9090 ms (241.0 GB/s) p5 8.5762 p95 9.9649 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_mt N=16384 TB=64 SB=32 MT=32 thr=288 numa=0 nodes=36
+locbuf_blk_mt N=16384 TB=64 SB=32 MT=32 thr=288 | med 8.4121 ms (255.3 GB/s) p5 8.1129 p95 9.3350 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_mt N=16384 TB=64 SB=64 MT=4 thr=288 numa=0 nodes=36
+locbuf_blk_mt N=16384 TB=64 SB=64 MT=4 thr=288 | med 10.4661 ms (205.2 GB/s) p5 10.3979 p95 11.8549 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_mt N=16384 TB=64 SB=64 MT=8 thr=288 numa=0 nodes=36
+locbuf_blk_mt N=16384 TB=64 SB=64 MT=8 thr=288 | med 9.5842 ms (224.1 GB/s) p5 9.4821 p95 12.0261 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_mt N=16384 TB=64 SB=64 MT=16 thr=288 numa=0 nodes=36
+locbuf_blk_mt N=16384 TB=64 SB=64 MT=16 thr=288 | med 10.2370 ms (209.8 GB/s) p5 10.1521 p95 13.0298 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_mt N=16384 TB=64 SB=64 MT=32 thr=288 numa=0 nodes=36
+locbuf_blk_mt N=16384 TB=64 SB=64 MT=32 thr=288 | med 8.7891 ms (244.3 GB/s) p5 8.7008 p95 9.3369 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_mt N=16384 TB=64 SB=128 MT=4 thr=288 numa=0 nodes=36
+locbuf_blk_mt N=16384 TB=64 SB=128 MT=4 thr=288 | med 19.8181 ms (108.4 GB/s) p5 19.7110 p95 20.5941 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_mt N=16384 TB=64 SB=128 MT=8 thr=288 numa=0 nodes=36
+locbuf_blk_mt N=16384 TB=64 SB=128 MT=8 thr=288 | med 12.5170 ms (171.6 GB/s) p5 12.3839 p95 16.2420 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_mt N=16384 TB=64 SB=128 MT=16 thr=288 numa=0 nodes=36
+locbuf_blk_mt N=16384 TB=64 SB=128 MT=16 thr=288 | med 16.4080 ms (130.9 GB/s) p5 16.0201 p95 18.9290 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_mt N=16384 TB=64 SB=128 MT=32 thr=288 numa=0 nodes=36
+locbuf_blk_mt N=16384 TB=64 SB=128 MT=32 thr=288 | med 10.5011 ms (204.5 GB/s) p5 10.3738 p95 10.7281 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_mt N=16384 TB=64 SB=256 MT=4 thr=288 numa=0 nodes=36
+locbuf_blk_mt N=16384 TB=64 SB=256 MT=4 thr=288 | med 71.6522 ms (30.0 GB/s) p5 67.0609 p95 73.1699 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_mt N=16384 TB=64 SB=256 MT=8 thr=288 numa=0 nodes=36
+locbuf_blk_mt N=16384 TB=64 SB=256 MT=8 thr=288 | med 10.8850 ms (197.3 GB/s) p5 10.7539 p95 13.9129 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_mt N=16384 TB=64 SB=256 MT=16 thr=288 numa=0 nodes=36
+locbuf_blk_mt N=16384 TB=64 SB=256 MT=16 thr=288 | med 16.6960 ms (128.6 GB/s) p5 16.3829 p95 17.5910 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_mt N=16384 TB=64 SB=256 MT=32 thr=288 numa=0 nodes=36
+locbuf_blk_mt N=16384 TB=64 SB=256 MT=32 thr=288 | med 10.8941 ms (197.1 GB/s) p5 10.2761 p95 12.5721 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_mt N=16384 TB=64 SB=512 MT=4 thr=288 numa=0 nodes=36
+locbuf_blk_mt N=16384 TB=64 SB=512 MT=4 thr=288 | med 297.5640 ms (7.2 GB/s) p5 297.0219 p95 299.7301 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_mt N=16384 TB=64 SB=512 MT=8 thr=288 numa=0 nodes=36
+locbuf_blk_mt N=16384 TB=64 SB=512 MT=8 thr=288 | med 14.2002 ms (151.2 GB/s) p5 14.0860 p95 14.6570 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_mt N=16384 TB=64 SB=512 MT=16 thr=288 numa=0 nodes=36
+locbuf_blk_mt N=16384 TB=64 SB=512 MT=16 thr=288 | med 16.3772 ms (131.1 GB/s) p5 15.7971 p95 17.0240 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_mt N=16384 TB=64 SB=512 MT=32 thr=288 numa=0 nodes=36
+locbuf_blk_mt N=16384 TB=64 SB=512 MT=32 thr=288 | med 14.3712 ms (149.4 GB/s) p5 14.1060 p95 15.0230 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_mt_c2 N=16384 TB=64 SB=8 MT=4 thr=288 numa=0 nodes=36
+locbuf_blk_mt_c2 N=16384 TB=64 SB=8 MT=4 thr=288 | med 6.8989 ms (311.3 GB/s) p5 6.8619 p95 8.3001 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_mt_c2 N=16384 TB=64 SB=8 MT=8 thr=288 numa=0 nodes=36
+locbuf_blk_mt_c2 N=16384 TB=64 SB=8 MT=8 thr=288 | med 8.1279 ms (264.2 GB/s) p5 7.9131 p95 9.4829 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  FAIL locbuf_blk_mt_c2 SB=8 MT=16: OPENMP DISPLAY ENVIRONMENT BEGIN
+   _OPENMP='201611'
+  [host] OMP_AFFINITY_FORMAT='OMP: pid %P tid %i thread %n bound to
+  FAIL locbuf_blk_mt_c2 SB=8 MT=32: OPENMP DISPLAY ENVIRONMENT BEGIN
+   _OPENMP='201611'
+  [host] OMP_AFFINITY_FORMAT='OMP: pid %P tid %i thread %n bound to
+  locbuf_blk_mt_c2 N=16384 TB=64 SB=16 MT=4 thr=288 numa=0 nodes=36
+locbuf_blk_mt_c2 N=16384 TB=64 SB=16 MT=4 thr=288 | med 11.5509 ms (185.9 GB/s) p5 11.4939 p95 12.6960 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_mt_c2 N=16384 TB=64 SB=16 MT=8 thr=288 numa=0 nodes=36
+locbuf_blk_mt_c2 N=16384 TB=64 SB=16 MT=8 thr=288 | med 12.4719 ms (172.2 GB/s) p5 12.2809 p95 14.4210 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_mt_c2 N=16384 TB=64 SB=16 MT=16 thr=288 numa=0 nodes=36
+locbuf_blk_mt_c2 N=16384 TB=64 SB=16 MT=16 thr=288 | med 6.3550 ms (337.9 GB/s) p5 6.2840 p95 8.1401 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  FAIL locbuf_blk_mt_c2 SB=16 MT=32: OPENMP DISPLAY ENVIRONMENT BEGIN
+   _OPENMP='201611'
+  [host] OMP_AFFINITY_FORMAT='OMP: pid %P tid %i thread %n bound to
+  locbuf_blk_mt_c2 N=16384 TB=64 SB=32 MT=4 thr=288 numa=0 nodes=36
+locbuf_blk_mt_c2 N=16384 TB=64 SB=32 MT=4 thr=288 | med 8.9741 ms (239.3 GB/s) p5 8.9071 p95 11.3580 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_mt_c2 N=16384 TB=64 SB=32 MT=8 thr=288 numa=0 nodes=36
+locbuf_blk_mt_c2 N=16384 TB=64 SB=32 MT=8 thr=288 | med 9.0709 ms (236.7 GB/s) p5 9.0239 p95 10.7000 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_mt_c2 N=16384 TB=64 SB=32 MT=16 thr=288 numa=0 nodes=36
+locbuf_blk_mt_c2 N=16384 TB=64 SB=32 MT=16 thr=288 | med 8.4870 ms (253.0 GB/s) p5 8.3389 p95 9.6009 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_mt_c2 N=16384 TB=64 SB=32 MT=32 thr=288 numa=0 nodes=36
+locbuf_blk_mt_c2 N=16384 TB=64 SB=32 MT=32 thr=288 | med 8.5909 ms (250.0 GB/s) p5 8.3790 p95 10.0191 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_mt_c2 N=16384 TB=64 SB=64 MT=4 thr=288 numa=0 nodes=36
+locbuf_blk_mt_c2 N=16384 TB=64 SB=64 MT=4 thr=288 | med 10.0138 ms (214.5 GB/s) p5 9.8960 p95 11.9641 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_mt_c2 N=16384 TB=64 SB=64 MT=8 thr=288 numa=0 nodes=36
+locbuf_blk_mt_c2 N=16384 TB=64 SB=64 MT=8 thr=288 | med 9.4912 ms (226.3 GB/s) p5 9.4481 p95 10.9560 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_mt_c2 N=16384 TB=64 SB=64 MT=16 thr=288 numa=0 nodes=36
+locbuf_blk_mt_c2 N=16384 TB=64 SB=64 MT=16 thr=288 | med 8.0051 ms (268.3 GB/s) p5 7.9031 p95 9.3791 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_mt_c2 N=16384 TB=64 SB=64 MT=32 thr=288 numa=0 nodes=36
+locbuf_blk_mt_c2 N=16384 TB=64 SB=64 MT=32 thr=288 | med 7.9350 ms (270.6 GB/s) p5 7.7009 p95 8.6188 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_mt_c2 N=16384 TB=64 SB=128 MT=4 thr=288 numa=0 nodes=36
+locbuf_blk_mt_c2 N=16384 TB=64 SB=128 MT=4 thr=288 | med 13.5250 ms (158.8 GB/s) p5 13.3879 p95 13.7870 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_mt_c2 N=16384 TB=64 SB=128 MT=8 thr=288 numa=0 nodes=36
+locbuf_blk_mt_c2 N=16384 TB=64 SB=128 MT=8 thr=288 | med 8.6482 ms (248.3 GB/s) p5 8.5039 p95 9.7611 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_mt_c2 N=16384 TB=64 SB=128 MT=16 thr=288 numa=0 nodes=36
+locbuf_blk_mt_c2 N=16384 TB=64 SB=128 MT=16 thr=288 | med 8.8241 ms (243.4 GB/s) p5 8.6510 p95 9.2840 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_mt_c2 N=16384 TB=64 SB=128 MT=32 thr=288 numa=0 nodes=36
+locbuf_blk_mt_c2 N=16384 TB=64 SB=128 MT=32 thr=288 | med 8.5399 ms (251.5 GB/s) p5 8.3339 p95 10.7498 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_mt_c2 N=16384 TB=64 SB=256 MT=4 thr=288 numa=0 nodes=36
+locbuf_blk_mt_c2 N=16384 TB=64 SB=256 MT=4 thr=288 | med 20.5140 ms (104.7 GB/s) p5 19.7349 p95 23.8431 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_mt_c2 N=16384 TB=64 SB=256 MT=8 thr=288 numa=0 nodes=36
+locbuf_blk_mt_c2 N=16384 TB=64 SB=256 MT=8 thr=288 | med 10.0648 ms (213.4 GB/s) p5 10.0241 p95 11.7040 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_mt_c2 N=16384 TB=64 SB=256 MT=16 thr=288 numa=0 nodes=36
+locbuf_blk_mt_c2 N=16384 TB=64 SB=256 MT=16 thr=288 | med 8.9021 ms (241.2 GB/s) p5 8.7519 p95 10.0780 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_mt_c2 N=16384 TB=64 SB=256 MT=32 thr=288 numa=0 nodes=36
+locbuf_blk_mt_c2 N=16384 TB=64 SB=256 MT=32 thr=288 | med 8.0070 ms (268.2 GB/s) p5 7.7829 p95 9.5360 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_mt_c2 N=16384 TB=64 SB=512 MT=4 thr=288 numa=0 nodes=36
+locbuf_blk_mt_c2 N=16384 TB=64 SB=512 MT=4 thr=288 | med 41.6219 ms (51.6 GB/s) p5 39.5291 p95 43.6521 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_mt_c2 N=16384 TB=64 SB=512 MT=8 thr=288 numa=0 nodes=36
+locbuf_blk_mt_c2 N=16384 TB=64 SB=512 MT=8 thr=288 | med 9.5351 ms (225.2 GB/s) p5 9.4829 p95 10.5979 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_mt_c2 N=16384 TB=64 SB=512 MT=16 thr=288 numa=0 nodes=36
+locbuf_blk_mt_c2 N=16384 TB=64 SB=512 MT=16 thr=288 | med 8.6739 ms (247.6 GB/s) p5 8.2791 p95 9.8479 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_mt_c2 N=16384 TB=64 SB=512 MT=32 thr=288 numa=0 nodes=36
+locbuf_blk_mt_c2 N=16384 TB=64 SB=512 MT=32 thr=288 | med 6.0129 ms (357.1 GB/s) p5 5.8150 p95 7.4761 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk N=16384 TB=64 SB=8 MT=8 thr=288 numa=0 nodes=36
+rm_blk N=16384 TB=64 SB=8 MT=8 thr=288 | med 16.2141 ms (132.4 GB/s) p5 15.9111 p95 17.9291 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk N=16384 TB=64 SB=16 MT=8 thr=288 numa=0 nodes=36
+rm_blk N=16384 TB=64 SB=16 MT=8 thr=288 | med 12.2159 ms (175.8 GB/s) p5 12.1169 p95 14.4980 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk N=16384 TB=64 SB=32 MT=8 thr=288 numa=0 nodes=36
+rm_blk N=16384 TB=64 SB=32 MT=8 thr=288 | med 11.7512 ms (182.7 GB/s) p5 11.6620 p95 11.8670 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk N=16384 TB=64 SB=64 MT=8 thr=288 numa=0 nodes=36
+rm_blk N=16384 TB=64 SB=64 MT=8 thr=288 | med 11.6398 ms (184.5 GB/s) p5 11.4930 p95 14.1261 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk N=16384 TB=64 SB=128 MT=8 thr=288 numa=0 nodes=36
+rm_blk N=16384 TB=64 SB=128 MT=8 thr=288 | med 18.0368 ms (119.1 GB/s) p5 17.4978 p95 20.4740 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk N=16384 TB=64 SB=256 MT=8 thr=288 numa=0 nodes=36
+rm_blk N=16384 TB=64 SB=256 MT=8 thr=288 | med 25.8451 ms (83.1 GB/s) p5 25.7440 p95 27.5519 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk N=16384 TB=64 SB=512 MT=8 thr=288 numa=0 nodes=36
+rm_blk N=16384 TB=64 SB=512 MT=8 thr=288 | med 26.9780 ms (79.6 GB/s) p5 26.5291 p95 28.6441 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_c2 N=16384 TB=64 SB=8 MT=8 thr=288 numa=0 nodes=36
+rm_blk_c2 N=16384 TB=64 SB=8 MT=8 thr=288 | med 12.6281 ms (170.1 GB/s) p5 11.8580 p95 14.8730 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_c2 N=16384 TB=64 SB=16 MT=8 thr=288 numa=0 nodes=36
+rm_blk_c2 N=16384 TB=64 SB=16 MT=8 thr=288 | med 9.6900 ms (221.6 GB/s) p5 9.6102 p95 12.1369 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_c2 N=16384 TB=64 SB=32 MT=8 thr=288 numa=0 nodes=36
+rm_blk_c2 N=16384 TB=64 SB=32 MT=8 thr=288 | med 8.1818 ms (262.5 GB/s) p5 8.0380 p95 9.9730 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_c2 N=16384 TB=64 SB=64 MT=8 thr=288 numa=0 nodes=36
+rm_blk_c2 N=16384 TB=64 SB=64 MT=8 thr=288 | med 7.4720 ms (287.4 GB/s) p5 7.4079 p95 9.3141 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_c2 N=16384 TB=64 SB=128 MT=8 thr=288 numa=0 nodes=36
+rm_blk_c2 N=16384 TB=64 SB=128 MT=8 thr=288 | med 10.0131 ms (214.5 GB/s) p5 9.9030 p95 11.1339 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_c2 N=16384 TB=64 SB=256 MT=8 thr=288 numa=0 nodes=36
+rm_blk_c2 N=16384 TB=64 SB=256 MT=8 thr=288 | med 12.9330 ms (166.0 GB/s) p5 12.7661 p95 13.9308 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_c2 N=16384 TB=64 SB=512 MT=8 thr=288 numa=0 nodes=36
+rm_blk_c2 N=16384 TB=64 SB=512 MT=8 thr=288 | med 16.1500 ms (133.0 GB/s) p5 15.8191 p95 17.5469 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_mt N=16384 TB=64 SB=8 MT=4 thr=288 numa=0 nodes=36
+rm_blk_mt N=16384 TB=64 SB=8 MT=4 thr=288 | med 13.5009 ms (159.1 GB/s) p5 13.3998 p95 15.1250 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_mt N=16384 TB=64 SB=8 MT=8 thr=288 numa=0 nodes=36
+rm_blk_mt N=16384 TB=64 SB=8 MT=8 thr=288 | med 14.3580 ms (149.6 GB/s) p5 14.2519 p95 15.7750 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  FAIL rm_blk_mt SB=8 MT=16: OPENMP DISPLAY ENVIRONMENT BEGIN
+   _OPENMP='201611'
+  [host] OMP_AFFINITY_FORMAT='OMP: pid %P tid %i thread %n bound to
+  FAIL rm_blk_mt SB=8 MT=32: OPENMP DISPLAY ENVIRONMENT BEGIN
+   _OPENMP='201611'
+  [host] OMP_AFFINITY_FORMAT='OMP: pid %P tid %i thread %n bound to
+  rm_blk_mt N=16384 TB=64 SB=16 MT=4 thr=288 numa=0 nodes=36
+rm_blk_mt N=16384 TB=64 SB=16 MT=4 thr=288 | med 8.3411 ms (257.5 GB/s) p5 8.2068 p95 10.3042 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_mt N=16384 TB=64 SB=16 MT=8 thr=288 numa=0 nodes=36
+rm_blk_mt N=16384 TB=64 SB=16 MT=8 thr=288 | med 11.0750 ms (193.9 GB/s) p5 11.0152 p95 11.3950 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_mt N=16384 TB=64 SB=16 MT=16 thr=288 numa=0 nodes=36
+rm_blk_mt N=16384 TB=64 SB=16 MT=16 thr=288 | med 9.2311 ms (232.6 GB/s) p5 9.0380 p95 11.3120 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  FAIL rm_blk_mt SB=16 MT=32: OPENMP DISPLAY ENVIRONMENT BEGIN
+   _OPENMP='201611'
+  [host] OMP_AFFINITY_FORMAT='OMP: pid %P tid %i thread %n bound to
+  rm_blk_mt N=16384 TB=64 SB=32 MT=4 thr=288 numa=0 nodes=36
+rm_blk_mt N=16384 TB=64 SB=32 MT=4 thr=288 | med 14.5190 ms (147.9 GB/s) p5 14.3249 p95 14.6842 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_mt N=16384 TB=64 SB=32 MT=8 thr=288 numa=0 nodes=36
+rm_blk_mt N=16384 TB=64 SB=32 MT=8 thr=288 | med 13.3691 ms (160.6 GB/s) p5 13.2840 p95 15.1021 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_mt N=16384 TB=64 SB=32 MT=16 thr=288 numa=0 nodes=36
+rm_blk_mt N=16384 TB=64 SB=32 MT=16 thr=288 | med 14.1299 ms (152.0 GB/s) p5 14.0049 p95 14.3800 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_mt N=16384 TB=64 SB=32 MT=32 thr=288 numa=0 nodes=36
+rm_blk_mt N=16384 TB=64 SB=32 MT=32 thr=288 | med 12.4240 ms (172.8 GB/s) p5 12.2259 p95 14.7660 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_mt N=16384 TB=64 SB=64 MT=4 thr=288 numa=0 nodes=36
+rm_blk_mt N=16384 TB=64 SB=64 MT=4 thr=288 | med 8.7481 ms (245.5 GB/s) p5 8.5430 p95 11.7559 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_mt N=16384 TB=64 SB=64 MT=8 thr=288 numa=0 nodes=36
+rm_blk_mt N=16384 TB=64 SB=64 MT=8 thr=288 | med 12.8181 ms (167.5 GB/s) p5 12.6650 p95 13.2921 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_mt N=16384 TB=64 SB=64 MT=16 thr=288 numa=0 nodes=36
+rm_blk_mt N=16384 TB=64 SB=64 MT=16 thr=288 | med 12.0740 ms (177.9 GB/s) p5 11.9421 p95 13.2680 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_mt N=16384 TB=64 SB=64 MT=32 thr=288 numa=0 nodes=36
+rm_blk_mt N=16384 TB=64 SB=64 MT=32 thr=288 | med 12.1169 ms (177.2 GB/s) p5 11.9619 p95 14.1420 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_mt N=16384 TB=64 SB=128 MT=4 thr=288 numa=0 nodes=36
+rm_blk_mt N=16384 TB=64 SB=128 MT=4 thr=288 | med 14.6949 ms (146.1 GB/s) p5 14.5569 p95 16.9511 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_mt N=16384 TB=64 SB=128 MT=8 thr=288 numa=0 nodes=36
+rm_blk_mt N=16384 TB=64 SB=128 MT=8 thr=288 | med 14.0190 ms (153.2 GB/s) p5 13.9191 p95 14.1521 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_mt N=16384 TB=64 SB=128 MT=16 thr=288 numa=0 nodes=36
+rm_blk_mt N=16384 TB=64 SB=128 MT=16 thr=288 | med 13.9048 ms (154.4 GB/s) p5 13.8140 p95 14.1490 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_mt N=16384 TB=64 SB=128 MT=32 thr=288 numa=0 nodes=36
+rm_blk_mt N=16384 TB=64 SB=128 MT=32 thr=288 | med 14.3490 ms (149.7 GB/s) p5 14.1671 p95 14.7710 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_mt N=16384 TB=64 SB=256 MT=4 thr=288 numa=0 nodes=36
+rm_blk_mt N=16384 TB=64 SB=256 MT=4 thr=288 | med 25.1720 ms (85.3 GB/s) p5 24.1470 p95 30.5350 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_mt N=16384 TB=64 SB=256 MT=8 thr=288 numa=0 nodes=36
+rm_blk_mt N=16384 TB=64 SB=256 MT=8 thr=288 | med 26.5779 ms (80.8 GB/s) p5 25.1689 p95 37.0131 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_mt N=16384 TB=64 SB=256 MT=16 thr=288 numa=0 nodes=36
+rm_blk_mt N=16384 TB=64 SB=256 MT=16 thr=288 | med 24.4720 ms (87.8 GB/s) p5 23.7229 p95 27.4019 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_mt N=16384 TB=64 SB=256 MT=32 thr=288 numa=0 nodes=36
+rm_blk_mt N=16384 TB=64 SB=256 MT=32 thr=288 | med 19.1770 ms (112.0 GB/s) p5 18.6729 p95 23.1149 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_mt N=16384 TB=64 SB=512 MT=4 thr=288 numa=0 nodes=36
+rm_blk_mt N=16384 TB=64 SB=512 MT=4 thr=288 | med 22.9561 ms (93.5 GB/s) p5 22.1200 p95 23.6909 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_mt N=16384 TB=64 SB=512 MT=8 thr=288 numa=0 nodes=36
+rm_blk_mt N=16384 TB=64 SB=512 MT=8 thr=288 | med 23.3140 ms (92.1 GB/s) p5 23.0360 p95 23.9551 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_mt N=16384 TB=64 SB=512 MT=16 thr=288 numa=0 nodes=36
+rm_blk_mt N=16384 TB=64 SB=512 MT=16 thr=288 | med 22.6209 ms (94.9 GB/s) p5 22.5079 p95 24.1492 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_mt N=16384 TB=64 SB=512 MT=32 thr=288 numa=0 nodes=36
+rm_blk_mt N=16384 TB=64 SB=512 MT=32 thr=288 | med 29.5300 ms (72.7 GB/s) p5 29.3331 p95 30.0119 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_mt_c2 N=16384 TB=64 SB=8 MT=4 thr=288 numa=0 nodes=36
+rm_blk_mt_c2 N=16384 TB=64 SB=8 MT=4 thr=288 | med 12.9709 ms (165.6 GB/s) p5 12.8539 p95 14.0359 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_mt_c2 N=16384 TB=64 SB=8 MT=8 thr=288 numa=0 nodes=36
+rm_blk_mt_c2 N=16384 TB=64 SB=8 MT=8 thr=288 | med 14.2090 ms (151.1 GB/s) p5 14.1082 p95 15.5859 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  FAIL rm_blk_mt_c2 SB=8 MT=16: OPENMP DISPLAY ENVIRONMENT BEGIN
+   _OPENMP='201611'
+  [host] OMP_AFFINITY_FORMAT='OMP: pid %P tid %i thread %n bound to
+  FAIL rm_blk_mt_c2 SB=8 MT=32: OPENMP DISPLAY ENVIRONMENT BEGIN
+   _OPENMP='201611'
+  [host] OMP_AFFINITY_FORMAT='OMP: pid %P tid %i thread %n bound to
+  rm_blk_mt_c2 N=16384 TB=64 SB=16 MT=4 thr=288 numa=0 nodes=36
+rm_blk_mt_c2 N=16384 TB=64 SB=16 MT=4 thr=288 | med 8.5409 ms (251.4 GB/s) p5 8.3799 p95 10.2050 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_mt_c2 N=16384 TB=64 SB=16 MT=8 thr=288 numa=0 nodes=36
+rm_blk_mt_c2 N=16384 TB=64 SB=16 MT=8 thr=288 | med 7.7839 ms (275.9 GB/s) p5 7.4871 p95 10.0870 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_mt_c2 N=16384 TB=64 SB=16 MT=16 thr=288 numa=0 nodes=36
+rm_blk_mt_c2 N=16384 TB=64 SB=16 MT=16 thr=288 | med 10.7250 ms (200.2 GB/s) p5 10.6430 p95 13.1478 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  FAIL rm_blk_mt_c2 SB=16 MT=32: OPENMP DISPLAY ENVIRONMENT BEGIN
+   _OPENMP='201611'
+  [host] OMP_AFFINITY_FORMAT='OMP: pid %P tid %i thread %n bound to
+  rm_blk_mt_c2 N=16384 TB=64 SB=32 MT=4 thr=288 numa=0 nodes=36
+rm_blk_mt_c2 N=16384 TB=64 SB=32 MT=4 thr=288 | med 12.3739 ms (173.5 GB/s) p5 12.2471 p95 13.8729 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_mt_c2 N=16384 TB=64 SB=32 MT=8 thr=288 numa=0 nodes=36
+rm_blk_mt_c2 N=16384 TB=64 SB=32 MT=8 thr=288 | med 11.3070 ms (189.9 GB/s) p5 11.2400 p95 13.3011 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_mt_c2 N=16384 TB=64 SB=32 MT=16 thr=288 numa=0 nodes=36
+rm_blk_mt_c2 N=16384 TB=64 SB=32 MT=16 thr=288 | med 12.3711 ms (173.6 GB/s) p5 12.1520 p95 13.7870 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_mt_c2 N=16384 TB=64 SB=32 MT=32 thr=288 numa=0 nodes=36
+rm_blk_mt_c2 N=16384 TB=64 SB=32 MT=32 thr=288 | med 9.9440 ms (216.0 GB/s) p5 9.8310 p95 11.6260 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_mt_c2 N=16384 TB=64 SB=64 MT=4 thr=288 numa=0 nodes=36
+rm_blk_mt_c2 N=16384 TB=64 SB=64 MT=4 thr=288 | med 11.5988 ms (185.1 GB/s) p5 11.3859 p95 13.8130 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_mt_c2 N=16384 TB=64 SB=64 MT=8 thr=288 numa=0 nodes=36
+rm_blk_mt_c2 N=16384 TB=64 SB=64 MT=8 thr=288 | med 9.6211 ms (223.2 GB/s) p5 9.5282 p95 11.2159 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_mt_c2 N=16384 TB=64 SB=64 MT=16 thr=288 numa=0 nodes=36
+rm_blk_mt_c2 N=16384 TB=64 SB=64 MT=16 thr=288 | med 9.9101 ms (216.7 GB/s) p5 9.7761 p95 13.1500 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_mt_c2 N=16384 TB=64 SB=64 MT=32 thr=288 numa=0 nodes=36
+rm_blk_mt_c2 N=16384 TB=64 SB=64 MT=32 thr=288 | med 10.4039 ms (206.4 GB/s) p5 10.3250 p95 12.3420 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_mt_c2 N=16384 TB=64 SB=128 MT=4 thr=288 numa=0 nodes=36
+rm_blk_mt_c2 N=16384 TB=64 SB=128 MT=4 thr=288 | med 12.3048 ms (174.5 GB/s) p5 12.2190 p95 13.0548 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_mt_c2 N=16384 TB=64 SB=128 MT=8 thr=288 numa=0 nodes=36
+rm_blk_mt_c2 N=16384 TB=64 SB=128 MT=8 thr=288 | med 12.9929 ms (165.3 GB/s) p5 12.8050 p95 13.6380 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_mt_c2 N=16384 TB=64 SB=128 MT=16 thr=288 numa=0 nodes=36
+rm_blk_mt_c2 N=16384 TB=64 SB=128 MT=16 thr=288 | med 10.2179 ms (210.2 GB/s) p5 10.0100 p95 11.5480 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_mt_c2 N=16384 TB=64 SB=128 MT=32 thr=288 numa=0 nodes=36
+rm_blk_mt_c2 N=16384 TB=64 SB=128 MT=32 thr=288 | med 10.9768 ms (195.6 GB/s) p5 10.8600 p95 12.7680 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_mt_c2 N=16384 TB=64 SB=256 MT=4 thr=288 numa=0 nodes=36
+rm_blk_mt_c2 N=16384 TB=64 SB=256 MT=4 thr=288 | med 12.8160 ms (167.6 GB/s) p5 12.6638 p95 13.8371 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_mt_c2 N=16384 TB=64 SB=256 MT=8 thr=288 numa=0 nodes=36
+rm_blk_mt_c2 N=16384 TB=64 SB=256 MT=8 thr=288 | med 15.7101 ms (136.7 GB/s) p5 15.4929 p95 16.9749 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_mt_c2 N=16384 TB=64 SB=256 MT=16 thr=288 numa=0 nodes=36
+rm_blk_mt_c2 N=16384 TB=64 SB=256 MT=16 thr=288 | med 12.7652 ms (168.2 GB/s) p5 12.1851 p95 13.5438 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_mt_c2 N=16384 TB=64 SB=256 MT=32 thr=288 numa=0 nodes=36
+rm_blk_mt_c2 N=16384 TB=64 SB=256 MT=32 thr=288 | med 12.0909 ms (177.6 GB/s) p5 11.8370 p95 13.7300 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_mt_c2 N=16384 TB=64 SB=512 MT=4 thr=288 numa=0 nodes=36
+rm_blk_mt_c2 N=16384 TB=64 SB=512 MT=4 thr=288 | med 14.3819 ms (149.3 GB/s) p5 13.2089 p95 16.0341 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_mt_c2 N=16384 TB=64 SB=512 MT=8 thr=288 numa=0 nodes=36
+rm_blk_mt_c2 N=16384 TB=64 SB=512 MT=8 thr=288 | med 9.5160 ms (225.7 GB/s) p5 9.2840 p95 10.2241 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_mt_c2 N=16384 TB=64 SB=512 MT=16 thr=288 numa=0 nodes=36
+rm_blk_mt_c2 N=16384 TB=64 SB=512 MT=16 thr=288 | med 12.6820 ms (169.3 GB/s) p5 12.6419 p95 12.7430 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_mt_c2 N=16384 TB=64 SB=512 MT=32 thr=288 numa=0 nodes=36
+rm_blk_mt_c2 N=16384 TB=64 SB=512 MT=32 thr=288 | med 11.2870 ms (190.3 GB/s) p5 11.2100 p95 11.4360 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  naive_nd N=16384 TB=64 SB=32 MT=8 thr=288 numa=1 nodes=36
+naive_nd N=16384 TB=64 SB=32 MT=8 thr=288 | med 80.8241 ms (26.6 GB/s) p5 80.4310 p95 81.4970 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  naive_c2_nd N=16384 TB=64 SB=32 MT=8 thr=288 numa=1 nodes=36
+naive_c2_nd N=16384 TB=64 SB=32 MT=8 thr=288 | med 77.1492 ms (27.8 GB/s) p5 76.7450 p95 78.0210 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  tiled_nd N=16384 TB=16 SB=32 MT=8 thr=288 numa=1 nodes=36
+tiled_nd N=16384 TB=16 SB=32 MT=8 thr=288 | med 7.7970 ms (275.4 GB/s) p5 7.7229 p95 8.3649 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  tiled_nd N=16384 TB=32 SB=32 MT=8 thr=288 numa=1 nodes=36
+tiled_nd N=16384 TB=32 SB=32 MT=8 thr=288 | med 8.5070 ms (252.4 GB/s) p5 8.3761 p95 9.6731 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  tiled_nd N=16384 TB=64 SB=32 MT=8 thr=288 numa=1 nodes=36
+tiled_nd N=16384 TB=64 SB=32 MT=8 thr=288 | med 8.8439 ms (242.8 GB/s) p5 8.7731 p95 8.9350 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  tiled_nd N=16384 TB=128 SB=32 MT=8 thr=288 numa=1 nodes=36
+tiled_nd N=16384 TB=128 SB=32 MT=8 thr=288 | med 15.8291 ms (135.7 GB/s) p5 15.2490 p95 17.5562 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  tiled_c2_nd N=16384 TB=16 SB=32 MT=8 thr=288 numa=1 nodes=36
+tiled_c2_nd N=16384 TB=16 SB=32 MT=8 thr=288 | med 7.1940 ms (298.5 GB/s) p5 7.1290 p95 8.5351 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  tiled_c2_nd N=16384 TB=32 SB=32 MT=8 thr=288 numa=1 nodes=36
+tiled_c2_nd N=16384 TB=32 SB=32 MT=8 thr=288 | med 7.3471 ms (292.3 GB/s) p5 7.2911 p95 8.5981 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  tiled_c2_nd N=16384 TB=64 SB=32 MT=8 thr=288 numa=1 nodes=36
+tiled_c2_nd N=16384 TB=64 SB=32 MT=8 thr=288 | med 7.6818 ms (279.6 GB/s) p5 7.6401 p95 9.1522 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  tiled_c2_nd N=16384 TB=128 SB=32 MT=8 thr=288 numa=1 nodes=36
+tiled_c2_nd N=16384 TB=128 SB=32 MT=8 thr=288 | med 7.4339 ms (288.9 GB/s) p5 7.3800 p95 9.1500 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_naive_nd N=16384 TB=64 SB=8 MT=8 thr=288 numa=1 nodes=36
+blk_naive_nd N=16384 TB=64 SB=8 MT=8 thr=288 | med 50.5269 ms (42.5 GB/s) p5 50.3039 p95 52.1450 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_naive_nd N=16384 TB=64 SB=16 MT=8 thr=288 numa=1 nodes=36
+blk_naive_nd N=16384 TB=64 SB=16 MT=8 thr=288 | med 17.6899 ms (121.4 GB/s) p5 17.2729 p95 19.6569 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_naive_nd N=16384 TB=64 SB=32 MT=8 thr=288 numa=1 nodes=36
+blk_naive_nd N=16384 TB=64 SB=32 MT=8 thr=288 | med 9.0170 ms (238.2 GB/s) p5 7.9029 p95 12.5182 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_naive_nd N=16384 TB=64 SB=64 MT=8 thr=288 numa=1 nodes=36
+blk_naive_nd N=16384 TB=64 SB=64 MT=8 thr=288 | med 10.7970 ms (198.9 GB/s) p5 9.3060 p95 13.2971 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_naive_nd N=16384 TB=64 SB=128 MT=8 thr=288 numa=1 nodes=36
+blk_naive_nd N=16384 TB=64 SB=128 MT=8 thr=288 | med 10.0131 ms (214.5 GB/s) p5 9.1839 p95 12.9280 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_naive_nd N=16384 TB=64 SB=256 MT=8 thr=288 numa=1 nodes=36
+blk_naive_nd N=16384 TB=64 SB=256 MT=8 thr=288 | med 10.2901 ms (208.7 GB/s) p5 9.1078 p95 12.5749 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_naive_nd N=16384 TB=64 SB=512 MT=8 thr=288 numa=1 nodes=36
+blk_naive_nd N=16384 TB=64 SB=512 MT=8 thr=288 | med 9.4881 ms (226.3 GB/s) p5 9.2950 p95 13.4041 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_naive_c2_nd N=16384 TB=64 SB=8 MT=8 thr=288 numa=1 nodes=36
+blk_naive_c2_nd N=16384 TB=64 SB=8 MT=8 thr=288 | med 52.7802 ms (40.7 GB/s) p5 52.5360 p95 53.8371 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_naive_c2_nd N=16384 TB=64 SB=16 MT=8 thr=288 numa=1 nodes=36
+blk_naive_c2_nd N=16384 TB=64 SB=16 MT=8 thr=288 | med 17.5900 ms (122.1 GB/s) p5 17.1480 p95 18.9981 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_naive_c2_nd N=16384 TB=64 SB=32 MT=8 thr=288 numa=1 nodes=36
+blk_naive_c2_nd N=16384 TB=64 SB=32 MT=8 thr=288 | med 9.2371 ms (232.5 GB/s) p5 8.3170 p95 11.3089 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_naive_c2_nd N=16384 TB=64 SB=64 MT=8 thr=288 numa=1 nodes=36
+blk_naive_c2_nd N=16384 TB=64 SB=64 MT=8 thr=288 | med 10.9890 ms (195.4 GB/s) p5 9.1391 p95 14.4572 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_naive_c2_nd N=16384 TB=64 SB=128 MT=8 thr=288 numa=1 nodes=36
+blk_naive_c2_nd N=16384 TB=64 SB=128 MT=8 thr=288 | med 11.2770 ms (190.4 GB/s) p5 9.6319 p95 14.4470 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_naive_c2_nd N=16384 TB=64 SB=256 MT=8 thr=288 numa=1 nodes=36
+blk_naive_c2_nd N=16384 TB=64 SB=256 MT=8 thr=288 | med 10.9470 ms (196.2 GB/s) p5 9.3958 p95 12.9881 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_naive_c2_nd N=16384 TB=64 SB=512 MT=8 thr=288 numa=1 nodes=36
+blk_naive_c2_nd N=16384 TB=64 SB=512 MT=8 thr=288 | med 9.8472 ms (218.1 GB/s) p5 9.2430 p95 12.3639 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_tiled_nd N=16384 TB=64 SB=8 MT=8 thr=288 numa=1 nodes=36
+blk_tiled_nd N=16384 TB=64 SB=8 MT=8 thr=288 | med 6.0532 ms (354.8 GB/s) p5 5.7230 p95 6.9480 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_tiled_nd N=16384 TB=64 SB=16 MT=8 thr=288 numa=1 nodes=36
+blk_tiled_nd N=16384 TB=64 SB=16 MT=8 thr=288 | med 5.9111 ms (363.3 GB/s) p5 5.5680 p95 6.6030 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_tiled_nd N=16384 TB=64 SB=32 MT=8 thr=288 numa=1 nodes=36
+blk_tiled_nd N=16384 TB=64 SB=32 MT=8 thr=288 | med 5.8639 ms (366.2 GB/s) p5 5.7580 p95 8.2781 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_tiled_nd N=16384 TB=64 SB=64 MT=8 thr=288 numa=1 nodes=36
+blk_tiled_nd N=16384 TB=64 SB=64 MT=8 thr=288 | med 5.8188 ms (369.1 GB/s) p5 5.7240 p95 8.9622 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_tiled_nd N=16384 TB=64 SB=128 MT=8 thr=288 numa=1 nodes=36
+blk_tiled_nd N=16384 TB=64 SB=128 MT=8 thr=288 | med 5.8191 ms (369.0 GB/s) p5 5.7850 p95 8.2541 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_tiled_nd N=16384 TB=64 SB=256 MT=8 thr=288 numa=1 nodes=36
+blk_tiled_nd N=16384 TB=64 SB=256 MT=8 thr=288 | med 5.7549 ms (373.2 GB/s) p5 5.7130 p95 8.2331 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_tiled_nd N=16384 TB=64 SB=512 MT=8 thr=288 numa=1 nodes=36
+blk_tiled_nd N=16384 TB=64 SB=512 MT=8 thr=288 | med 5.7490 ms (373.5 GB/s) p5 5.6949 p95 8.3170 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_tiled_c2_nd N=16384 TB=64 SB=8 MT=8 thr=288 numa=1 nodes=36
+blk_tiled_c2_nd N=16384 TB=64 SB=8 MT=8 thr=288 | med 4.3490 ms (493.8 GB/s) p5 3.9420 p95 6.2950 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_tiled_c2_nd N=16384 TB=64 SB=16 MT=8 thr=288 numa=1 nodes=36
+blk_tiled_c2_nd N=16384 TB=64 SB=16 MT=8 thr=288 | med 3.6440 ms (589.3 GB/s) p5 3.5329 p95 4.5769 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_tiled_c2_nd N=16384 TB=64 SB=32 MT=8 thr=288 numa=1 nodes=36
+blk_tiled_c2_nd N=16384 TB=64 SB=32 MT=8 thr=288 | med 3.4831 ms (616.6 GB/s) p5 3.2439 p95 5.3082 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_tiled_c2_nd N=16384 TB=64 SB=64 MT=8 thr=288 numa=1 nodes=36
+blk_tiled_c2_nd N=16384 TB=64 SB=64 MT=8 thr=288 | med 2.9750 ms (721.8 GB/s) p5 2.8880 p95 5.3661 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_tiled_c2_nd N=16384 TB=64 SB=128 MT=8 thr=288 numa=1 nodes=36
+blk_tiled_c2_nd N=16384 TB=64 SB=128 MT=8 thr=288 | med 3.3600 ms (639.1 GB/s) p5 3.2640 p95 6.3281 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_tiled_c2_nd N=16384 TB=64 SB=256 MT=8 thr=288 numa=1 nodes=36
+blk_tiled_c2_nd N=16384 TB=64 SB=256 MT=8 thr=288 | med 3.3140 ms (648.0 GB/s) p5 3.1910 p95 6.2921 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_tiled_c2_nd N=16384 TB=64 SB=512 MT=8 thr=288 numa=1 nodes=36
+blk_tiled_c2_nd N=16384 TB=64 SB=512 MT=8 thr=288 | med 3.4389 ms (624.5 GB/s) p5 3.3190 p95 6.2809 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_nd N=16384 TB=64 SB=8 MT=8 thr=288 numa=1 nodes=36
+blk_aligned_nd N=16384 TB=64 SB=8 MT=8 thr=288 | med 7.5481 ms (284.5 GB/s) p5 7.4482 p95 11.3270 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_nd N=16384 TB=64 SB=16 MT=8 thr=288 numa=1 nodes=36
+blk_aligned_nd N=16384 TB=64 SB=16 MT=8 thr=288 | med 5.1901 ms (413.8 GB/s) p5 4.7891 p95 10.3698 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_nd N=16384 TB=64 SB=32 MT=8 thr=288 numa=1 nodes=36
+blk_aligned_nd N=16384 TB=64 SB=32 MT=8 thr=288 | med 5.9042 ms (363.7 GB/s) p5 5.8031 p95 7.7572 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_nd N=16384 TB=64 SB=64 MT=8 thr=288 numa=1 nodes=36
+blk_aligned_nd N=16384 TB=64 SB=64 MT=8 thr=288 | med 5.8680 ms (366.0 GB/s) p5 5.7740 p95 8.4989 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_nd N=16384 TB=64 SB=128 MT=8 thr=288 numa=1 nodes=36
+blk_aligned_nd N=16384 TB=64 SB=128 MT=8 thr=288 | med 12.0540 ms (178.2 GB/s) p5 11.9400 p95 12.3379 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_nd N=16384 TB=64 SB=256 MT=8 thr=288 numa=1 nodes=36
+blk_aligned_nd N=16384 TB=64 SB=256 MT=8 thr=288 | med 15.5730 ms (137.9 GB/s) p5 15.1761 p95 16.7699 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_nd N=16384 TB=64 SB=512 MT=8 thr=288 numa=1 nodes=36
+blk_aligned_nd N=16384 TB=64 SB=512 MT=8 thr=288 | med 25.1551 ms (85.4 GB/s) p5 25.0621 p95 25.4011 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_c2_nd N=16384 TB=64 SB=8 MT=8 thr=288 numa=1 nodes=36
+blk_aligned_c2_nd N=16384 TB=64 SB=8 MT=8 thr=288 | med 7.5169 ms (285.7 GB/s) p5 7.4289 p95 10.0160 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_c2_nd N=16384 TB=64 SB=16 MT=8 thr=288 numa=1 nodes=36
+blk_aligned_c2_nd N=16384 TB=64 SB=16 MT=8 thr=288 | med 4.0460 ms (530.8 GB/s) p5 3.9132 p95 5.9609 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_c2_nd N=16384 TB=64 SB=32 MT=8 thr=288 numa=1 nodes=36
+blk_aligned_c2_nd N=16384 TB=64 SB=32 MT=8 thr=288 | med 3.0088 ms (713.7 GB/s) p5 2.9700 p95 5.1069 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_c2_nd N=16384 TB=64 SB=64 MT=8 thr=288 numa=1 nodes=36
+blk_aligned_c2_nd N=16384 TB=64 SB=64 MT=8 thr=288 | med 3.3400 ms (643.0 GB/s) p5 3.0570 p95 5.7018 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_c2_nd N=16384 TB=64 SB=128 MT=8 thr=288 numa=1 nodes=36
+blk_aligned_c2_nd N=16384 TB=64 SB=128 MT=8 thr=288 | med 2.8670 ms (749.0 GB/s) p5 2.8181 p95 5.4750 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_c2_nd N=16384 TB=64 SB=256 MT=8 thr=288 numa=1 nodes=36
+blk_aligned_c2_nd N=16384 TB=64 SB=256 MT=8 thr=288 | med 3.0169 ms (711.8 GB/s) p5 2.9731 p95 6.0952 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_c2_nd N=16384 TB=64 SB=512 MT=8 thr=288 numa=1 nodes=36
+blk_aligned_c2_nd N=16384 TB=64 SB=512 MT=8 thr=288 | med 3.6099 ms (594.9 GB/s) p5 3.4769 p95 8.1151 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_mt_nd N=16384 TB=64 SB=8 MT=4 thr=288 numa=1 nodes=36
+blk_aligned_mt_nd N=16384 TB=64 SB=8 MT=4 thr=288 | med 9.2008 ms (233.4 GB/s) p5 9.0470 p95 15.2171 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_mt_nd N=16384 TB=64 SB=8 MT=8 thr=288 numa=1 nodes=36
+blk_aligned_mt_nd N=16384 TB=64 SB=8 MT=8 thr=288 | med 7.4770 ms (287.2 GB/s) p5 7.4050 p95 10.5660 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  FAIL blk_aligned_mt_nd SB=8 MT=16: OPENMP DISPLAY ENVIRONMENT BEGIN
+   _OPENMP='201611'
+  [host] OMP_AFFINITY_FORMAT='OMP: pid %P tid %i thread %n bound to
+  FAIL blk_aligned_mt_nd SB=8 MT=32: OPENMP DISPLAY ENVIRONMENT BEGIN
+   _OPENMP='201611'
+  [host] OMP_AFFINITY_FORMAT='OMP: pid %P tid %i thread %n bound to
+  blk_aligned_mt_nd N=16384 TB=64 SB=16 MT=4 thr=288 numa=1 nodes=36
+blk_aligned_mt_nd N=16384 TB=64 SB=16 MT=4 thr=288 | med 5.1138 ms (419.9 GB/s) p5 5.0151 p95 8.1279 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_mt_nd N=16384 TB=64 SB=16 MT=8 thr=288 numa=1 nodes=36
+blk_aligned_mt_nd N=16384 TB=64 SB=16 MT=8 thr=288 | med 5.6179 ms (382.3 GB/s) p5 5.5051 p95 8.2130 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_mt_nd N=16384 TB=64 SB=16 MT=16 thr=288 numa=1 nodes=36
+blk_aligned_mt_nd N=16384 TB=64 SB=16 MT=16 thr=288 | med 4.8330 ms (444.3 GB/s) p5 4.5938 p95 7.3328 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  FAIL blk_aligned_mt_nd SB=16 MT=32: OPENMP DISPLAY ENVIRONMENT BEGIN
+   _OPENMP='201611'
+  [host] OMP_AFFINITY_FORMAT='OMP: pid %P tid %i thread %n bound to
+  blk_aligned_mt_nd N=16384 TB=64 SB=32 MT=4 thr=288 numa=1 nodes=36
+blk_aligned_mt_nd N=16384 TB=64 SB=32 MT=4 thr=288 | med 5.6851 ms (377.7 GB/s) p5 5.5971 p95 7.0748 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_mt_nd N=16384 TB=64 SB=32 MT=8 thr=288 numa=1 nodes=36
+blk_aligned_mt_nd N=16384 TB=64 SB=32 MT=8 thr=288 | med 5.6360 ms (381.0 GB/s) p5 5.5459 p95 7.3740 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_mt_nd N=16384 TB=64 SB=32 MT=16 thr=288 numa=1 nodes=36
+blk_aligned_mt_nd N=16384 TB=64 SB=32 MT=16 thr=288 | med 6.4659 ms (332.1 GB/s) p5 6.3710 p95 7.9591 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_mt_nd N=16384 TB=64 SB=32 MT=32 thr=288 numa=1 nodes=36
+blk_aligned_mt_nd N=16384 TB=64 SB=32 MT=32 thr=288 | med 5.8899 ms (364.6 GB/s) p5 5.8010 p95 7.7739 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_mt_nd N=16384 TB=64 SB=64 MT=4 thr=288 numa=1 nodes=36
+blk_aligned_mt_nd N=16384 TB=64 SB=64 MT=4 thr=288 | med 5.6660 ms (379.0 GB/s) p5 5.5821 p95 8.5351 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_mt_nd N=16384 TB=64 SB=64 MT=8 thr=288 numa=1 nodes=36
+blk_aligned_mt_nd N=16384 TB=64 SB=64 MT=8 thr=288 | med 5.9030 ms (363.8 GB/s) p5 5.8432 p95 8.1940 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_mt_nd N=16384 TB=64 SB=64 MT=16 thr=288 numa=1 nodes=36
+blk_aligned_mt_nd N=16384 TB=64 SB=64 MT=16 thr=288 | med 5.9359 ms (361.8 GB/s) p5 5.8889 p95 8.4491 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_mt_nd N=16384 TB=64 SB=64 MT=32 thr=288 numa=1 nodes=36
+blk_aligned_mt_nd N=16384 TB=64 SB=64 MT=32 thr=288 | med 5.7452 ms (373.8 GB/s) p5 5.6801 p95 8.5671 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_mt_nd N=16384 TB=64 SB=128 MT=4 thr=288 numa=1 nodes=36
+blk_aligned_mt_nd N=16384 TB=64 SB=128 MT=4 thr=288 | med 11.6251 ms (184.7 GB/s) p5 11.4472 p95 12.5492 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_mt_nd N=16384 TB=64 SB=128 MT=8 thr=288 numa=1 nodes=36
+blk_aligned_mt_nd N=16384 TB=64 SB=128 MT=8 thr=288 | med 16.5031 ms (130.1 GB/s) p5 16.4192 p95 16.8560 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_mt_nd N=16384 TB=64 SB=128 MT=16 thr=288 numa=1 nodes=36
+blk_aligned_mt_nd N=16384 TB=64 SB=128 MT=16 thr=288 | med 16.0401 ms (133.9 GB/s) p5 15.5609 p95 16.4189 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_mt_nd N=16384 TB=64 SB=128 MT=32 thr=288 numa=1 nodes=36
+blk_aligned_mt_nd N=16384 TB=64 SB=128 MT=32 thr=288 | med 13.4780 ms (159.3 GB/s) p5 13.2670 p95 13.8860 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_mt_nd N=16384 TB=64 SB=256 MT=4 thr=288 numa=1 nodes=36
+blk_aligned_mt_nd N=16384 TB=64 SB=256 MT=4 thr=288 | med 16.4990 ms (130.2 GB/s) p5 16.2811 p95 16.7720 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_mt_nd N=16384 TB=64 SB=256 MT=8 thr=288 numa=1 nodes=36
+blk_aligned_mt_nd N=16384 TB=64 SB=256 MT=8 thr=288 | med 39.2790 ms (54.7 GB/s) p5 38.9681 p95 39.7182 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_mt_nd N=16384 TB=64 SB=256 MT=16 thr=288 numa=1 nodes=36
+blk_aligned_mt_nd N=16384 TB=64 SB=256 MT=16 thr=288 | med 44.2650 ms (48.5 GB/s) p5 44.0140 p95 44.8990 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_mt_nd N=16384 TB=64 SB=256 MT=32 thr=288 numa=1 nodes=36
+blk_aligned_mt_nd N=16384 TB=64 SB=256 MT=32 thr=288 | med 23.4358 ms (91.6 GB/s) p5 23.2270 p95 23.8900 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_mt_nd N=16384 TB=64 SB=512 MT=4 thr=288 numa=1 nodes=36
+blk_aligned_mt_nd N=16384 TB=64 SB=512 MT=4 thr=288 | med 26.1800 ms (82.0 GB/s) p5 25.6631 p95 27.3309 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_mt_nd N=16384 TB=64 SB=512 MT=8 thr=288 numa=1 nodes=36
+blk_aligned_mt_nd N=16384 TB=64 SB=512 MT=8 thr=288 | med 105.0479 ms (20.4 GB/s) p5 104.3110 p95 105.3679 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_mt_nd N=16384 TB=64 SB=512 MT=16 thr=288 numa=1 nodes=36
+blk_aligned_mt_nd N=16384 TB=64 SB=512 MT=16 thr=288 | med 121.8829 ms (17.6 GB/s) p5 120.0652 p95 125.8559 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_mt_nd N=16384 TB=64 SB=512 MT=32 thr=288 numa=1 nodes=36
+blk_aligned_mt_nd N=16384 TB=64 SB=512 MT=32 thr=288 | med 40.6301 ms (52.9 GB/s) p5 40.3211 p95 41.5461 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_mt_c2_nd N=16384 TB=64 SB=8 MT=4 thr=288 numa=1 nodes=36
+blk_aligned_mt_c2_nd N=16384 TB=64 SB=8 MT=4 thr=288 | med 8.7099 ms (246.6 GB/s) p5 8.4920 p95 11.1179 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_mt_c2_nd N=16384 TB=64 SB=8 MT=8 thr=288 numa=1 nodes=36
+blk_aligned_mt_c2_nd N=16384 TB=64 SB=8 MT=8 thr=288 | med 7.4668 ms (287.6 GB/s) p5 7.3750 p95 10.8159 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  FAIL blk_aligned_mt_c2_nd SB=8 MT=16: OPENMP DISPLAY ENVIRONMENT BEGIN
+   _OPENMP='201611'
+  [host] OMP_AFFINITY_FORMAT='OMP: pid %P tid %i thread %n bound to
+  FAIL blk_aligned_mt_c2_nd SB=8 MT=32: OPENMP DISPLAY ENVIRONMENT BEGIN
+   _OPENMP='201611'
+  [host] OMP_AFFINITY_FORMAT='OMP: pid %P tid %i thread %n bound to
+  blk_aligned_mt_c2_nd N=16384 TB=64 SB=16 MT=4 thr=288 numa=1 nodes=36
+blk_aligned_mt_c2_nd N=16384 TB=64 SB=16 MT=4 thr=288 | med 4.2388 ms (506.6 GB/s) p5 4.1320 p95 7.5569 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_mt_c2_nd N=16384 TB=64 SB=16 MT=8 thr=288 numa=1 nodes=36
+blk_aligned_mt_c2_nd N=16384 TB=64 SB=16 MT=8 thr=288 | med 4.2522 ms (505.0 GB/s) p5 4.1480 p95 7.7989 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_mt_c2_nd N=16384 TB=64 SB=16 MT=16 thr=288 numa=1 nodes=36
+blk_aligned_mt_c2_nd N=16384 TB=64 SB=16 MT=16 thr=288 | med 3.8650 ms (555.6 GB/s) p5 3.8018 p95 6.5210 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  FAIL blk_aligned_mt_c2_nd SB=16 MT=32: OPENMP DISPLAY ENVIRONMENT BEGIN
+   _OPENMP='201611'
+  [host] OMP_AFFINITY_FORMAT='OMP: pid %P tid %i thread %n bound to
+  blk_aligned_mt_c2_nd N=16384 TB=64 SB=32 MT=4 thr=288 numa=1 nodes=36
+blk_aligned_mt_c2_nd N=16384 TB=64 SB=32 MT=4 thr=288 | med 3.2351 ms (663.8 GB/s) p5 3.1760 p95 5.0571 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_mt_c2_nd N=16384 TB=64 SB=32 MT=8 thr=288 numa=1 nodes=36
+blk_aligned_mt_c2_nd N=16384 TB=64 SB=32 MT=8 thr=288 | med 2.9600 ms (725.5 GB/s) p5 2.8989 p95 5.8200 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_mt_c2_nd N=16384 TB=64 SB=32 MT=16 thr=288 numa=1 nodes=36
+blk_aligned_mt_c2_nd N=16384 TB=64 SB=32 MT=16 thr=288 | med 3.8230 ms (561.7 GB/s) p5 3.7420 p95 6.2380 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_mt_c2_nd N=16384 TB=64 SB=32 MT=32 thr=288 numa=1 nodes=36
+blk_aligned_mt_c2_nd N=16384 TB=64 SB=32 MT=32 thr=288 | med 3.0010 ms (715.6 GB/s) p5 2.9531 p95 5.9018 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_mt_c2_nd N=16384 TB=64 SB=64 MT=4 thr=288 numa=1 nodes=36
+blk_aligned_mt_c2_nd N=16384 TB=64 SB=64 MT=4 thr=288 | med 3.1340 ms (685.2 GB/s) p5 3.0200 p95 5.9631 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_mt_c2_nd N=16384 TB=64 SB=64 MT=8 thr=288 numa=1 nodes=36
+blk_aligned_mt_c2_nd N=16384 TB=64 SB=64 MT=8 thr=288 | med 3.9761 ms (540.1 GB/s) p5 3.8831 p95 6.3369 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_mt_c2_nd N=16384 TB=64 SB=64 MT=16 thr=288 numa=1 nodes=36
+blk_aligned_mt_c2_nd N=16384 TB=64 SB=64 MT=16 thr=288 | med 4.1189 ms (521.4 GB/s) p5 4.0300 p95 6.1111 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_mt_c2_nd N=16384 TB=64 SB=64 MT=32 thr=288 numa=1 nodes=36
+blk_aligned_mt_c2_nd N=16384 TB=64 SB=64 MT=32 thr=288 | med 2.9879 ms (718.7 GB/s) p5 2.9418 p95 5.9340 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_mt_c2_nd N=16384 TB=64 SB=128 MT=4 thr=288 numa=1 nodes=36
+blk_aligned_mt_c2_nd N=16384 TB=64 SB=128 MT=4 thr=288 | med 2.9740 ms (722.1 GB/s) p5 2.8281 p95 5.6021 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_mt_c2_nd N=16384 TB=64 SB=128 MT=8 thr=288 numa=1 nodes=36
+blk_aligned_mt_c2_nd N=16384 TB=64 SB=128 MT=8 thr=288 | med 5.2822 ms (406.6 GB/s) p5 5.2180 p95 7.1120 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_mt_c2_nd N=16384 TB=64 SB=128 MT=16 thr=288 numa=1 nodes=36
+blk_aligned_mt_c2_nd N=16384 TB=64 SB=128 MT=16 thr=288 | med 4.9219 ms (436.3 GB/s) p5 4.7870 p95 7.3628 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_mt_c2_nd N=16384 TB=64 SB=128 MT=32 thr=288 numa=1 nodes=36
+blk_aligned_mt_c2_nd N=16384 TB=64 SB=128 MT=32 thr=288 | med 3.1800 ms (675.3 GB/s) p5 3.1102 p95 5.7089 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_mt_c2_nd N=16384 TB=64 SB=256 MT=4 thr=288 numa=1 nodes=36
+blk_aligned_mt_c2_nd N=16384 TB=64 SB=256 MT=4 thr=288 | med 2.9819 ms (720.2 GB/s) p5 2.9390 p95 5.4681 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_mt_c2_nd N=16384 TB=64 SB=256 MT=8 thr=288 numa=1 nodes=36
+blk_aligned_mt_c2_nd N=16384 TB=64 SB=256 MT=8 thr=288 | med 7.5440 ms (284.7 GB/s) p5 7.4210 p95 9.9049 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_mt_c2_nd N=16384 TB=64 SB=256 MT=16 thr=288 numa=1 nodes=36
+blk_aligned_mt_c2_nd N=16384 TB=64 SB=256 MT=16 thr=288 | med 8.7709 ms (244.8 GB/s) p5 8.6279 p95 11.3962 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_mt_c2_nd N=16384 TB=64 SB=256 MT=32 thr=288 numa=1 nodes=36
+blk_aligned_mt_c2_nd N=16384 TB=64 SB=256 MT=32 thr=288 | med 3.4010 ms (631.4 GB/s) p5 3.3450 p95 6.1600 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_mt_c2_nd N=16384 TB=64 SB=512 MT=4 thr=288 numa=1 nodes=36
+blk_aligned_mt_c2_nd N=16384 TB=64 SB=512 MT=4 thr=288 | med 3.5799 ms (599.9 GB/s) p5 3.4261 p95 5.0569 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_mt_c2_nd N=16384 TB=64 SB=512 MT=8 thr=288 numa=1 nodes=36
+blk_aligned_mt_c2_nd N=16384 TB=64 SB=512 MT=8 thr=288 | med 12.9991 ms (165.2 GB/s) p5 12.2321 p95 14.3290 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_mt_c2_nd N=16384 TB=64 SB=512 MT=16 thr=288 numa=1 nodes=36
+blk_aligned_mt_c2_nd N=16384 TB=64 SB=512 MT=16 thr=288 | med 13.7651 ms (156.0 GB/s) p5 13.5338 p95 15.8322 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  blk_aligned_mt_c2_nd N=16384 TB=64 SB=512 MT=32 thr=288 numa=1 nodes=36
+blk_aligned_mt_c2_nd N=16384 TB=64 SB=512 MT=32 thr=288 | med 3.7560 ms (571.7 GB/s) p5 3.7022 p95 6.6061 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_nd N=16384 TB=16 SB=32 MT=8 thr=288 numa=1 nodes=36
+locbuf_nd N=16384 TB=16 SB=32 MT=8 thr=288 | med 6.0070 ms (357.5 GB/s) p5 5.8029 p95 6.2699 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_nd N=16384 TB=32 SB=32 MT=8 thr=288 numa=1 nodes=36
+locbuf_nd N=16384 TB=32 SB=32 MT=8 thr=288 | med 5.6531 ms (379.9 GB/s) p5 5.5411 p95 5.7909 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_nd N=16384 TB=64 SB=32 MT=8 thr=288 numa=1 nodes=36
+locbuf_nd N=16384 TB=64 SB=32 MT=8 thr=288 | med 5.6500 ms (380.1 GB/s) p5 5.5149 p95 5.8961 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_nd N=16384 TB=128 SB=32 MT=8 thr=288 numa=1 nodes=36
+locbuf_nd N=16384 TB=128 SB=32 MT=8 thr=288 | med 13.1938 ms (162.8 GB/s) p5 12.9678 p95 13.9160 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_c2_nd N=16384 TB=16 SB=32 MT=8 thr=288 numa=1 nodes=36
+locbuf_c2_nd N=16384 TB=16 SB=32 MT=8 thr=288 | med 5.3101 ms (404.4 GB/s) p5 5.2269 p95 7.0779 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_c2_nd N=16384 TB=32 SB=32 MT=8 thr=288 numa=1 nodes=36
+locbuf_c2_nd N=16384 TB=32 SB=32 MT=8 thr=288 | med 4.6890 ms (458.0 GB/s) p5 4.6151 p95 6.4960 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_c2_nd N=16384 TB=64 SB=32 MT=8 thr=288 numa=1 nodes=36
+locbuf_c2_nd N=16384 TB=64 SB=32 MT=8 thr=288 | med 4.5528 ms (471.7 GB/s) p5 4.4770 p95 5.8801 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_c2_nd N=16384 TB=128 SB=32 MT=8 thr=288 numa=1 nodes=36
+locbuf_c2_nd N=16384 TB=128 SB=32 MT=8 thr=288 | med 4.9000 ms (438.3 GB/s) p5 4.7932 p95 5.2650 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_2buf_nd N=16384 TB=16 SB=32 MT=8 thr=288 numa=1 nodes=36
+locbuf_2buf_nd N=16384 TB=16 SB=32 MT=8 thr=288 | med 7.5581 ms (284.1 GB/s) p5 7.4680 p95 8.1210 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_2buf_nd N=16384 TB=32 SB=32 MT=8 thr=288 numa=1 nodes=36
+locbuf_2buf_nd N=16384 TB=32 SB=32 MT=8 thr=288 | med 7.0510 ms (304.6 GB/s) p5 6.9950 p95 8.2488 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_2buf_nd N=16384 TB=64 SB=32 MT=8 thr=288 numa=1 nodes=36
+locbuf_2buf_nd N=16384 TB=64 SB=32 MT=8 thr=288 | med 6.8099 ms (315.3 GB/s) p5 6.7451 p95 8.8470 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_2buf_nd N=16384 TB=128 SB=32 MT=8 thr=288 numa=1 nodes=36
+locbuf_2buf_nd N=16384 TB=128 SB=32 MT=8 thr=288 | med 14.4520 ms (148.6 GB/s) p5 14.2682 p95 14.7500 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_2buf_c2_nd N=16384 TB=16 SB=32 MT=8 thr=288 numa=1 nodes=36
+locbuf_2buf_c2_nd N=16384 TB=16 SB=32 MT=8 thr=288 | med 7.3390 ms (292.6 GB/s) p5 7.2670 p95 9.9070 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_2buf_c2_nd N=16384 TB=32 SB=32 MT=8 thr=288 numa=1 nodes=36
+locbuf_2buf_c2_nd N=16384 TB=32 SB=32 MT=8 thr=288 | med 6.0630 ms (354.2 GB/s) p5 6.0060 p95 7.3600 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_2buf_c2_nd N=16384 TB=64 SB=32 MT=8 thr=288 numa=1 nodes=36
+locbuf_2buf_c2_nd N=16384 TB=64 SB=32 MT=8 thr=288 | med 6.0430 ms (355.4 GB/s) p5 5.9910 p95 7.6630 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_2buf_c2_nd N=16384 TB=128 SB=32 MT=8 thr=288 numa=1 nodes=36
+locbuf_2buf_c2_nd N=16384 TB=128 SB=32 MT=8 thr=288 | med 6.2678 ms (342.6 GB/s) p5 6.2041 p95 7.6771 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_nd N=16384 TB=64 SB=8 MT=8 thr=288 numa=1 nodes=36
+locbuf_blk_nd N=16384 TB=64 SB=8 MT=8 thr=288 | med 2.1629 ms (992.9 GB/s) p5 2.0440 p95 3.6831 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_nd N=16384 TB=64 SB=16 MT=8 thr=288 numa=1 nodes=36
+locbuf_blk_nd N=16384 TB=64 SB=16 MT=8 thr=288 | med 3.1269 ms (686.8 GB/s) p5 2.9180 p95 4.1671 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_nd N=16384 TB=64 SB=32 MT=8 thr=288 numa=1 nodes=36
+locbuf_blk_nd N=16384 TB=64 SB=32 MT=8 thr=288 | med 3.7971 ms (565.6 GB/s) p5 3.6049 p95 5.4970 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_nd N=16384 TB=64 SB=64 MT=8 thr=288 numa=1 nodes=36
+locbuf_blk_nd N=16384 TB=64 SB=64 MT=8 thr=288 | med 3.9690 ms (541.1 GB/s) p5 3.8490 p95 4.9231 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_nd N=16384 TB=64 SB=128 MT=8 thr=288 numa=1 nodes=36
+locbuf_blk_nd N=16384 TB=64 SB=128 MT=8 thr=288 | med 8.4050 ms (255.5 GB/s) p5 8.2300 p95 8.8241 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_nd N=16384 TB=64 SB=256 MT=8 thr=288 numa=1 nodes=36
+locbuf_blk_nd N=16384 TB=64 SB=256 MT=8 thr=288 | med 12.7230 ms (168.8 GB/s) p5 12.4681 p95 13.0532 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_nd N=16384 TB=64 SB=512 MT=8 thr=288 numa=1 nodes=36
+locbuf_blk_nd N=16384 TB=64 SB=512 MT=8 thr=288 | med 17.5390 ms (122.4 GB/s) p5 17.4379 p95 18.0020 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_c2_nd N=16384 TB=64 SB=8 MT=8 thr=288 numa=1 nodes=36
+locbuf_blk_c2_nd N=16384 TB=64 SB=8 MT=8 thr=288 | med 2.1410 ms (1003.0 GB/s) p5 2.0399 p95 3.1152 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_c2_nd N=16384 TB=64 SB=16 MT=8 thr=288 numa=1 nodes=36
+locbuf_blk_c2_nd N=16384 TB=64 SB=16 MT=8 thr=288 | med 2.1069 ms (1019.3 GB/s) p5 1.9341 p95 3.2461 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_c2_nd N=16384 TB=64 SB=32 MT=8 thr=288 numa=1 nodes=36
+locbuf_blk_c2_nd N=16384 TB=64 SB=32 MT=8 thr=288 | med 2.2361 ms (960.4 GB/s) p5 2.1100 p95 3.3801 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_c2_nd N=16384 TB=64 SB=64 MT=8 thr=288 numa=1 nodes=36
+locbuf_blk_c2_nd N=16384 TB=64 SB=64 MT=8 thr=288 | med 2.3270 ms (922.9 GB/s) p5 2.0969 p95 3.8240 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_c2_nd N=16384 TB=64 SB=128 MT=8 thr=288 numa=1 nodes=36
+locbuf_blk_c2_nd N=16384 TB=64 SB=128 MT=8 thr=288 | med 2.4600 ms (873.0 GB/s) p5 2.2731 p95 3.8161 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_c2_nd N=16384 TB=64 SB=256 MT=8 thr=288 numa=1 nodes=36
+locbuf_blk_c2_nd N=16384 TB=64 SB=256 MT=8 thr=288 | med 2.3439 ms (916.2 GB/s) p5 2.1930 p95 3.7911 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_c2_nd N=16384 TB=64 SB=512 MT=8 thr=288 numa=1 nodes=36
+locbuf_blk_c2_nd N=16384 TB=64 SB=512 MT=8 thr=288 | med 2.8090 ms (764.5 GB/s) p5 2.7142 p95 4.5929 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_mt_nd N=16384 TB=64 SB=8 MT=4 thr=288 numa=1 nodes=36
+locbuf_blk_mt_nd N=16384 TB=64 SB=8 MT=4 thr=288 | med 2.5530 ms (841.2 GB/s) p5 2.4390 p95 2.9931 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_mt_nd N=16384 TB=64 SB=8 MT=8 thr=288 numa=1 nodes=36
+locbuf_blk_mt_nd N=16384 TB=64 SB=8 MT=8 thr=288 | med 2.1241 ms (1011.0 GB/s) p5 1.9989 p95 3.1929 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  FAIL locbuf_blk_mt_nd SB=8 MT=16: OPENMP DISPLAY ENVIRONMENT BEGIN
+   _OPENMP='201611'
+  [host] OMP_AFFINITY_FORMAT='OMP: pid %P tid %i thread %n bound to
+  FAIL locbuf_blk_mt_nd SB=8 MT=32: OPENMP DISPLAY ENVIRONMENT BEGIN
+   _OPENMP='201611'
+  [host] OMP_AFFINITY_FORMAT='OMP: pid %P tid %i thread %n bound to
+  locbuf_blk_mt_nd N=16384 TB=64 SB=16 MT=4 thr=288 numa=1 nodes=36
+locbuf_blk_mt_nd N=16384 TB=64 SB=16 MT=4 thr=288 | med 5.4281 ms (395.6 GB/s) p5 5.3508 p95 8.1649 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_mt_nd N=16384 TB=64 SB=16 MT=8 thr=288 numa=1 nodes=36
+locbuf_blk_mt_nd N=16384 TB=64 SB=16 MT=8 thr=288 | med 6.6402 ms (323.4 GB/s) p5 6.5789 p95 10.3221 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_mt_nd N=16384 TB=64 SB=16 MT=16 thr=288 numa=1 nodes=36
+locbuf_blk_mt_nd N=16384 TB=64 SB=16 MT=16 thr=288 | med 3.0470 ms (704.8 GB/s) p5 2.7940 p95 4.5550 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  FAIL locbuf_blk_mt_nd SB=16 MT=32: OPENMP DISPLAY ENVIRONMENT BEGIN
+   _OPENMP='201611'
+  [host] OMP_AFFINITY_FORMAT='OMP: pid %P tid %i thread %n bound to
+  locbuf_blk_mt_nd N=16384 TB=64 SB=32 MT=4 thr=288 numa=1 nodes=36
+locbuf_blk_mt_nd N=16384 TB=64 SB=32 MT=4 thr=288 | med 6.9840 ms (307.5 GB/s) p5 6.8810 p95 7.3760 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_mt_nd N=16384 TB=64 SB=32 MT=8 thr=288 numa=1 nodes=36
+locbuf_blk_mt_nd N=16384 TB=64 SB=32 MT=8 thr=288 | med 5.5530 ms (386.7 GB/s) p5 5.3508 p95 7.3059 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_mt_nd N=16384 TB=64 SB=32 MT=16 thr=288 numa=1 nodes=36
+locbuf_blk_mt_nd N=16384 TB=64 SB=32 MT=16 thr=288 | med 3.9580 ms (542.6 GB/s) p5 3.7949 p95 5.9199 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_mt_nd N=16384 TB=64 SB=32 MT=32 thr=288 numa=1 nodes=36
+locbuf_blk_mt_nd N=16384 TB=64 SB=32 MT=32 thr=288 | med 3.8221 ms (561.9 GB/s) p5 3.6390 p95 5.6100 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_mt_nd N=16384 TB=64 SB=64 MT=4 thr=288 numa=1 nodes=36
+locbuf_blk_mt_nd N=16384 TB=64 SB=64 MT=4 thr=288 | med 6.0899 ms (352.6 GB/s) p5 5.9381 p95 8.7621 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_mt_nd N=16384 TB=64 SB=64 MT=8 thr=288 numa=1 nodes=36
+locbuf_blk_mt_nd N=16384 TB=64 SB=64 MT=8 thr=288 | med 6.2370 ms (344.3 GB/s) p5 6.1951 p95 8.2970 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_mt_nd N=16384 TB=64 SB=64 MT=16 thr=288 numa=1 nodes=36
+locbuf_blk_mt_nd N=16384 TB=64 SB=64 MT=16 thr=288 | med 5.5828 ms (384.7 GB/s) p5 5.4240 p95 7.8549 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_mt_nd N=16384 TB=64 SB=64 MT=32 thr=288 numa=1 nodes=36
+locbuf_blk_mt_nd N=16384 TB=64 SB=64 MT=32 thr=288 | med 4.0240 ms (533.7 GB/s) p5 3.9270 p95 4.9691 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_mt_nd N=16384 TB=64 SB=128 MT=4 thr=288 numa=1 nodes=36
+locbuf_blk_mt_nd N=16384 TB=64 SB=128 MT=4 thr=288 | med 22.3548 ms (96.1 GB/s) p5 22.2230 p95 23.8180 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_mt_nd N=16384 TB=64 SB=128 MT=8 thr=288 numa=1 nodes=36
+locbuf_blk_mt_nd N=16384 TB=64 SB=128 MT=8 thr=288 | med 13.1550 ms (163.2 GB/s) p5 13.0649 p95 13.4509 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_mt_nd N=16384 TB=64 SB=128 MT=16 thr=288 numa=1 nodes=36
+locbuf_blk_mt_nd N=16384 TB=64 SB=128 MT=16 thr=288 | med 13.9060 ms (154.4 GB/s) p5 13.7680 p95 14.2002 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_mt_nd N=16384 TB=64 SB=128 MT=32 thr=288 numa=1 nodes=36
+locbuf_blk_mt_nd N=16384 TB=64 SB=128 MT=32 thr=288 | med 8.6322 ms (248.8 GB/s) p5 8.3890 p95 11.4219 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_mt_nd N=16384 TB=64 SB=256 MT=4 thr=288 numa=1 nodes=36
+locbuf_blk_mt_nd N=16384 TB=64 SB=256 MT=4 thr=288 | med 77.6880 ms (27.6 GB/s) p5 77.2820 p95 80.4641 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_mt_nd N=16384 TB=64 SB=256 MT=8 thr=288 numa=1 nodes=36
+locbuf_blk_mt_nd N=16384 TB=64 SB=256 MT=8 thr=288 | med 18.5351 ms (115.9 GB/s) p5 18.3179 p95 19.0001 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_mt_nd N=16384 TB=64 SB=256 MT=16 thr=288 numa=1 nodes=36
+locbuf_blk_mt_nd N=16384 TB=64 SB=256 MT=16 thr=288 | med 13.3700 ms (160.6 GB/s) p5 13.0570 p95 14.0860 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_mt_nd N=16384 TB=64 SB=256 MT=32 thr=288 numa=1 nodes=36
+locbuf_blk_mt_nd N=16384 TB=64 SB=256 MT=32 thr=288 | med 13.2930 ms (161.5 GB/s) p5 12.8839 p95 14.4050 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_mt_nd N=16384 TB=64 SB=512 MT=4 thr=288 numa=1 nodes=36
+locbuf_blk_mt_nd N=16384 TB=64 SB=512 MT=4 thr=288 | med 305.7220 ms (7.0 GB/s) p5 304.9650 p95 306.7250 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_mt_nd N=16384 TB=64 SB=512 MT=8 thr=288 numa=1 nodes=36
+locbuf_blk_mt_nd N=16384 TB=64 SB=512 MT=8 thr=288 | med 27.1630 ms (79.1 GB/s) p5 26.9909 p95 27.4429 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_mt_nd N=16384 TB=64 SB=512 MT=16 thr=288 numa=1 nodes=36
+locbuf_blk_mt_nd N=16384 TB=64 SB=512 MT=16 thr=288 | med 26.2711 ms (81.7 GB/s) p5 23.8631 p95 28.4281 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_mt_nd N=16384 TB=64 SB=512 MT=32 thr=288 numa=1 nodes=36
+locbuf_blk_mt_nd N=16384 TB=64 SB=512 MT=32 thr=288 | med 17.7958 ms (120.7 GB/s) p5 17.3841 p95 18.1060 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_mt_c2_nd N=16384 TB=64 SB=8 MT=4 thr=288 numa=1 nodes=36
+locbuf_blk_mt_c2_nd N=16384 TB=64 SB=8 MT=4 thr=288 | med 2.2240 ms (965.6 GB/s) p5 2.1071 p95 3.4580 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_mt_c2_nd N=16384 TB=64 SB=8 MT=8 thr=288 numa=1 nodes=36
+locbuf_blk_mt_c2_nd N=16384 TB=64 SB=8 MT=8 thr=288 | med 2.1360 ms (1005.4 GB/s) p5 2.0361 p95 3.4959 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  FAIL locbuf_blk_mt_c2_nd SB=8 MT=16: OPENMP DISPLAY ENVIRONMENT BEGIN
+   _OPENMP='201611'
+  [host] OMP_AFFINITY_FORMAT='OMP: pid %P tid %i thread %n bound to
+  FAIL locbuf_blk_mt_c2_nd SB=8 MT=32: OPENMP DISPLAY ENVIRONMENT BEGIN
+   _OPENMP='201611'
+  [host] OMP_AFFINITY_FORMAT='OMP: pid %P tid %i thread %n bound to
+  locbuf_blk_mt_c2_nd N=16384 TB=64 SB=16 MT=4 thr=288 numa=1 nodes=36
+locbuf_blk_mt_c2_nd N=16384 TB=64 SB=16 MT=4 thr=288 | med 4.4510 ms (482.5 GB/s) p5 4.3180 p95 7.0500 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_mt_c2_nd N=16384 TB=64 SB=16 MT=8 thr=288 numa=1 nodes=36
+locbuf_blk_mt_c2_nd N=16384 TB=64 SB=16 MT=8 thr=288 | med 5.7571 ms (373.0 GB/s) p5 5.4400 p95 7.8731 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_mt_c2_nd N=16384 TB=64 SB=16 MT=16 thr=288 numa=1 nodes=36
+locbuf_blk_mt_c2_nd N=16384 TB=64 SB=16 MT=16 thr=288 | med 1.9791 ms (1085.1 GB/s) p5 1.8392 p95 3.7909 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  FAIL locbuf_blk_mt_c2_nd SB=16 MT=32: OPENMP DISPLAY ENVIRONMENT BEGIN
+   _OPENMP='201611'
+  [host] OMP_AFFINITY_FORMAT='OMP: pid %P tid %i thread %n bound to
+  locbuf_blk_mt_c2_nd N=16384 TB=64 SB=32 MT=4 thr=288 numa=1 nodes=36
+locbuf_blk_mt_c2_nd N=16384 TB=64 SB=32 MT=4 thr=288 | med 3.6922 ms (581.6 GB/s) p5 3.6249 p95 5.2500 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_mt_c2_nd N=16384 TB=64 SB=32 MT=8 thr=288 numa=1 nodes=36
+locbuf_blk_mt_c2_nd N=16384 TB=64 SB=32 MT=8 thr=288 | med 3.0432 ms (705.7 GB/s) p5 2.8970 p95 5.1060 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_mt_c2_nd N=16384 TB=64 SB=32 MT=16 thr=288 numa=1 nodes=36
+locbuf_blk_mt_c2_nd N=16384 TB=64 SB=32 MT=16 thr=288 | med 2.1071 ms (1019.1 GB/s) p5 1.9312 p95 3.8981 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_mt_c2_nd N=16384 TB=64 SB=32 MT=32 thr=288 numa=1 nodes=36
+locbuf_blk_mt_c2_nd N=16384 TB=64 SB=32 MT=32 thr=288 | med 2.2399 ms (958.7 GB/s) p5 2.0661 p95 4.1900 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_mt_c2_nd N=16384 TB=64 SB=64 MT=4 thr=288 numa=1 nodes=36
+locbuf_blk_mt_c2_nd N=16384 TB=64 SB=64 MT=4 thr=288 | med 5.1551 ms (416.6 GB/s) p5 5.0471 p95 8.5170 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_mt_c2_nd N=16384 TB=64 SB=64 MT=8 thr=288 numa=1 nodes=36
+locbuf_blk_mt_c2_nd N=16384 TB=64 SB=64 MT=8 thr=288 | med 3.1290 ms (686.3 GB/s) p5 3.0329 p95 7.5231 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_mt_c2_nd N=16384 TB=64 SB=64 MT=16 thr=288 numa=1 nodes=36
+locbuf_blk_mt_c2_nd N=16384 TB=64 SB=64 MT=16 thr=288 | med 2.2790 ms (942.3 GB/s) p5 2.1219 p95 4.2880 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_mt_c2_nd N=16384 TB=64 SB=64 MT=32 thr=288 numa=1 nodes=36
+locbuf_blk_mt_c2_nd N=16384 TB=64 SB=64 MT=32 thr=288 | med 2.6309 ms (816.2 GB/s) p5 2.4791 p95 4.2431 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_mt_c2_nd N=16384 TB=64 SB=128 MT=4 thr=288 numa=1 nodes=36
+locbuf_blk_mt_c2_nd N=16384 TB=64 SB=128 MT=4 thr=288 | med 9.5429 ms (225.0 GB/s) p5 9.4080 p95 13.0079 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_mt_c2_nd N=16384 TB=64 SB=128 MT=8 thr=288 numa=1 nodes=36
+locbuf_blk_mt_c2_nd N=16384 TB=64 SB=128 MT=8 thr=288 | med 3.3281 ms (645.3 GB/s) p5 3.2690 p95 5.5580 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_mt_c2_nd N=16384 TB=64 SB=128 MT=16 thr=288 numa=1 nodes=36
+locbuf_blk_mt_c2_nd N=16384 TB=64 SB=128 MT=16 thr=288 | med 2.1210 ms (1012.5 GB/s) p5 1.9951 p95 3.6061 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_mt_c2_nd N=16384 TB=64 SB=128 MT=32 thr=288 numa=1 nodes=36
+locbuf_blk_mt_c2_nd N=16384 TB=64 SB=128 MT=32 thr=288 | med 2.0189 ms (1063.7 GB/s) p5 1.9729 p95 5.0960 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_mt_c2_nd N=16384 TB=64 SB=256 MT=4 thr=288 numa=1 nodes=36
+locbuf_blk_mt_c2_nd N=16384 TB=64 SB=256 MT=4 thr=288 | med 19.6011 ms (109.6 GB/s) p5 18.5480 p95 30.7429 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_mt_c2_nd N=16384 TB=64 SB=256 MT=8 thr=288 numa=1 nodes=36
+locbuf_blk_mt_c2_nd N=16384 TB=64 SB=256 MT=8 thr=288 | med 3.2079 ms (669.4 GB/s) p5 3.1769 p95 5.3899 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_mt_c2_nd N=16384 TB=64 SB=256 MT=16 thr=288 numa=1 nodes=36
+locbuf_blk_mt_c2_nd N=16384 TB=64 SB=256 MT=16 thr=288 | med 2.0628 ms (1041.1 GB/s) p5 1.9760 p95 3.4420 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_mt_c2_nd N=16384 TB=64 SB=256 MT=32 thr=288 numa=1 nodes=36
+locbuf_blk_mt_c2_nd N=16384 TB=64 SB=256 MT=32 thr=288 | med 2.4650 ms (871.2 GB/s) p5 2.2671 p95 4.6420 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_mt_c2_nd N=16384 TB=64 SB=512 MT=4 thr=288 numa=1 nodes=36
+locbuf_blk_mt_c2_nd N=16384 TB=64 SB=512 MT=4 thr=288 | med 41.4999 ms (51.7 GB/s) p5 40.1840 p95 43.3619 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_mt_c2_nd N=16384 TB=64 SB=512 MT=8 thr=288 numa=1 nodes=36
+locbuf_blk_mt_c2_nd N=16384 TB=64 SB=512 MT=8 thr=288 | med 3.9549 ms (543.0 GB/s) p5 3.8569 p95 5.8401 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_mt_c2_nd N=16384 TB=64 SB=512 MT=16 thr=288 numa=1 nodes=36
+locbuf_blk_mt_c2_nd N=16384 TB=64 SB=512 MT=16 thr=288 | med 2.8419 ms (755.6 GB/s) p5 2.7051 p95 4.9629 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  locbuf_blk_mt_c2_nd N=16384 TB=64 SB=512 MT=32 thr=288 numa=1 nodes=36
+locbuf_blk_mt_c2_nd N=16384 TB=64 SB=512 MT=32 thr=288 | med 2.8491 ms (753.7 GB/s) p5 2.6960 p95 4.8981 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_nd N=16384 TB=64 SB=8 MT=8 thr=288 numa=1 nodes=36
+rm_blk_nd N=16384 TB=64 SB=8 MT=8 thr=288 | med 13.4959 ms (159.1 GB/s) p5 13.1929 p95 15.1889 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_nd N=16384 TB=64 SB=16 MT=8 thr=288 numa=1 nodes=36
+rm_blk_nd N=16384 TB=64 SB=16 MT=8 thr=288 | med 8.4140 ms (255.2 GB/s) p5 8.3630 p95 9.1259 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_nd N=16384 TB=64 SB=32 MT=8 thr=288 numa=1 nodes=36
+rm_blk_nd N=16384 TB=64 SB=32 MT=8 thr=288 | med 8.7888 ms (244.3 GB/s) p5 8.6679 p95 9.0258 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_nd N=16384 TB=64 SB=64 MT=8 thr=288 numa=1 nodes=36
+rm_blk_nd N=16384 TB=64 SB=64 MT=8 thr=288 | med 8.1420 ms (263.8 GB/s) p5 8.0910 p95 9.2721 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_nd N=16384 TB=64 SB=128 MT=8 thr=288 numa=1 nodes=36
+rm_blk_nd N=16384 TB=64 SB=128 MT=8 thr=288 | med 15.5210 ms (138.4 GB/s) p5 15.3661 p95 17.2172 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_nd N=16384 TB=64 SB=256 MT=8 thr=288 numa=1 nodes=36
+rm_blk_nd N=16384 TB=64 SB=256 MT=8 thr=288 | med 18.8868 ms (113.7 GB/s) p5 18.4391 p95 19.2790 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_nd N=16384 TB=64 SB=512 MT=8 thr=288 numa=1 nodes=36
+rm_blk_nd N=16384 TB=64 SB=512 MT=8 thr=288 | med 30.8800 ms (69.5 GB/s) p5 30.1719 p95 31.8432 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_c2_nd N=16384 TB=64 SB=8 MT=8 thr=288 numa=1 nodes=36
+rm_blk_c2_nd N=16384 TB=64 SB=8 MT=8 thr=288 | med 12.1670 ms (176.5 GB/s) p5 11.8890 p95 13.1669 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_c2_nd N=16384 TB=64 SB=16 MT=8 thr=288 numa=1 nodes=36
+rm_blk_c2_nd N=16384 TB=64 SB=16 MT=8 thr=288 | med 6.8512 ms (313.4 GB/s) p5 6.7508 p95 8.5270 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_c2_nd N=16384 TB=64 SB=32 MT=8 thr=288 numa=1 nodes=36
+rm_blk_c2_nd N=16384 TB=64 SB=32 MT=8 thr=288 | med 7.8101 ms (275.0 GB/s) p5 7.7431 p95 9.4190 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_c2_nd N=16384 TB=64 SB=64 MT=8 thr=288 numa=1 nodes=36
+rm_blk_c2_nd N=16384 TB=64 SB=64 MT=8 thr=288 | med 7.9789 ms (269.1 GB/s) p5 7.9210 p95 9.3431 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_c2_nd N=16384 TB=64 SB=128 MT=8 thr=288 numa=1 nodes=36
+rm_blk_c2_nd N=16384 TB=64 SB=128 MT=8 thr=288 | med 6.8102 ms (315.3 GB/s) p5 6.7410 p95 6.9170 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_c2_nd N=16384 TB=64 SB=256 MT=8 thr=288 numa=1 nodes=36
+rm_blk_c2_nd N=16384 TB=64 SB=256 MT=8 thr=288 | med 6.6838 ms (321.3 GB/s) p5 6.6230 p95 8.7340 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_c2_nd N=16384 TB=64 SB=512 MT=8 thr=288 numa=1 nodes=36
+rm_blk_c2_nd N=16384 TB=64 SB=512 MT=8 thr=288 | med 8.6250 ms (249.0 GB/s) p5 8.5671 p95 9.3582 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_mt_nd N=16384 TB=64 SB=8 MT=4 thr=288 numa=1 nodes=36
+rm_blk_mt_nd N=16384 TB=64 SB=8 MT=4 thr=288 | med 14.4310 ms (148.8 GB/s) p5 14.2741 p95 15.2040 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_mt_nd N=16384 TB=64 SB=8 MT=8 thr=288 numa=1 nodes=36
+rm_blk_mt_nd N=16384 TB=64 SB=8 MT=8 thr=288 | med 13.7260 ms (156.5 GB/s) p5 13.6139 p95 15.1379 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  FAIL rm_blk_mt_nd SB=8 MT=16: OPENMP DISPLAY ENVIRONMENT BEGIN
+   _OPENMP='201611'
+  [host] OMP_AFFINITY_FORMAT='OMP: pid %P tid %i thread %n bound to
+  FAIL rm_blk_mt_nd SB=8 MT=32: OPENMP DISPLAY ENVIRONMENT BEGIN
+   _OPENMP='201611'
+  [host] OMP_AFFINITY_FORMAT='OMP: pid %P tid %i thread %n bound to
+  rm_blk_mt_nd N=16384 TB=64 SB=16 MT=4 thr=288 numa=1 nodes=36
+rm_blk_mt_nd N=16384 TB=64 SB=16 MT=4 thr=288 | med 7.6301 ms (281.4 GB/s) p5 7.5562 p95 8.6660 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_mt_nd N=16384 TB=64 SB=16 MT=8 thr=288 numa=1 nodes=36
+rm_blk_mt_nd N=16384 TB=64 SB=16 MT=8 thr=288 | med 7.7610 ms (276.7 GB/s) p5 7.6799 p95 8.7690 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_mt_nd N=16384 TB=64 SB=16 MT=16 thr=288 numa=1 nodes=36
+rm_blk_mt_nd N=16384 TB=64 SB=16 MT=16 thr=288 | med 8.4991 ms (252.7 GB/s) p5 8.4360 p95 9.4440 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  FAIL rm_blk_mt_nd SB=16 MT=32: OPENMP DISPLAY ENVIRONMENT BEGIN
+   _OPENMP='201611'
+  [host] OMP_AFFINITY_FORMAT='OMP: pid %P tid %i thread %n bound to
+  rm_blk_mt_nd N=16384 TB=64 SB=32 MT=4 thr=288 numa=1 nodes=36
+rm_blk_mt_nd N=16384 TB=64 SB=32 MT=4 thr=288 | med 7.8459 ms (273.7 GB/s) p5 7.8042 p95 9.1271 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_mt_nd N=16384 TB=64 SB=32 MT=8 thr=288 numa=1 nodes=36
+rm_blk_mt_nd N=16384 TB=64 SB=32 MT=8 thr=288 | med 8.6310 ms (248.8 GB/s) p5 8.5790 p95 8.9169 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_mt_nd N=16384 TB=64 SB=32 MT=16 thr=288 numa=1 nodes=36
+rm_blk_mt_nd N=16384 TB=64 SB=32 MT=16 thr=288 | med 8.2951 ms (258.9 GB/s) p5 8.2340 p95 9.3300 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_mt_nd N=16384 TB=64 SB=32 MT=32 thr=288 numa=1 nodes=36
+rm_blk_mt_nd N=16384 TB=64 SB=32 MT=32 thr=288 | med 8.7039 ms (246.7 GB/s) p5 8.5940 p95 10.5062 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_mt_nd N=16384 TB=64 SB=64 MT=4 thr=288 numa=1 nodes=36
+rm_blk_mt_nd N=16384 TB=64 SB=64 MT=4 thr=288 | med 8.0118 ms (268.0 GB/s) p5 7.9651 p95 8.5421 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_mt_nd N=16384 TB=64 SB=64 MT=8 thr=288 numa=1 nodes=36
+rm_blk_mt_nd N=16384 TB=64 SB=64 MT=8 thr=288 | med 7.8230 ms (274.5 GB/s) p5 7.7732 p95 7.8821 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_mt_nd N=16384 TB=64 SB=64 MT=16 thr=288 numa=1 nodes=36
+rm_blk_mt_nd N=16384 TB=64 SB=64 MT=16 thr=288 | med 7.8950 ms (272.0 GB/s) p5 7.8361 p95 9.0432 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_mt_nd N=16384 TB=64 SB=64 MT=32 thr=288 numa=1 nodes=36
+rm_blk_mt_nd N=16384 TB=64 SB=64 MT=32 thr=288 | med 8.1232 ms (264.4 GB/s) p5 8.0469 p95 9.2981 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_mt_nd N=16384 TB=64 SB=128 MT=4 thr=288 numa=1 nodes=36
+rm_blk_mt_nd N=16384 TB=64 SB=128 MT=4 thr=288 | med 14.3721 ms (149.4 GB/s) p5 14.2372 p95 16.9952 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_mt_nd N=16384 TB=64 SB=128 MT=8 thr=288 numa=1 nodes=36
+rm_blk_mt_nd N=16384 TB=64 SB=128 MT=8 thr=288 | med 14.6379 ms (146.7 GB/s) p5 14.5440 p95 15.3990 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_mt_nd N=16384 TB=64 SB=128 MT=16 thr=288 numa=1 nodes=36
+rm_blk_mt_nd N=16384 TB=64 SB=128 MT=16 thr=288 | med 14.8301 ms (144.8 GB/s) p5 14.6940 p95 15.6941 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_mt_nd N=16384 TB=64 SB=128 MT=32 thr=288 numa=1 nodes=36
+rm_blk_mt_nd N=16384 TB=64 SB=128 MT=32 thr=288 | med 15.1720 ms (141.5 GB/s) p5 15.0201 p95 16.7542 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_mt_nd N=16384 TB=64 SB=256 MT=4 thr=288 numa=1 nodes=36
+rm_blk_mt_nd N=16384 TB=64 SB=256 MT=4 thr=288 | med 10.7601 ms (199.6 GB/s) p5 10.5021 p95 11.8639 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_mt_nd N=16384 TB=64 SB=256 MT=8 thr=288 numa=1 nodes=36
+rm_blk_mt_nd N=16384 TB=64 SB=256 MT=8 thr=288 | med 11.9851 ms (179.2 GB/s) p5 11.7950 p95 14.6229 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_mt_nd N=16384 TB=64 SB=256 MT=16 thr=288 numa=1 nodes=36
+rm_blk_mt_nd N=16384 TB=64 SB=256 MT=16 thr=288 | med 13.6409 ms (157.4 GB/s) p5 13.3011 p95 16.1359 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_mt_nd N=16384 TB=64 SB=256 MT=32 thr=288 numa=1 nodes=36
+rm_blk_mt_nd N=16384 TB=64 SB=256 MT=32 thr=288 | med 17.0050 ms (126.3 GB/s) p5 16.6860 p95 18.2700 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_mt_nd N=16384 TB=64 SB=512 MT=4 thr=288 numa=1 nodes=36
+rm_blk_mt_nd N=16384 TB=64 SB=512 MT=4 thr=288 | med 19.8681 ms (108.1 GB/s) p5 17.8058 p95 20.3791 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_mt_nd N=16384 TB=64 SB=512 MT=8 thr=288 numa=1 nodes=36
+rm_blk_mt_nd N=16384 TB=64 SB=512 MT=8 thr=288 | med 18.4882 ms (116.2 GB/s) p5 17.4170 p95 18.9300 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_mt_nd N=16384 TB=64 SB=512 MT=16 thr=288 numa=1 nodes=36
+rm_blk_mt_nd N=16384 TB=64 SB=512 MT=16 thr=288 | med 21.1568 ms (101.5 GB/s) p5 20.8559 p95 21.7590 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_mt_nd N=16384 TB=64 SB=512 MT=32 thr=288 numa=1 nodes=36
+rm_blk_mt_nd N=16384 TB=64 SB=512 MT=32 thr=288 | med 25.3232 ms (84.8 GB/s) p5 24.0860 p95 27.0400 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_mt_c2_nd N=16384 TB=64 SB=8 MT=4 thr=288 numa=1 nodes=36
+rm_blk_mt_c2_nd N=16384 TB=64 SB=8 MT=4 thr=288 | med 12.2719 ms (175.0 GB/s) p5 11.9929 p95 13.3550 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_mt_c2_nd N=16384 TB=64 SB=8 MT=8 thr=288 numa=1 nodes=36
+rm_blk_mt_c2_nd N=16384 TB=64 SB=8 MT=8 thr=288 | med 12.4059 ms (173.1 GB/s) p5 12.2831 p95 14.2548 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  FAIL rm_blk_mt_c2_nd SB=8 MT=16: OPENMP DISPLAY ENVIRONMENT BEGIN
+   _OPENMP='201611'
+  [host] OMP_AFFINITY_FORMAT='OMP: pid %P tid %i thread %n bound to
+  FAIL rm_blk_mt_c2_nd SB=8 MT=32: OPENMP DISPLAY ENVIRONMENT BEGIN
+   _OPENMP='201611'
+  [host] OMP_AFFINITY_FORMAT='OMP: pid %P tid %i thread %n bound to
+  rm_blk_mt_c2_nd N=16384 TB=64 SB=16 MT=4 thr=288 numa=1 nodes=36
+rm_blk_mt_c2_nd N=16384 TB=64 SB=16 MT=4 thr=288 | med 7.8769 ms (272.6 GB/s) p5 7.8101 p95 10.4861 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_mt_c2_nd N=16384 TB=64 SB=16 MT=8 thr=288 numa=1 nodes=36
+rm_blk_mt_c2_nd N=16384 TB=64 SB=16 MT=8 thr=288 | med 7.9079 ms (271.6 GB/s) p5 7.8239 p95 9.4242 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_mt_c2_nd N=16384 TB=64 SB=16 MT=16 thr=288 numa=1 nodes=36
+rm_blk_mt_c2_nd N=16384 TB=64 SB=16 MT=16 thr=288 | med 6.9442 ms (309.2 GB/s) p5 6.8672 p95 9.2080 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  FAIL rm_blk_mt_c2_nd SB=16 MT=32: OPENMP DISPLAY ENVIRONMENT BEGIN
+   _OPENMP='201611'
+  [host] OMP_AFFINITY_FORMAT='OMP: pid %P tid %i thread %n bound to
+  rm_blk_mt_c2_nd N=16384 TB=64 SB=32 MT=4 thr=288 numa=1 nodes=36
+rm_blk_mt_c2_nd N=16384 TB=64 SB=32 MT=4 thr=288 | med 7.6840 ms (279.5 GB/s) p5 7.6489 p95 9.5799 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_mt_c2_nd N=16384 TB=64 SB=32 MT=8 thr=288 numa=1 nodes=36
+rm_blk_mt_c2_nd N=16384 TB=64 SB=32 MT=8 thr=288 | med 7.7221 ms (278.1 GB/s) p5 7.6611 p95 9.3331 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_mt_c2_nd N=16384 TB=64 SB=32 MT=16 thr=288 numa=1 nodes=36
+rm_blk_mt_c2_nd N=16384 TB=64 SB=32 MT=16 thr=288 | med 7.8061 ms (275.1 GB/s) p5 7.7441 p95 9.8400 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_mt_c2_nd N=16384 TB=64 SB=32 MT=32 thr=288 numa=1 nodes=36
+rm_blk_mt_c2_nd N=16384 TB=64 SB=32 MT=32 thr=288 | med 7.8709 ms (272.8 GB/s) p5 7.8180 p95 9.7761 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_mt_c2_nd N=16384 TB=64 SB=64 MT=4 thr=288 numa=1 nodes=36
+rm_blk_mt_c2_nd N=16384 TB=64 SB=64 MT=4 thr=288 | med 7.6361 ms (281.2 GB/s) p5 7.5879 p95 7.7620 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_mt_c2_nd N=16384 TB=64 SB=64 MT=8 thr=288 numa=1 nodes=36
+rm_blk_mt_c2_nd N=16384 TB=64 SB=64 MT=8 thr=288 | med 6.5019 ms (330.3 GB/s) p5 6.4690 p95 6.7110 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_mt_c2_nd N=16384 TB=64 SB=64 MT=16 thr=288 numa=1 nodes=36
+rm_blk_mt_c2_nd N=16384 TB=64 SB=64 MT=16 thr=288 | med 7.8251 ms (274.4 GB/s) p5 7.7531 p95 8.9519 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_mt_c2_nd N=16384 TB=64 SB=64 MT=32 thr=288 numa=1 nodes=36
+rm_blk_mt_c2_nd N=16384 TB=64 SB=64 MT=32 thr=288 | med 7.9858 ms (268.9 GB/s) p5 7.9112 p95 10.5770 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_mt_c2_nd N=16384 TB=64 SB=128 MT=4 thr=288 numa=1 nodes=36
+rm_blk_mt_c2_nd N=16384 TB=64 SB=128 MT=4 thr=288 | med 6.5420 ms (328.3 GB/s) p5 6.4988 p95 6.8760 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_mt_c2_nd N=16384 TB=64 SB=128 MT=8 thr=288 numa=1 nodes=36
+rm_blk_mt_c2_nd N=16384 TB=64 SB=128 MT=8 thr=288 | med 6.7060 ms (320.2 GB/s) p5 6.6640 p95 8.1499 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_mt_c2_nd N=16384 TB=64 SB=128 MT=16 thr=288 numa=1 nodes=36
+rm_blk_mt_c2_nd N=16384 TB=64 SB=128 MT=16 thr=288 | med 6.7201 ms (319.6 GB/s) p5 6.6521 p95 8.2750 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_mt_c2_nd N=16384 TB=64 SB=128 MT=32 thr=288 numa=1 nodes=36
+rm_blk_mt_c2_nd N=16384 TB=64 SB=128 MT=32 thr=288 | med 7.9010 ms (271.8 GB/s) p5 7.8008 p95 9.0749 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_mt_c2_nd N=16384 TB=64 SB=256 MT=4 thr=288 numa=1 nodes=36
+rm_blk_mt_c2_nd N=16384 TB=64 SB=256 MT=4 thr=288 | med 7.5989 ms (282.6 GB/s) p5 6.5711 p95 8.8141 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_mt_c2_nd N=16384 TB=64 SB=256 MT=8 thr=288 numa=1 nodes=36
+rm_blk_mt_c2_nd N=16384 TB=64 SB=256 MT=8 thr=288 | med 7.7782 ms (276.1 GB/s) p5 7.7169 p95 9.2680 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_mt_c2_nd N=16384 TB=64 SB=256 MT=16 thr=288 numa=1 nodes=36
+rm_blk_mt_c2_nd N=16384 TB=64 SB=256 MT=16 thr=288 | med 7.7860 ms (275.8 GB/s) p5 7.7059 p95 8.8401 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_mt_c2_nd N=16384 TB=64 SB=256 MT=32 thr=288 numa=1 nodes=36
+rm_blk_mt_c2_nd N=16384 TB=64 SB=256 MT=32 thr=288 | med 7.8230 ms (274.5 GB/s) p5 7.7569 p95 9.7840 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_mt_c2_nd N=16384 TB=64 SB=512 MT=4 thr=288 numa=1 nodes=36
+rm_blk_mt_c2_nd N=16384 TB=64 SB=512 MT=4 thr=288 | med 8.5032 ms (252.6 GB/s) p5 8.4469 p95 8.8170 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_mt_c2_nd N=16384 TB=64 SB=512 MT=8 thr=288 numa=1 nodes=36
+rm_blk_mt_c2_nd N=16384 TB=64 SB=512 MT=8 thr=288 | med 7.5150 ms (285.8 GB/s) p5 7.4670 p95 8.9190 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_mt_c2_nd N=16384 TB=64 SB=512 MT=16 thr=288 numa=1 nodes=36
+rm_blk_mt_c2_nd N=16384 TB=64 SB=512 MT=16 thr=288 | med 7.2670 ms (295.5 GB/s) p5 7.2260 p95 8.6479 maxerr=0.0e+00 PASS cksum=2.199023e+12
+  rm_blk_mt_c2_nd N=16384 TB=64 SB=512 MT=32 thr=288 numa=1 nodes=36
+rm_blk_mt_c2_nd N=16384 TB=64 SB=512 MT=32 thr=288 | med 7.4649 ms (287.7 GB/s) p5 7.3900 p95 8.2080 maxerr=0.0e+00 PASS cksum=2.199023e+12
+
+  -- Library: HPTT --
+  hptt N=16384 SB=32 thr=288 hptt_thr=288 numa_nodes=36 method=ESTIMATE
+  NUMA: first-touch (aligned_alloc)
+  Creating plan (ESTIMATE)...
+  Plan: 0.000 s
+hptt N=16384 SB=32 thr=288 hptt_thr=288 | med 10.9921 ms (195.4 GB/s)  p5 10.9129  p95 11.7900  maxerr=0.0e+00  PASS  cksum=2.199023e+12
+  hptt_patient N=16384 SB=32 thr=288 hptt_thr=288 numa_nodes=36 method=PATIENT
+  NUMA: first-touch (aligned_alloc)
+  Creating plan (PATIENT)...
+  Plan: 1.084 s
+hptt_patient N=16384 SB=32 thr=288 hptt_thr=288 | med 9.1860 ms (233.8 GB/s)  p5 9.0809  p95 10.3691  maxerr=0.0e+00  PASS  cksum=2.199023e+12
+  hptt_blk N=16384 SB=16 thr=288 hptt_thr=288 numa_nodes=36 method=ESTIMATE
+  NUMA: bind_and_touch across 36 node(s)
+  Creating plan (ESTIMATE)...
+  Plan: 0.000 s
+hptt_blk N=16384 SB=16 thr=288 hptt_thr=288 | med 3.8350 ms (560.0 GB/s)  p5 3.7401  p95 6.8080  maxerr=0.0e+00  PASS  cksum=2.199023e+12
+  hptt_blk N=16384 SB=32 thr=288 hptt_thr=288 numa_nodes=36 method=ESTIMATE
+  NUMA: bind_and_touch across 36 node(s)
+  Creating plan (ESTIMATE)...
+  Plan: 0.000 s
+hptt_blk N=16384 SB=32 thr=288 hptt_thr=288 | med 7.9360 ms (270.6 GB/s)  p5 7.7331  p95 9.4290  maxerr=0.0e+00  PASS  cksum=2.199023e+12
+  hptt_blk N=16384 SB=64 thr=288 hptt_thr=288 numa_nodes=36 method=ESTIMATE
+  NUMA: bind_and_touch across 36 node(s)
+  Creating plan (ESTIMATE)...
+  Plan: 0.000 s
+hptt_blk N=16384 SB=64 thr=288 hptt_thr=288 | med 2.7080 ms (793.0 GB/s)  p5 2.6090  p95 4.3170  maxerr=0.0e+00  PASS  cksum=2.199023e+12
+  hptt_blk N=16384 SB=128 thr=288 hptt_thr=288 numa_nodes=36 method=ESTIMATE
+  NUMA: bind_and_touch across 36 node(s)
+  Creating plan (ESTIMATE)...
+  Plan: 0.000 s
+hptt_blk N=16384 SB=128 thr=288 hptt_thr=288 | med 2.6360 ms (814.7 GB/s)  p5 2.4819  p95 4.6461  maxerr=0.0e+00  PASS  cksum=2.199023e+12
+  hptt_blk N=16384 SB=256 thr=288 hptt_thr=288 numa_nodes=36 method=ESTIMATE
+  NUMA: bind_and_touch across 36 node(s)
+  Creating plan (ESTIMATE)...
+  Plan: 0.000 s
+hptt_blk N=16384 SB=256 thr=288 hptt_thr=288 | med 7.6971 ms (279.0 GB/s)  p5 7.5600  p95 9.3691  maxerr=0.0e+00  PASS  cksum=2.199023e+12
+  hptt_blk N=16384 SB=512 thr=288 hptt_thr=288 numa_nodes=36 method=ESTIMATE
+  NUMA: bind_and_touch across 36 node(s)
+  Creating plan (ESTIMATE)...
+  Plan: 0.000 s
+hptt_blk N=16384 SB=512 thr=288 hptt_thr=288 | med 7.9570 ms (269.9 GB/s)  p5 7.7331  p95 10.0591  maxerr=0.0e+00  PASS  cksum=2.199023e+12
+  hptt_patient_blk N=16384 SB=16 thr=288 hptt_thr=288 numa_nodes=36 method=PATIENT
+  NUMA: bind_and_touch across 36 node(s)
+  Creating plan (PATIENT)...
+  Plan: 42.044 s
+hptt_patient_blk N=16384 SB=16 thr=288 hptt_thr=288 | med 8.4131 ms (255.3 GB/s)  p5 8.3282  p95 10.4959  maxerr=0.0e+00  PASS  cksum=2.199023e+12
+  hptt_patient_blk N=16384 SB=32 thr=288 hptt_thr=288 numa_nodes=36 method=PATIENT
+  NUMA: bind_and_touch across 36 node(s)
+  Creating plan (PATIENT)...
+  Plan: 38.121 s
+hptt_patient_blk N=16384 SB=32 thr=288 hptt_thr=288 | med 2.6751 ms (802.8 GB/s)  p5 2.5699  p95 5.6570  maxerr=0.0e+00  PASS  cksum=2.199023e+12
+  hptt_patient_blk N=16384 SB=64 thr=288 hptt_thr=288 numa_nodes=36 method=PATIENT
+  NUMA: bind_and_touch across 36 node(s)
+  Creating plan (PATIENT)...
+  Plan: 41.699 s
+hptt_patient_blk N=16384 SB=64 thr=288 hptt_thr=288 | med 7.9520 ms (270.1 GB/s)  p5 7.8628  p95 8.4848  maxerr=0.0e+00  PASS  cksum=2.199023e+12
+  hptt_patient_blk N=16384 SB=128 thr=288 hptt_thr=288 numa_nodes=36 method=PATIENT
+  NUMA: bind_and_touch across 36 node(s)
+  Creating plan (PATIENT)...
+  Plan: 42.751 s
+hptt_patient_blk N=16384 SB=128 thr=288 hptt_thr=288 | med 8.6169 ms (249.2 GB/s)  p5 8.4989  p95 10.2849  maxerr=0.0e+00  PASS  cksum=2.199023e+12
+  hptt_patient_blk N=16384 SB=256 thr=288 hptt_thr=288 numa_nodes=36 method=PATIENT
+  NUMA: bind_and_touch across 36 node(s)
+  Creating plan (PATIENT)...
+  Plan: 39.183 s
+hptt_patient_blk N=16384 SB=256 thr=288 hptt_thr=288 | med 2.4500 ms (876.5 GB/s)  p5 2.3241  p95 4.5829  maxerr=0.0e+00  PASS  cksum=2.199023e+12
+  hptt_patient_blk N=16384 SB=512 thr=288 hptt_thr=288 numa_nodes=36 method=PATIENT
+  NUMA: bind_and_touch across 36 node(s)
+  Creating plan (PATIENT)...
+  Plan: 42.420 s
+hptt_patient_blk N=16384 SB=512 thr=288 hptt_thr=288 | med 7.3490 ms (292.2 GB/s)  p5 7.2222  p95 7.8728  maxerr=0.0e+00  PASS  cksum=2.199023e+12
+
+-- Aggregate --
+
+==============================================================================================================
+ CPU: unknown   Cores: 64   Emp BW: 483.5 GB/s
+ Transpose: N=16384  bytes/call = 2.147 GB (read+write, float32)
+==============================================================================================================
+
+ variant                 TB  SB MT thr   medGB/s  minGB/s  maxGB/s  %pkBW     medMs     p5ms    p95ms   vs lib  stat
+ --------------------------------------------------------------------------------------------------------------------
+ locbuf_blk_mt_c2_nd     64  16 16 288    1085.7    517.1   1227.1  224.5%    1.9780   1.8391   3.7721    464%  PASS  
+ locbuf_blk_mt_c2_nd     64 128 32 288    1063.9    412.1   1095.0  220.0%    2.0185   1.9729   4.7929    455%  PASS  
+ locbuf_blk_mt_c2_nd     64 256 16 288    1041.2    400.9   1097.9  215.4%    2.0624   1.9759   3.2482    445%  PASS  
+ locbuf_blk_c2_nd        64  16  8 288    1020.5    498.4   1137.4  211.1%    2.1044   1.9331   3.1509    436%  PASS  
+ locbuf_blk_mt_c2_nd     64  32 16 288    1019.7    406.8   1129.7  210.9%    2.1061   1.9311   3.7203    436%  PASS  
+ locbuf_blk_mt_c2_nd     64 128 16 288    1013.4    442.9   1107.5  209.6%    2.1191   1.9950   3.4958    433%  PASS  
+ locbuf_blk_mt_nd        64   8  8 288    1011.2    453.7   1106.9  209.2%    2.1236   1.9984   2.5576    433%  PASS  
+ locbuf_blk_mt_c2_nd     64   8  8 288    1005.6    395.9   1066.8  208.0%    2.1355   2.0360   3.4941    430%  PASS  
+ locbuf_blk_c2_nd        64   8  8 288    1003.0    586.4   1060.5  207.5%    2.1410   2.0398   3.0153    429%  PASS  
+ locbuf_blk_nd           64   8  8 288     993.1    477.5   1063.2  205.4%    2.1625   2.0439   3.6269    425%  PASS  
+ locbuf_blk_mt_c2_nd     64   8  4 288     965.6    276.3   1039.4  199.7%    2.2240   2.1071   3.2834    413%  PASS  
+ locbuf_blk_c2_nd        64  32  8 288     960.4    445.0   1032.5  198.6%    2.2361   2.1098   2.7882    411%  PASS  
+ locbuf_blk_mt_c2_nd     64  32 32 288     958.7     49.5   1074.8  198.3%    2.2399   2.0660   4.0692    410%  PASS  
+ locbuf_blk_mt_c2_nd     64  64 16 288     942.7    289.5   1038.9  195.0%    2.2780   2.1216   4.1910    403%  PASS  
+ locbuf_blk_c2_nd        64  64  8 288     924.1    432.9   1057.8  191.1%    2.3240   2.0967   3.8109    395%  PASS  
+ locbuf_blk_c2_nd        64 256  8 288     916.6    476.5    999.4  189.6%    2.3429   2.1922   3.3730    392%  PASS  
+ hptt_patient_blk         0 256  0 288     877.2    380.4    934.8  181.4%    2.4481   2.3240   4.5498    375%  PASS *
+ locbuf_blk_c2_nd        64 128  8 288     873.7    535.7    992.4  180.7%    2.4580   2.2718   3.3733    374%  PASS  
+ locbuf_blk_mt_c2_nd     64 256 32 288     871.4     85.8    974.0  180.2%    2.4645   2.2650   4.6296    373%  PASS  
+ locbuf_blk_mt_nd        64   8  4 288     841.2    538.9    887.3  174.0%    2.5530   2.4387   2.8819    360%  PASS  
+ locbuf_blk_mt_c2_nd     64  64 32 288     816.4    356.1    960.4  168.8%    2.6305   2.4782   3.8402    349%  PASS  
+ hptt_blk                 0 128  0 288     814.8    334.5    871.2  168.5%    2.6355   2.4819   4.6137    349%  PASS *
+ hptt_patient_blk         0  32  0 288     802.9    337.9    853.8  166.1%    2.6746   2.5694   5.3331    343%  PASS *
+ hptt_blk                 0  64  0 288     793.0    369.9    832.1  164.0%    2.7080   2.6088   4.1023    339%  PASS *
+ locbuf_blk_c2_nd        64 512  8 288     765.0    237.0    800.4  158.2%    2.8070   2.7138   4.5902    327%  PASS  
+ locbuf_blk_mt_c2_nd     64 512 16 288     755.8     71.2    821.2  156.3%    2.8415   2.7050   4.8870    323%  PASS  
+ locbuf_blk_mt_c2_nd     64 512 32 288     754.4    326.9    807.0  156.0%    2.8466   2.6960   4.7015    323%  PASS  
+ blk_aligned_c2_nd       64 128  8 288     749.2    253.4    769.4  154.9%    2.8665   2.8177   5.3308    320%  PASS  
+ blk_aligned_mt_c2_nd    64  32  8 288     725.7    240.4    747.5  150.1%    2.9590   2.8986   5.7362    310%  PASS  
+ blk_aligned_mt_c2_nd    64 128  4 288     722.8    244.0    768.1  149.5%    2.9711   2.8281   4.7204    309%  PASS  
+ blk_tiled_c2_nd         64  64  8 288     722.2    216.9    748.5  149.4%    2.9734   2.8878   5.1314    309%  PASS  
+ blk_aligned_mt_c2_nd    64 256  4 288     720.4    290.6    734.7  149.0%    2.9809   2.9390   4.8380    308%  PASS  
+ blk_aligned_mt_c2_nd    64  64 32 288     718.9    315.2    735.2  148.7%    2.9874   2.9418   5.9292    307%  PASS  
+ blk_aligned_mt_c2_nd    64  32 32 288     715.7    309.0    731.5  148.0%    3.0004   2.9530   5.8640    306%  PASS  
+ blk_aligned_c2_nd       64  32  8 288     713.7    345.7    727.0  147.6%    3.0088   2.9698   5.0548    305%  PASS  
+ blk_aligned_c2_nd       64 256  8 288     712.1    255.8    727.7  147.3%    3.0155   2.9730   5.9962    305%  PASS  
+ locbuf_blk_mt_c2_nd     64  32  8 288     706.0    341.6    743.6  146.0%    3.0416   2.8969   5.0566    302%  PASS  
+ locbuf_blk_mt_nd        64  16 16 288     705.0    337.7    824.0  145.8%    3.0460   2.7907   4.5330    302%  PASS  
+ locbuf_blk_nd           64  16  8 288     687.1    394.1    776.7  142.1%    3.1254   2.9143   4.0264    294%  PASS  
+ locbuf_blk_mt_c2_nd     64  64  8 288     686.5    162.5    716.3  142.0%    3.1281   3.0329   6.6472    294%  PASS  
+ blk_aligned_mt_c2_nd    64  64  4 288     685.5    339.7    728.2  141.8%    3.1329   3.0199   5.9221    293%  PASS  
+ blk_aligned_mt_c2_nd    64 128 32 288     675.3    321.3    696.3  139.7%    3.1799   3.1101   5.0677    289%  PASS  
+ locbuf_blk_mt_c2_nd     64 256  8 288     669.5    357.7    681.5  138.5%    3.2074   3.1764   5.2882    286%  PASS  
+ blk_aligned_mt_c2_nd    64  32  4 288     663.9    323.7    680.6  137.3%    3.2345   3.1760   4.8431    284%  PASS  
+ blk_tiled_c2_nd         64 256  8 288     648.4    306.1    685.7  134.1%    3.3120   3.1907   6.2502    277%  PASS  
+ locbuf_blk_mt_c2_nd     64 128  8 288     645.3    230.2    661.0  133.5%    3.3280   3.2689   5.3385    276%  PASS  
+ blk_aligned_c2_nd       64  64  8 288     643.4     83.5    713.2  133.1%    3.3375   3.0559   5.6925    275%  PASS  
+ blk_tiled_c2_nd         64 128  8 288     639.2    264.9    666.7  132.2%    3.3596   3.2639   6.0867    273%  PASS  
+ blk_aligned_mt_c2_nd    64 256 32 288     631.5    252.0    649.6  130.6%    3.4004   3.3450   5.9920    270%  PASS  
+ blk_tiled_c2_nd         64 512  8 288     624.5    229.2    650.2  129.2%    3.4390   3.3188   6.2458    267%  PASS  
+ blk_tiled_c2_nd         64  32  8 288     617.5    290.0    673.6  127.7%    3.4776   3.2438   5.1881    264%  PASS  
+ blk_aligned_mt_c2_nd    64 512  4 288     600.5    298.5    628.5  124.2%    3.5764   3.4261   5.0104    257%  PASS  
+ blk_aligned_c2_nd       64 512  8 288     594.9    249.1    621.0  123.0%    3.6099   3.4765   7.0718    254%  PASS  
+ blk_tiled_c2_nd         64  16  8 288     589.5    235.7    621.7  121.9%    3.6430   3.5327   4.3964    252%  PASS  
+ locbuf_blk_mt_c2_nd     64  32  4 288     581.7    316.7    594.7  120.3%    3.6917   3.6249   5.0011    249%  PASS  
+ blk_aligned_mt_c2_nd    64 512 32 288     571.8    191.8    582.3  118.3%    3.7559   3.7021   6.5329    245%  PASS  
+ locbuf_blk_nd           64  32  8 288     565.7    196.2    605.4  117.0%    3.7965   3.6046   5.3411    242%  PASS  
+ blk_aligned_mt_c2_nd    64  32 16 288     561.9    295.8    577.9  116.2%    3.8220   3.7419   5.7954    240%  PASS  
+ locbuf_blk_mt_nd        64  32 32 288     561.9    364.1    602.9  116.2%    3.8215   3.6389   5.5996    240%  PASS  
+ hptt_blk                 0  16  0 288     560.2    134.4    578.2  115.9%    3.8334   3.7398   6.4099    240%  PASS *
+ blk_aligned_mt_c2_nd    64  16 16 288     555.7    166.0    566.6  114.9%    3.8645   3.8018   6.1686    238%  PASS  
+ locbuf_blk_mt_nd        64  32 16 288     543.1    232.9    570.8  112.3%    3.9544   3.7946   5.8135    232%  PASS  
+ locbuf_blk_mt_c2_nd     64 512  8 288     543.1    327.6    562.0  112.3%    3.9544   3.8563   5.4981    232%  PASS  
+ locbuf_blk_nd           64  64  8 288     541.3    359.6    566.8  112.0%    3.9674   3.8489   4.8699    232%  PASS  
+ blk_aligned_mt_c2_nd    64  64  8 288     540.2    226.5    559.5  111.7%    3.9750   3.8822   6.2049    231%  PASS  
+ locbuf_blk_mt_nd        64  64 32 288     533.7    224.4    551.6  110.4%    4.0236   3.9269   4.9148    228%  PASS  
+ blk_aligned_c2_nd       64  16  8 288     530.9    226.4    551.6  109.8%    4.0449   3.9130   5.9050    227%  PASS  
+ blk_aligned_mt_c2_nd    64  64 16 288     521.4    219.4    535.0  107.8%    4.1184   4.0299   6.0844    223%  PASS  
+ blk_aligned_mt_c2_nd    64  16  4 288     506.7    254.7    522.9  104.8%    4.2385   4.1320   7.5560    217%  PASS  
+ blk_aligned_mt_c2_nd    64  16  8 288     505.3     80.9    522.0  104.5%    4.2502   4.1477   7.6413    216%  PASS  
+ blk_tiled_c2_nd         64   8  8 288     495.1    212.1    573.7  102.4%    4.3375   3.9393   5.6519    212%  PASS  
+ locbuf_blk_mt_c2_nd     64  16  4 288     482.6    287.2    511.1   99.8%    4.4496   4.3177   6.8867    206%  PASS  
+ locbuf_c2_nd            64  32  8 288     471.7    312.0    488.0   97.6%    4.5528   4.4766   5.8061    202%  PASS  
+ locbuf_c2_nd            32  32  8 288     458.0    261.2    470.3   94.7%    4.6885   4.6149   5.9535    196%  PASS  
+ blk_aligned_mt_nd       64  16 16 288     444.6    257.5    480.5   92.0%    4.8299   4.5934   7.3197    190%  PASS  
+ locbuf_c2_nd           128  32  8 288     438.3    262.4    451.2   90.7%    4.8995   4.7930   5.1103    187%  PASS  
+ blk_aligned_mt_c2_nd    64 128 16 288     436.3    236.8    455.5   90.2%    4.9219   4.7867   6.5262    187%  PASS  
+ blk_aligned_mt_nd       64  16  4 288     420.0    190.5    439.0   86.9%    5.1134   5.0149   8.1062    180%  PASS  
+ locbuf_blk_mt_c2_nd     64  64  4 288     416.8    245.8    427.3   86.2%    5.1525   5.0470   7.9005    178%  PASS  
+ blk_aligned_nd          64  16  8 288     413.8    196.4    459.7   85.6%    5.1891   4.7891   8.6097    177%  PASS  
+ blk_aligned_mt_c2_nd    64 128  8 288     406.7    211.8    413.4   84.1%    5.2806   5.2180   6.9666    174%  PASS  
+ locbuf_c2_nd            16  32  8 288     404.6    259.1    412.7   83.7%    5.3080   5.2267   6.9726    173%  PASS  
+ locbuf_blk_mt_nd        64  16  4 288     395.6    246.9    415.9   81.8%    5.4281   5.3503   7.4668    169%  PASS  
+ locbuf_blk_mt_nd        64  32  8 288     386.9    266.6    404.5   80.0%    5.5500   5.3503   7.3011    165%  PASS  
+ locbuf_blk_mt_nd        64  64 16 288     384.7    185.7    401.7   79.6%    5.5819   5.4240   7.7782    165%  PASS  
+ blk_aligned_mt_nd       64  16  8 288     382.3    247.1    400.3   79.1%    5.6174   5.5049   8.1825    164%  PASS  
+ locbuf_blk              64  16  8 288     381.5    219.0    399.1   78.9%    5.6289   5.4593   6.1085    163%  PASS  
+ blk_aligned_mt_nd       64  32  8 288     381.1    203.7    389.3   78.8%    5.6344   5.5455   6.9161    163%  PASS  
+ locbuf_nd               64  32  8 288     380.3    310.7    393.6   78.7%    5.6465   5.5147   5.8845    163%  PASS  
+ locbuf_nd               32  32  8 288     380.0    294.4    391.2   78.6%    5.6511   5.5404   5.7853    163%  PASS  
+ blk_aligned_mt_nd       64  64  4 288     379.1    209.5    387.3   78.4%    5.6651   5.5817   8.5236    162%  PASS  
+ blk_aligned_mt_nd       64  32  4 288     377.8    173.4    386.3   78.1%    5.6845   5.5969   7.0132    162%  PASS  
+ blk_aligned_mt_nd       64  64 32 288     373.8    243.8    379.1   77.3%    5.7452   5.6798   8.4568    160%  PASS  
+ blk_tiled_nd            64 512  8 288     373.5    237.1    378.3   77.3%    5.7490   5.6947   8.2617    160%  PASS  
+ blk_tiled_nd            64 256  8 288     373.2    185.2    377.8   77.2%    5.7545   5.7129   7.9024    160%  PASS  
+ locbuf_blk_mt_c2_nd     64  16  8 288     373.1    240.4    401.2   77.2%    5.7551   5.4397   7.8615    160%  PASS  
+ blk_tiled_nd            64  64  8 288     369.1    231.2    377.8   76.3%    5.8184   5.7237   8.8174    158%  PASS  
+ blk_tiled_nd            64 128  8 288     369.1    191.1    372.4   76.3%    5.8186   5.7848   8.0982    158%  PASS  
+ blk_tiled_nd            64  32  8 288     366.3    251.8    379.7   75.8%    5.8630   5.7580   8.2362    157%  PASS  
+ blk_aligned_nd          64  64  8 288     366.0    230.3    372.4   75.7%    5.8680   5.7740   8.3241    157%  PASS  
+ blk_aligned_mt_nd       64  32 32 288     364.6    249.4    375.0   75.4%    5.8894   5.8005   7.7209    156%  PASS  
+ blk_aligned_nd          64  32  8 288     363.8    190.3    376.7   75.2%    5.9036   5.8031   7.6582    156%  PASS  
+ blk_aligned_mt_nd       64  64  8 288     363.8    222.6    368.5   75.2%    5.9030   5.8432   8.0286    156%  PASS  
+ blk_tiled_nd            64  16  8 288     363.4    158.8    401.3   75.2%    5.9096   5.5650   6.2060    155%  PASS  
+ blk_aligned_mt_nd       64  64 16 288     361.8    211.5    366.1   74.8%    5.9355   5.8887   8.0357    155%  PASS  
+ locbuf_blk_mt_c2        64 512 32 288     357.5    249.1    377.6   73.9%    6.0065   5.8148   7.2584    153%  PASS  
+ locbuf_nd               16  32  8 288     357.5    227.8    371.7   73.9%    6.0065   5.8028   6.2301    153%  PASS  
+ locbuf_2buf_c2_nd       64  32  8 288     355.4    251.9    361.6   73.5%    6.0430   5.9909   7.2734    152%  PASS  
+ blk_tiled_nd            64   8  8 288     355.1    226.0    386.6   73.4%    6.0471   5.7215   6.8085    152%  PASS  
+ locbuf_2buf_c2_nd       32  32  8 288     354.2    253.4    358.5   73.3%    6.0624   6.0060   7.2945    151%  PASS  
+ locbuf_blk_mt_nd        64  64  4 288     352.7    144.8    363.4   73.0%    6.0880   5.9379   8.6973    151%  PASS  
+ locbuf_blk_mt_nd        64  64  8 288     344.3    233.0    349.5   71.2%    6.2366   6.1951   8.1670    147%  PASS  
+ locbuf_2buf_c2_nd      128  32  8 288     342.7    256.1    347.7   70.9%    6.2665   6.2040   6.5362    147%  PASS  
+ locbuf_blk_mt_c2        64  16 16 288     338.0    222.9    345.0   69.9%    6.3540   6.2833   7.6991    145%  PASS  
+ blk_aligned_mt_nd       64  32 16 288     332.1    191.0    339.3   68.7%    6.4659   6.3709   7.9562    142%  PASS  
+ rm_blk_mt_c2_nd         64  64  8 288     330.3    208.0    333.1   68.3%    6.5014   6.4688   6.7101    141%  PASS  
+ rm_blk_mt_c2_nd         64 128  4 288     328.3    236.3    331.3   67.9%    6.5414   6.4988   6.8703    140%  PASS  
+ locbuf_blk_mt_nd        64  16  8 288     323.4    189.6    327.4   66.9%    6.6396   6.5789  10.2754    138%  PASS  
+ locbuf_blk_c2           64  32  8 288     322.2    233.3    344.4   66.6%    6.6653   6.3465   7.7980    138%  PASS  
+ rm_blk_c2_nd            64 256  8 288     321.3    194.2    326.1   66.5%    6.6835   6.6230   8.5820    137%  PASS  
+ rm_blk_mt_c2_nd         64 128  8 288     320.3    176.6    323.5   66.2%    6.7055   6.6640   8.1433    137%  PASS  
+ rm_blk_mt_c2_nd         64 128 16 288     319.6    193.2    324.1   66.1%    6.7190   6.6521   7.9767    137%  PASS  
+ locbuf_2buf_nd          64  32  8 288     315.4    183.0    319.8   65.2%    6.8084   6.7451   8.8395    135%  PASS  
+ rm_blk_c2_nd            64 128  8 288     315.3    248.2    319.5   65.2%    6.8101   6.7407   6.9027    135%  PASS  
+ rm_blk_c2_nd            64  16  8 288     313.5    223.4    318.9   64.8%    6.8496   6.7507   8.2306    134%  PASS  
+ locbuf_blk_mt_c2        64   8  4 288     311.3    215.7    314.6   64.4%    6.8985   6.8613   7.5429    133%  PASS  
+ locbuf_blk_mt           64   8  8 288     309.5    212.3    314.6   64.0%    6.9375   6.8659   8.0584    132%  PASS  
+ rm_blk_mt_c2_nd         64  16 16 288     309.3    214.0    314.2   64.0%    6.9425   6.8671   9.1880    132%  PASS  
+ locbuf_blk_mt_nd        64  32  4 288     307.5    166.8    315.0   63.6%    6.9835   6.8810   7.3361    132%  PASS  
+ blk_aligned_mt_c2       64  64 32 288     306.2    223.1    310.7   63.3%    7.0134   6.9587   8.3422    131%  PASS  
+ locbuf_2buf_nd          32  32  8 288     304.6    192.1    308.3   63.0%    7.0510   6.9950   7.7616    130%  PASS  
+ blk_aligned_mt_c2       64 128  8 288     302.9    190.4    305.0   62.6%    7.0895   7.0508   7.9044    130%  PASS  
+ locbuf_c2               16  32  8 288     299.0    138.0    307.0   61.8%    7.1821   7.0703   8.8918    128%  PASS  
+ tiled_c2_nd             16  32  8 288     298.6    205.8    301.7   61.7%    7.1930   7.1289   8.2919    128%  PASS  
+ rm_blk_mt_c2_nd         64 512 16 288     295.6    206.9    298.1   61.1%    7.2656   7.2258   8.4855    126%  PASS  
+ locbuf_2buf_c2_nd       16  32  8 288     292.6    136.9    298.8   60.5%    7.3385   7.2668   9.8871    125%  PASS  
+ tiled_c2_nd             32  32  8 288     292.3    214.0    295.2   60.5%    7.3466   7.2909   8.1514    125%  PASS  
+ hptt_patient_blk         0 512  0 288     292.3    239.0    298.4   60.5%    7.3470   7.2222   7.8427    125%  PASS *
+ tiled_c2_nd            128  32  8 288     288.9    139.3    292.6   59.8%    7.4329   7.3798   8.9706    124%  PASS  
+ rm_blk_mt_c2_nd         64 512 32 288     287.7    225.2    291.7   59.5%    7.4641   7.3900   8.1861    123%  PASS  
+ blk_aligned_mt_c2_nd    64   8  8 288     287.6    170.6    293.4   59.5%    7.4663   7.3749   9.9418    123%  PASS  
+ rm_blk_c2               64  64  8 288     287.4    155.5    290.9   59.4%    7.4716   7.4077   9.0670    123%  PASS  
+ blk_aligned_mt_nd       64   8  8 288     287.2    186.3    292.1   59.4%    7.4766   7.4050   9.8799    123%  PASS  
+ locbuf_c2               32  32  8 288     286.9     77.9    291.6   59.3%    7.4861   7.4126   9.0823    123%  PASS  
+ locbuf_blk_c2           64 512  8 288     286.2     72.0    309.1   59.2%    7.5035   7.0672   9.5550    122%  PASS  
+ locbuf_blk_mt           64  16 16 288     286.0    219.2    292.5   59.1%    7.5099   7.4241   7.6413    122%  PASS  
+ rm_blk_mt_c2_nd         64 512  8 288     285.8    215.6    289.1   59.1%    7.5145   7.4670   8.7272    122%  PASS  
+ blk_aligned_c2_nd       64   8  8 288     285.7    211.1    289.7   59.1%    7.5154   7.4289   9.9693    122%  PASS  
+ blk_aligned_mt_c2_nd    64 256  8 288     284.7    184.8    291.5   58.9%    7.5440   7.4208   9.8899    122%  PASS  
+ blk_aligned_nd          64   8  8 288     284.6    175.5    289.5   58.9%    7.5465   7.4481  10.8120    122%  PASS  
+ locbuf_2buf_nd          16  32  8 288     284.2    224.0    290.1   58.8%    7.5575   7.4676   7.7903    122%  PASS  
+ rm_blk_mt_c2_nd         64 256  4 288     282.6     78.1    327.8   58.4%    7.5989   6.5707   8.1928    121%  PASS  
+ locbuf_blk              64  32  8 288     282.0    197.7    292.3   58.3%    7.6145   7.3882   9.8612    121%  PASS  
+ blk_aligned_mt_c2       64  32  8 288     281.7    189.1    299.7   58.3%    7.6245   7.5287   8.4771    120%  PASS  
+ rm_blk_mt_nd            64  16  4 288     281.5    200.0    286.0   58.2%    7.6295   7.5562   8.6479    120%  PASS  
+ rm_blk_mt_c2_nd         64  64  4 288     281.2    206.1    284.4   58.2%    7.6361   7.5876   7.7545    120%  PASS  
+ tiled_c2_nd             64  32  8 288     279.6    201.1    281.5   57.8%    7.6814   7.6401   8.6942    120%  PASS  
+ rm_blk_mt_c2_nd         64  32  4 288     279.5    207.6    281.7   57.8%    7.6840   7.6488   9.5781    120%  PASS  
+ hptt_blk                 0 256  0 288     279.0    168.4    297.3   57.7%    7.6960   7.5587   9.1268    119%  PASS *
+ rm_blk_mt_c2_nd         64  32  8 288     278.1     29.4    280.8   57.5%    7.7220   7.6610   9.3186    119%  PASS  
+ rm_blk_mt_nd            64  16  8 288     276.7    187.1    281.6   57.2%    7.7610   7.6798   8.4431    118%  PASS  
+ rm_blk_mt_c2_nd         64 256  8 288     276.1    181.9    279.4   57.1%    7.7780   7.7165   9.1226    118%  PASS  
+ rm_blk_mt_c2            64  16  8 288     275.9    206.8    292.5   57.1%    7.7829   7.4866   9.4592    118%  PASS  
+ rm_blk_mt_c2_nd         64 256 16 288     275.8    209.2    279.3   57.0%    7.7856   7.7056   8.8143    118%  PASS  
+ tiled_nd                16  32  8 288     275.4    192.8    278.9   57.0%    7.7965   7.7228   8.2938    118%  PASS  
+ rm_blk_mt_c2_nd         64  32 16 288     275.2    192.5    277.8   56.9%    7.8036   7.7440   9.8391    118%  PASS  
+ rm_blk_c2_nd            64  32  8 288     275.0     75.6    277.9   56.9%    7.8090   7.7431   9.3297    118%  PASS  
+ rm_blk_mt_nd            64  64  8 288     274.5    173.7    277.6   56.8%    7.8220   7.7730   7.8801    117%  PASS  
+ rm_blk_mt_c2_nd         64  64 16 288     274.5    135.7    277.5   56.8%    7.8245   7.7529   8.9197    117%  PASS  
+ rm_blk_mt_c2_nd         64 256 32 288     274.5    183.3    277.6   56.8%    7.8220   7.7569   9.7611    117%  PASS  
+ rm_blk_mt_nd            64  32  4 288     273.7    197.3    276.6   56.6%    7.8454   7.8039   8.7595    117%  PASS  
+ locbuf_blk_c2           64  16  8 288     273.3    197.7    284.4   56.5%    7.8580   7.6019   9.7645    117%  PASS  
+ locbuf_blk_c2           64 256  8 288     273.1    209.4    291.8   56.5%    7.8635   7.4652   9.4684    117%  PASS  
+ rm_blk_mt_c2_nd         64  32 32 288     272.9    197.8    275.9   56.4%    7.8690   7.8177   9.2574    117%  PASS  
+ rm_blk_mt_c2_nd         64  16  4 288     272.7     74.0    277.7   56.4%    7.8739   7.8101  10.3006    117%  PASS  
+ rm_blk_mt_nd            64  64 16 288     272.1    181.2    274.2   56.3%    7.8934   7.8361   9.0013    116%  PASS  
+ rm_blk_mt_c2_nd         64 128 32 288     271.8    168.2    276.5   56.2%    7.9005   7.8008   9.0056    116%  PASS  
+ rm_blk_mt_c2_nd         64  16  8 288     271.6    162.1    275.5   56.2%    7.9074   7.8236   9.3850    116%  PASS  
+ locbuf_blk_mt_c2        64  64 32 288     270.7    193.2    281.4   56.0%    7.9340   7.7002   8.5183    116%  PASS  
+ hptt_blk                 0  32  0 288     270.6    158.9    285.8   56.0%    7.9350   7.7323   9.3293    116%  PASS *
+ hptt_patient_blk         0  64  0 288     270.1    206.0    275.9   55.9%    7.9499   7.8627   8.2968    116%  PASS *
+ hptt_blk                 0 512  0 288     270.0    165.2    278.7   55.8%    7.9545   7.7330   9.9099    115%  PASS *
+ rm_blk_c2_nd            64  64  8 288     269.2    185.5    271.7   55.7%    7.9780   7.9209   9.1853    115%  PASS  
+ rm_blk_mt_c2_nd         64  64 32 288     268.9    119.7    272.0   55.6%    7.9854   7.9110  10.4336    115%  PASS  
+ locbuf_blk_mt_c2        64  64 16 288     268.3    194.2    272.5   55.5%    8.0045   7.9028   9.0113    115%  PASS  
+ locbuf_blk_mt_c2        64 256 32 288     268.2    215.8    279.7   55.5%    8.0070   7.7829   9.4296    115%  PASS  
+ rm_blk_mt_nd            64  64  4 288     268.1    165.3    269.7   55.4%    8.0110   7.9650   8.2379    115%  PASS  
+ locbuf_2buf_c2          32  32  8 288     266.2    199.6    270.7   55.0%    8.0684   7.9797   8.7709    114%  PASS  
+ locbuf_blk_c2           64   8  8 288     265.9    199.8    281.8   55.0%    8.0760   7.7852   9.6596    114%  PASS  
+ locbuf_c2              128  32  8 288     264.4    203.1    273.5   54.7%    8.1226   7.9399   9.2019    113%  PASS  
+ rm_blk_mt_nd            64  64 32 288     264.4    201.0    268.7   54.7%    8.1221   8.0466   9.2874    113%  PASS  
+ locbuf_blk_mt_c2        64   8  8 288     264.3    192.0    274.3   54.7%    8.1260   7.9130   9.4790    113%  PASS  
+ locbuf_blk_c2           64 128  8 288     264.2    214.2    270.7   54.6%    8.1290   8.0003   9.3291    113%  PASS  
+ rm_blk_nd               64  64  8 288     263.8    201.5    266.4   54.6%    8.1415   8.0909   9.1770    113%  PASS  
+ blk_aligned_mt_c2       64 512 32 288     263.5    200.0    269.1   54.5%    8.1509   8.0284   8.9304    113%  PASS  
+ locbuf_blk_c2           64  64  8 288     263.1    191.0    268.5   54.4%    8.1626   8.0300   9.8209    113%  PASS  
+ rm_blk_c2               64  32  8 288     262.5    189.6    269.5   54.3%    8.1813   8.0374   9.7592    112%  PASS  
+ locbuf_blk_mt           64   8  4 288     261.6    149.4    266.7   54.1%    8.2076   8.1018  10.1091    112%  PASS  
+ blk_tiled               64 128  8 288     261.5    162.2    274.0   54.1%    8.2129   7.8858  10.2467    112%  PASS  
+ rm_blk_mt_nd            64  32 16 288     258.9    206.9    262.3   53.5%    8.2946   8.2338   8.9282    111%  PASS  
+ blk_aligned             64  32  8 288     258.1    177.3    275.0   53.4%    8.3189   8.1735  10.3644    110%  PASS  
+ rm_blk_mt               64  16  4 288     257.5    182.9    280.6   53.3%    8.3400   8.2057  10.2852    110%  PASS  
+ locbuf_blk_nd           64 128  8 288     255.5    210.3    262.9   52.8%    8.4050   8.2289   8.7480    109%  PASS  
+ locbuf_blk_mt           64  32 32 288     255.4     93.8    268.1   52.8%    8.4071   8.1127   9.2286    109%  PASS  
+ hptt_patient_blk         0  16  0 288     255.3    115.8    259.0   52.8%    8.4126   8.3281  10.3109    109%  PASS *
+ rm_blk_nd               64  16  8 288     255.2    170.4    257.4   52.8%    8.4139   8.3630   9.1232    109%  PASS  
+ locbuf_2buf             16  32  8 288     253.3    172.6    262.5   52.4%    8.4776   8.2709  10.3788    108%  PASS  
+ locbuf_blk_mt_c2        64  32 16 288     253.1    154.1    259.5   52.3%    8.4859   8.3386   9.5764    108%  PASS  
+ rm_blk_mt_nd            64  16 16 288     252.7    192.2    255.5   52.3%    8.4965   8.4358   9.2302    108%  PASS  
+ rm_blk_mt_c2_nd         64 512  4 288     252.6    192.6    255.1   52.2%    8.5031   8.4468   8.6659    108%  PASS  
+ tiled_nd                32  32  8 288     252.5    173.2    257.4   52.2%    8.5055   8.3759   9.1429    108%  PASS  
+ locbuf_blk_mt_c2        64 128 32 288     251.5    185.5    270.7   52.0%    8.5390   8.3335  10.3168    108%  PASS  
+ rm_blk_mt_c2            64  16  4 288     251.5    193.0    259.7   52.0%    8.5388   8.3798  10.1955    108%  PASS  
+ locbuf_2buf_c2          64  32  8 288     250.1    171.9    255.3   51.7%    8.5859   8.4585   9.5705    107%  PASS  
+ locbuf_blk_mt_c2        64  32 32 288     250.0    198.8    259.6   51.7%    8.5889   8.3787   9.9792    107%  PASS  
+ hptt_patient_blk         0 128  0 288     249.2     39.4    253.8   51.5%    8.6169   8.4988   9.2933    107%  PASS *
+ rm_blk_c2_nd            64 512  8 288     249.0    193.9    251.3   51.5%    8.6244   8.5670   9.0141    107%  PASS  
+ locbuf_blk_mt_nd        64 128 32 288     248.9    163.5    261.9   51.5%    8.6286   8.3857  11.1180    106%  PASS  
+ rm_blk_mt_nd            64  32  8 288     248.8    153.2    251.7   51.5%    8.6305   8.5789   8.7705    106%  PASS  
+ locbuf_blk_mt_c2        64 128  8 288     248.3    210.7    254.3   51.4%    8.6476   8.5037   9.7269    106%  PASS  
+ locbuf_blk_mt_c2        64 512 16 288     247.7    199.4    268.4   51.2%    8.6684   8.2785   9.8128    106%  PASS  
+ blk_aligned_c2          64 256  8 288     246.9    195.2    247.9   51.1%    8.6986   8.6691  10.2919    106%  PASS  
+ rm_blk_mt_nd            64  32 32 288     246.7    180.0    250.5   51.0%    8.7035   8.5939   9.8885    106%  PASS  
+ blk_aligned_mt_c2_nd    64   8  4 288     246.6    161.9    254.0   51.0%    8.7080   8.4919  10.8957    105%  PASS  
+ blk_aligned_mt_c2       64  16  4 288     246.2    184.9    250.8   50.9%    8.7210   8.6326  10.0510    105%  PASS  
+ locbuf_blk              64  64  8 288     245.5    190.0    262.1   50.8%    8.7479   8.4099   9.4507    105%  PASS  
+ rm_blk_mt               64  64  4 288     245.5    150.1    253.1   50.8%    8.7476   8.5428  11.5489    105%  PASS  
+ blk_aligned_mt_c2_nd    64 256 16 288     244.9    178.8    251.4   50.6%    8.7695   8.6277  10.8945    105%  PASS  
+ rm_blk_nd               64  32  8 288     244.4    213.6    248.5   50.5%    8.7880   8.6674   8.9862    105%  PASS  
+ locbuf_blk_mt           64  64 32 288     244.3    146.9    247.7   50.5%    8.7891   8.7008   9.1403    104%  PASS  
+ locbuf_blk              64 128  8 288     243.5    173.1    252.9   50.4%    8.8174   8.6059  10.3435    104%  PASS  
+ locbuf_blk_mt_c2        64 128 16 288     243.4    183.7    250.6   50.3%    8.8220   8.6507   9.2423    104%  PASS  
+ blk_aligned_mt_c2       64  32  4 288     243.1    192.3    244.6   50.3%    8.8340   8.7919   9.8444    104%  PASS  
+ tiled_nd                64  32  8 288     242.8    215.5    245.5   50.2%    8.8434   8.7729   8.9159    104%  PASS  
+ locbuf_blk              64   8  8 288     242.6    176.7    252.9   50.2%    8.8520   8.6177   9.6540    104%  PASS  
+ locbuf                  32  32  8 288     241.5    187.4    247.4   49.9%    8.8925   8.7372   9.9579    103%  PASS  
+ locbuf_blk_mt_c2        64 256 16 288     241.2    180.3    248.1   49.9%    8.9021   8.7515   9.9316    103%  PASS  
+ locbuf_blk_mt           64  32 16 288     241.1     63.1    258.7   49.9%    8.9085   8.5758   9.8130    103%  PASS  
+ locbuf_blk_mt_c2        64  32  4 288     239.3    183.9    241.8   49.5%    8.9741   8.9071  11.3256    102%  PASS  
+ blk_naive_nd            64  32  8 288     238.3    165.5    278.1   49.3%    9.0115   7.9021  12.4742    102%  PASS  
+ locbuf_blk_mt_c2        64  32  8 288     236.8    171.4    238.4   49.0%    9.0700   9.0239  10.6581    101%  PASS  
+ locbuf                 128  32  8 288     236.6    178.6    244.3   48.9%    9.0770   8.8629  10.1304    101%  PASS  
+ blk_aligned_mt_c2       64 256 16 288     236.4    179.6    239.1   48.9%    9.0826   9.0129  10.2000    101%  PASS  
+ hptt_patient             0  32  0 288     233.8     39.1    246.1   48.4%    9.1854   9.0806  10.1969    100%  PASS *
+ locbuf                  64  32  8 288     233.5    169.9    239.2   48.3%    9.1981   9.0490   9.4159    100%  PASS  
+ blk_aligned_mt_c2       64 128 16 288     233.4    187.5    236.5   48.3%    9.2007   9.1205  10.4667    100%  PASS  
+ blk_aligned_mt_nd       64   8  4 288     233.4     81.5    238.1   48.3%    9.2003   9.0470  15.2073    100%  PASS  
+ blk_aligned_mt_c2       64 256  4 288     232.6    185.9    235.1   48.1%    9.2319   9.1681  10.2227     99%  PASS  
+ rm_blk_mt               64  16 16 288     232.6    163.7    240.1   48.1%    9.2311   9.0376  11.0203     99%  PASS  
+ blk_naive_c2_nd         64  32  8 288     232.6    148.4    280.0   48.1%    9.2325   8.3165  10.9764     99%  PASS  
+ blk_aligned_mt_c2       64  64  8 288     231.8    190.1    233.8   47.9%    9.2645   9.1978  10.0585     99%  PASS  
+ locbuf_2buf             32  32  8 288     231.5    185.7    239.8   47.9%    9.2765   9.0510   9.5244     99%  PASS  
+ locbuf_c2               64  32  8 288     230.9    179.4    234.3   47.8%    9.3014   9.2153  11.0208     99%  PASS  
+ blk_aligned_mt_c2       64 128 32 288     230.8     68.1    231.7   47.7%    9.3064   9.2780  11.1459     99%  PASS  
+ blk_aligned_mt_c2       64 256 32 288     230.6    180.4    231.8   47.7%    9.3125   9.2758  11.1468     99%  PASS  
+ blk_aligned_mt          64  32 32 288     230.0    152.7    235.0   47.6%    9.3361   9.2144  10.0072     98%  PASS  
+ blk_aligned_mt_c2       64  64 16 288     229.4    193.2    231.5   47.4%    9.3621   9.2930  10.2306     98%  PASS  
+ blk_aligned_mt_c2       64 256  8 288     229.1    169.3    231.2   47.4%    9.3756   9.3210  10.8930     98%  PASS  
+ blk_aligned_mt_c2       64  32 16 288     228.6    173.5    231.2   47.3%    9.3951   9.3237  11.2305     98%  PASS  
+ blk_aligned_mt_c2       64  32 32 288     227.2    167.6    228.8   47.0%    9.4521   9.4089   9.8271     97%  PASS  
+ locbuf_blk_mt           64  32  4 288     227.0    188.6    229.0   46.9%    9.4604   9.4179  10.3410     97%  PASS  
+ blk_naive_nd            64 512  8 288     226.4     95.2    232.8   46.8%    9.4841   9.2940  13.0050     97%  PASS  
+ locbuf_blk_mt_c2        64  64  8 288     226.3    183.3    227.7   46.8%    9.4911   9.4481  10.6455     97%  PASS  
+ locbuf                  16  32  8 288     225.8    139.5    243.4   46.7%    9.5100   8.9781  10.7665     97%  PASS  
+ rm_blk_mt_c2            64 512  8 288     225.7    200.3    232.6   46.7%    9.5155   9.2840  10.1747     97%  PASS  
+ blk_tiled_c2            64  32  8 288     225.5     70.2    229.1   46.6%    9.5226   9.4058   9.8060     96%  PASS  
+ locbuf_blk_mt_c2        64 512  8 288     225.2    171.6    227.4   46.6%    9.5346   9.4827  10.2761     96%  PASS  
+ locbuf_blk_mt_c2_nd     64 128  4 288     225.1     29.4    230.3   46.6%    9.5381   9.4079  12.4752     96%  PASS  
+ blk_tiled               64  32  8 288     224.6    144.9    238.0   46.4%    9.5620   9.0909  11.5968     96%  PASS  
+ locbuf_blk_mt           64  64  8 288     224.1    159.8    227.8   46.3%    9.5836   9.4821  11.9815     96%  PASS  
+ tiled_c2                64  32  8 288     223.2    153.7    225.3   46.2%    9.6201   9.5389  11.5225     95%  PASS  
+ rm_blk_mt_c2            64  64  8 288     223.2    178.5    225.8   46.2%    9.6210   9.5279  11.0413     95%  PASS  
+ locbuf_2buf             64  32  8 288     222.8    183.8    228.2   46.1%    9.6405   9.5300   9.8143     95%  PASS  
+ tiled_c2                16  32  8 288     222.1    159.0    224.3   45.9%    9.6670   9.6008  11.0094     95%  PASS  
+ blk_aligned_mt          64  32  8 288     222.1    174.3    235.3   45.9%    9.6705   9.1769  10.3342     95%  PASS  
+ blk_tiled_c2            64  64  8 288     222.0    155.3    224.2   45.9%    9.6725   9.6102  12.0923     95%  PASS  
+ rm_blk_c2               64  16  8 288     221.6    137.1    227.1   45.8%    9.6895   9.6101  11.9793     95%  PASS  
+ blk_aligned_c2          64  32  8 288     220.8    159.5    226.3   45.7%    9.7245   9.5878  11.9352     94%  PASS  
+ locbuf_2buf_c2         128  32  8 288     220.0    171.7    223.0   45.5%    9.7599   9.6537  11.5064     94%  PASS  
+ blk_naive_c2_nd         64 512  8 288     218.5    144.6    236.1   45.2%    9.8275   9.2422  12.1530     93%  PASS  
+ locbuf_2buf_c2          16  32  8 288     217.4    157.2    222.2   45.0%    9.8770   9.7593  11.7052     93%  PASS  
+ tiled_c2               128  32  8 288     216.9     48.3    220.5   44.9%    9.8995   9.7839  11.6312     93%  PASS  
+ rm_blk_mt_c2            64  64 16 288     216.7    159.3    221.5   44.8%    9.9101   9.7748  11.5967     93%  PASS  
+ rm_blk_mt_c2            64  32 32 288     216.0    146.2    219.6   44.7%    9.9421   9.8308  11.5291     92%  PASS  
+ locbuf_blk_mt_c2        64  64  4 288     214.5    134.4    231.1   44.4%   10.0094   9.8957  11.1822     92%  PASS  
+ rm_blk_c2               64 128  8 288     214.5    162.8    217.4   44.4%   10.0125   9.9026  11.0931     92%  PASS  
+ blk_naive_nd            64 128  8 288     214.5    150.1    236.6   44.4%   10.0120   9.1837  12.7228     92%  PASS  
+ blk_aligned_mt          64  64  8 288     213.6    142.5    222.2   44.2%   10.0555   9.8624  11.2442     91%  PASS  
+ blk_aligned_c2          64 128  8 288     213.4    158.3    214.3   44.1%   10.0656  10.0410  12.8838     91%  PASS  
+ locbuf_blk_mt_c2        64 256  8 288     213.4    155.9    214.9   44.1%   10.0645  10.0240  11.5348     91%  PASS  
+ locbuf_blk_mt           64  16  4 288     213.3     98.4    214.9   44.1%   10.0685  10.0150  11.7152     91%  PASS  
+ blk_aligned_mt_c2       64  64  4 288     211.0     80.9    212.5   43.6%   10.1774  10.1279  11.0915     90%  PASS  
+ blk_aligned_mt          64  64  4 288     210.7    171.9    213.6   43.6%   10.1939  10.1251  10.7420     90%  PASS  
+ rm_blk_mt_c2            64 128 16 288     210.2    167.2    215.5   43.5%   10.2175  10.0100  11.4368     90%  PASS  
+ locbuf_blk_mt           64  64 16 288     209.8    153.9    211.8   43.4%   10.2365  10.1521  12.6405     90%  PASS  
+ blk_aligned_mt          64  32 16 288     209.4    170.2    232.9   43.3%   10.2561   9.5646  10.4760     90%  PASS  
+ blk_naive_nd            64 256  8 288     208.9     62.8    243.1   43.2%   10.2791   9.1067  12.3706     89%  PASS  
+ blk_aligned_mt          64  64 16 288     206.9    182.1    211.6   42.8%   10.3769  10.1766  11.4178     88%  PASS  
+ blk_aligned_mt          64  16  8 288     206.6    167.8    211.5   42.7%   10.3959  10.1964  12.0608     88%  PASS  
+ tiled                   64  32  8 288     206.5    168.0    208.8   42.7%   10.4005  10.3151  10.6461     88%  PASS  
+ rm_blk_mt_c2            64  64 32 288     206.4    166.8    208.5   42.7%   10.4029  10.3245  12.2081     88%  PASS  
+ locbuf_blk_mt           64  64  4 288     205.2    165.8    207.3   42.4%   10.4655  10.3979  10.7093     88%  PASS  
+ locbuf_blk_mt           64 128 32 288     204.5    176.6    207.5   42.3%   10.5010  10.3733  10.6975     87%  PASS  
+ tiled_c2                32  32  8 288     203.9    158.8    207.3   42.2%   10.5300  10.4431  12.2349     87%  PASS  
+ blk_aligned_c2          64  64  8 288     200.9    149.5    205.7   41.5%   10.6920  10.5038  12.7785     86%  PASS  
+ blk_tiled_c2            64 256  8 288     200.6    170.0    202.8   41.5%   10.7061  10.6158  11.3826     86%  PASS  
+ rm_blk_mt_c2            64  16 16 288     200.2    151.6    203.3   41.4%   10.7244  10.6429  13.0747     86%  PASS  
+ rm_blk_mt_nd            64 256  4 288     199.6    168.5    210.6   41.3%   10.7596  10.5020  11.7539     85%  PASS  
+ locbuf_2buf            128  32  8 288     199.4    160.5    204.2   41.2%   10.7720  10.6295  11.3441     85%  PASS  
+ blk_naive_nd            64  64  8 288     198.9    144.3    238.2   41.1%   10.7945   9.3037  13.2391     85%  PASS  
+ blk_tiled_c2            64  16  8 288     198.1    153.1    206.5   41.0%   10.8420  10.5289  12.2782     85%  PASS  
+ locbuf_blk_mt           64 256 32 288     197.6    136.0    214.6   40.9%   10.8706  10.2756  12.5435     85%  PASS  
+ locbuf_blk_mt           64 256  8 288     197.3    145.2    200.3   40.8%   10.8835  10.7536  13.5890     84%  PASS  
+ blk_naive_c2_nd         64 256  8 288     196.5    149.9    247.5   40.7%   10.9260   9.3849  12.8540     84%  PASS  
+ rm_blk_mt_c2            64 128 32 288     195.7    162.8    198.4   40.5%   10.9760  10.8595  12.5911     84%  PASS  
+ blk_naive_c2_nd         64  64  8 288     195.5    140.1    239.6   40.4%   10.9855   9.1374  14.3934     84%  PASS  
+ hptt                     0  32  0 288     195.4    167.7    197.4   40.4%   10.9916  10.9129  11.7425     84%  PASS *
+ rm_blk_mt               64  16  8 288     193.9    173.8    195.7   40.1%   11.0745  11.0151  11.2724     83%  PASS  
+ blk_tiled               64  16  8 288     193.1    142.6    200.6   39.9%   11.1225  10.7851  11.8985     83%  PASS  
+ blk_aligned_mt_c2       64 128  4 288     191.5    157.6    194.9   39.6%   11.2121  11.1247  11.6121     82%  PASS  
+ blk_aligned_mt          64  64 32 288     191.3    142.7    199.0   39.6%   11.2284  10.8643  11.8541     82%  PASS  
+ blk_aligned_mt          64 128  4 288     190.7    141.7    191.7   39.4%   11.2636  11.2258  12.6258     82%  PASS  
+ blk_naive_c2_nd         64 128  8 288     190.6    141.0    238.5   39.4%   11.2690   9.6318  14.2173     82%  PASS  
+ blk_aligned_c2          64  16  8 288     190.3    145.8    192.5   39.4%   11.2860  11.1976  13.4207     81%  PASS  
+ rm_blk_mt_c2            64 512 32 288     190.3    176.3    192.0   39.4%   11.2865  11.2099  11.4274     81%  PASS  
+ rm_blk_mt_c2            64  32  8 288     189.9    147.6    191.3   39.3%   11.3065  11.2400  12.6608     81%  PASS  
+ blk_tiled_c2            64 128  8 288     189.0    165.1    190.6   39.1%   11.3641  11.2997  12.3743     81%  PASS  
+ locbuf_blk              64 512  8 288     186.0    124.0    187.6   38.5%   11.5471  11.4691  11.7470     80%  PASS  
+ locbuf_blk_mt_c2        64  16  4 288     185.9    152.5    187.4   38.5%   11.5505  11.4938  12.3065     80%  PASS  
+ rm_blk_mt_c2            64  64  4 288     185.2    148.9    189.7   38.3%   11.5969  11.3850  13.5822     79%  PASS  
+ blk_aligned_mt_nd       64 128  4 288     184.7    135.2    188.6   38.2%   11.6246  11.4465  12.2828     79%  PASS  
+ rm_blk                  64  64  8 288     184.5    144.2    188.9   38.2%   11.6384  11.4926  14.0633     79%  PASS  
+ blk_tiled               64 256  8 288     183.9    159.0    187.9   38.0%   11.6795  11.5299  11.9494     79%  PASS  
+ tiled                   16  32  8 288     183.3     60.7    187.9   37.9%   11.7165  11.5847  12.8909     78%  PASS  
+ blk_aligned_mt_c2       64 512  4 288     183.1    138.3    184.0   37.9%   11.7315  11.6901  12.7569     78%  PASS  
+ blk_tiled               64 512  8 288     182.9    142.5    185.5   37.8%   11.7410  11.6308  11.9360     78%  PASS  
+ rm_blk                  64  32  8 288     182.7    157.8    185.2   37.8%   11.7511  11.6619  11.8537     78%  PASS  
+ blk_tiled_c2            64   8  8 288     181.9    144.5    184.6   37.6%   11.8085  11.6590  12.0310     78%  PASS  
+ blk_aligned_mt_c2       64  16  8 288     181.7    140.5    182.5   37.6%   11.8165  11.7818  13.8358     78%  PASS  
+ blk_aligned_mt          64  32  4 288     181.5    148.6    185.5   37.5%   11.8316  11.7079  13.5834     78%  PASS  
+ rm_blk_mt_nd            64 256  8 288     179.2    132.5    183.2   37.1%   11.9840  11.7946  14.4558     77%  PASS  
+ blk_aligned             64  64  8 288     178.7    147.0    181.7   37.0%   12.0159  11.8717  13.1354     76%  PASS  
+ locbuf_blk_mt           64  32  8 288     178.6    137.7    181.6   36.9%   12.0270  11.8688  13.8460     76%  PASS  
+ blk_aligned_nd          64 128  8 288     178.2    137.9    180.5   36.8%   12.0540  11.9400  12.3123     76%  PASS  
+ rm_blk_mt               64  64 16 288     177.9    133.8    180.9   36.8%   12.0735  11.9418  12.9869     76%  PASS  
+ blk_tiled               64  64  8 288     177.7     71.8    180.3   36.8%   12.0821  11.9627  14.7084     76%  PASS  
+ rm_blk_mt_c2            64 256 32 288     177.6    140.1    182.0   36.7%   12.0909  11.8368  13.6539     76%  PASS  
+ blk_aligned_mt          64  16  4 288     177.3    138.3    180.8   36.7%   12.1145  11.9411  13.2602     76%  PASS  
+ rm_blk_mt               64  64 32 288     177.3    120.2    180.9   36.7%   12.1135  11.9617  13.8732     76%  PASS  
+ rm_blk_c2_nd            64   8  8 288     176.5    141.9    182.6   36.5%   12.1665  11.8889  13.1146     75%  PASS  
+ rm_blk                  64  16  8 288     175.8    130.7    177.9   36.4%   12.2144  12.1168  14.4618     75%  PASS  
+ blk_tiled               64   8  8 288     175.6    142.7    179.1   36.3%   12.2275  12.0799  12.6990     75%  PASS  
+ blk_aligned_mt_c2       64  16 16 288     175.2    131.1    175.9   36.2%   12.2540  12.2158  13.7753     75%  PASS  
+ rm_blk_mt_c2_nd         64   8  4 288     175.1    111.1    182.3   36.2%   12.2669  11.9910  13.3283     75%  PASS  
+ rm_blk_mt_c2            64 128  4 288     174.5    136.6    176.5   36.1%   12.3044  12.2185  12.7101     75%  PASS  
+ rm_blk_mt_c2            64  32  4 288     173.6    142.3    176.0   35.9%   12.3720  12.2469  13.8171     74%  PASS  
+ rm_blk_mt_c2            64  32 16 288     173.6    141.4    179.2   35.9%   12.3705  12.1516  13.7016     74%  PASS  
+ rm_blk_mt_c2_nd         64   8  8 288     173.1     68.5    176.5   35.8%   12.4059  12.2830  14.0990     74%  PASS  
+ rm_blk_mt               64  32 32 288     172.9    134.6    182.1   35.8%   12.4195  12.2233  14.6378     74%  PASS  
+ locbuf_blk_mt_c2        64  16  8 288     172.2    140.0    176.9   35.6%   12.4705  12.2803  14.4124     74%  PASS  
+ blk_aligned_c2          64 512  8 288     172.1    140.8    175.0   35.6%   12.4760  12.3886  13.9909     74%  PASS  
+ blk_tiled_c2            64 512  8 288     172.0    113.9    174.4   35.6%   12.4885  12.3751  14.5712     74%  PASS  
+ locbuf_blk_mt           64 128  8 288     171.6    123.4    173.8   35.5%   12.5160  12.3839  16.1469     73%  PASS  
+ blk_aligned_mt          64  16 16 288     171.3    134.2    183.8   35.4%   12.5375  12.1920  14.4650     73%  PASS  
+ rm_blk_c2               64   8  8 288     170.1    133.6    189.4   35.2%   12.6281  11.8569  14.5661     73%  PASS  
+ rm_blk_mt_c2            64 512 16 288     169.3    158.6    170.2   35.0%   12.6815  12.6419  12.7421     72%  PASS  
+ blk_aligned             64 128  8 288     169.1    154.4    169.8   35.0%   12.7025  12.6659  12.8166     72%  PASS  
+ locbuf_blk_nd           64 256  8 288     168.9    157.2    174.6   34.9%   12.7144  12.4672  13.0520     72%  PASS  
+ rm_blk_mt_c2            64 256 16 288     168.3    153.5    177.3   34.8%   12.7616  12.1850  13.4786     72%  PASS  
+ rm_blk_mt               64  64  8 288     167.6    141.5    170.1   34.7%   12.8167  12.6646  13.2017     72%  PASS  
+ rm_blk_mt_c2            64 256  4 288     167.6    128.9    170.6   34.7%   12.8155  12.6634  13.2471     72%  PASS  
+ rm_blk_c2               64 256  8 288     166.1    134.2    169.6   34.3%   12.9325  12.7660  13.7630     71%  PASS  
+ rm_blk_mt_c2            64   8  4 288     165.6    139.7    168.5   34.2%   12.9704  12.8538  13.9496     71%  PASS  
+ rm_blk_mt_c2            64 128  8 288     165.3    134.1    168.9   34.2%   12.9925  12.8049  13.6294     71%  PASS  
+ blk_aligned_mt_c2_nd    64 512  8 288     165.3     67.7    175.9   34.2%   12.9950  12.2317  14.2596     71%  PASS  
+ blk_aligned_mt          64 128 16 288     165.2    139.2    166.8   34.2%   12.9991  12.9079  13.2074     71%  PASS  
+ blk_aligned_mt          64 128  8 288     163.9    143.1    165.3   33.9%   13.1015  13.0237  13.2465     70%  PASS  
+ blk_aligned_mt_c2       64 512 16 288     163.5    115.5    165.5   33.8%   13.1351  13.0398  16.0992     70%  PASS  
+ locbuf_blk_mt_nd        64 128  8 288     163.3     51.7    165.4   33.8%   13.1540  13.0648  13.3571     70%  PASS  
+ locbuf_nd              128  32  8 288     162.8    138.1    166.9   33.7%   13.1935  12.9675  13.7156     70%  PASS  
+ locbuf_blk_mt           64  16  8 288     162.7    146.2    168.9   33.6%   13.1996  12.8925  13.7810     70%  PASS  
+ locbuf_blk_mt_nd        64 256 32 288     161.6    110.7    168.7   33.4%   13.2926  12.8837  14.3595     69%  PASS  
+ locbuf_blk_mt_nd        64 256 16 288     160.7    113.5    167.9   33.2%   13.3666  13.0563  14.0575     69%  PASS  
+ rm_blk_mt               64  32  8 288     160.6    135.5    162.5   33.2%   13.3690  13.2839  14.8532     69%  PASS  
+ blk_aligned_mt_nd       64 128 32 288     159.4    145.9    163.2   33.0%   13.4741  13.2661  13.8622     68%  PASS  
+ rm_blk_nd               64   8  8 288     159.2    134.1    164.1   32.9%   13.4915  13.1926  14.6958     68%  PASS  
+ rm_blk_mt               64   8  4 288     159.1    119.3    160.9   32.9%   13.4990  13.3994  14.9787     68%  PASS  
+ locbuf_blk_mt_c2        64 128  4 288     158.8    153.3    161.3   32.8%   13.5241  13.3879  13.7367     68%  PASS  
+ blk_aligned_mt          64 256 32 288     157.9    120.3    159.7   32.7%   13.6009  13.4959  16.3035     68%  PASS  
+ rm_blk_mt_nd            64 256 16 288     157.4    125.2    162.4   32.6%   13.6404  13.3004  15.7579     67%  PASS  
+ rm_blk_mt_nd            64   8  8 288     156.5    127.2    158.9   32.4%   13.7260  13.6139  14.8616     67%  PASS  
+ locbuf_blk              64 256  8 288     156.4    128.8    165.4   32.3%   13.7305  13.0968  15.3830     67%  PASS  
+ blk_aligned_mt_c2_nd    64 512 16 288     156.1    118.9    159.3   32.3%   13.7596  13.5336  15.8075     67%  PASS  
+ tiled                   32  32  8 288     155.8    128.5    159.8   32.2%   13.7811  13.5456  15.3891     67%  PASS  
+ blk_aligned_mt_c2       64 512  8 288     154.9    117.4    156.8   32.0%   13.8669  13.7258  15.2897     66%  PASS  
+ locbuf_blk_mt_nd        64 128 16 288     154.5    145.5    158.1   31.9%   13.9040  13.7678  14.1923     66%  PASS  
+ rm_blk_mt               64 128 16 288     154.4     71.6    155.7   31.9%   13.9043  13.8134  14.1157     66%  PASS  
+ rm_blk_mt               64 128  8 288     153.2    130.3    154.5   31.7%   14.0185  13.9191  14.1396     66%  PASS  
+ blk_aligned             64  16  8 288     152.6    115.0    154.7   31.6%   14.0749  13.9150  16.4590     65%  PASS  
+ rm_blk_mt               64  32 16 288     152.0    124.0    155.2   31.4%   14.1294  14.0043  14.3107     65%  PASS  
+ locbuf_blk_mt           64 512  8 288     151.3    140.2    153.5   31.3%   14.1976  14.0858  14.5571     65%  PASS  
+ tiled                  128  32  8 288     151.1    125.9    153.5   31.3%   14.2090  14.0658  14.5798     65%  PASS  
+ rm_blk_mt_c2            64   8  8 288     151.1    129.7    152.7   31.3%   14.2086  14.1073  15.4996     65%  PASS  
+ rm_blk_mt               64 128 32 288     149.7    144.9    152.2   31.0%   14.3485  14.1671  14.7350     64%  PASS  
+ rm_blk_mt               64   8  8 288     149.6    119.4    150.9   30.9%   14.3565  14.2519  15.6715     64%  PASS  
+ locbuf_blk_mt           64 512 32 288     149.4    117.5    152.8   30.9%   14.3710  14.1059  14.9908     64%  PASS  
+ rm_blk_mt_nd            64 128  4 288     149.4    124.4    151.4   30.9%   14.3706  14.2369  16.9078     64%  PASS  
+ rm_blk_mt_c2            64 512  4 288     149.3     67.8    169.2   30.9%   14.3811  13.2021  15.9209     64%  PASS  
+ rm_blk_mt_nd            64   8  4 288     148.8    118.9    151.1   30.8%   14.4305  14.2737  15.1688     64%  PASS  
+ locbuf_2buf_nd         128  32  8 288     148.6    137.6    151.8   30.7%   14.4490  14.2678  14.7385     64%  PASS  
+ rm_blk_mt               64  32  4 288     147.9    125.1    152.0   30.6%   14.5175  14.3247  14.6842     63%  PASS  
+ rm_blk_mt_nd            64 128  8 288     146.7    128.0    150.1   30.3%   14.6370  14.5436  15.0180     63%  PASS  
+ rm_blk_mt               64 128  4 288     146.2    119.8    148.6   30.2%   14.6919  14.5558  16.8141     63%  PASS  
+ rm_blk_mt_nd            64 128 16 288     144.8    126.9    146.8   30.0%   14.8280  14.6939  15.6341     62%  PASS  
+ rm_blk_mt_nd            64 128 32 288     141.6    123.6    144.2   29.3%   15.1701  15.0194  16.6257     61%  PASS  
+ blk_aligned_mt_c2       64   8  4 288     138.7    123.5    139.6   28.7%   15.4821  15.4020  16.5542     59%  PASS  
+ rm_blk_nd               64 128  8 288     138.4     94.2    140.4   28.6%   15.5200  15.3658  16.8228     59%  PASS  
+ blk_aligned_nd          64 256  8 288     137.9    106.9    143.1   28.5%   15.5720  15.1757  16.6494     59%  PASS  
+ rm_blk_mt_c2            64 256  8 288     136.7    122.4    142.3   28.3%   15.7100  15.4912  16.7147     58%  PASS  
+ tiled_nd               128  32  8 288     135.8    108.9    141.7   28.1%   15.8186  15.2475  17.5390     58%  PASS  
+ blk_aligned_mt          64 512 32 288     134.4    109.7    135.2   27.8%   15.9763  15.9119  18.0058     57%  PASS  
+ blk_aligned_mt_nd       64 128 16 288     133.9    128.5    138.6   27.7%   16.0366  15.5599  16.3999     57%  PASS  
+ rm_blk_c2               64 512  8 288     133.0    110.7    137.1   27.5%   16.1430  15.8180  17.2846     57%  PASS  
+ rm_blk                  64   8  8 288     132.4    110.8    137.8   27.4%   16.2135  15.9095  17.8310     57%  PASS  
+ blk_aligned_mt          64   8  4 288     132.1    106.3    134.0   27.3%   16.2516  16.1761  18.0688     57%  PASS  
+ locbuf_blk_mt           64 512 16 288     131.2    111.7    136.8   27.1%   16.3701  15.7944  16.9176     56%  PASS  
+ locbuf_blk_mt           64 128 16 288     130.9     99.3    134.5   27.1%   16.4020  16.0199  18.7161     56%  PASS  
+ blk_aligned_mt_nd       64 256  4 288     130.2    110.4    132.9   26.9%   16.4975  16.2802  16.7607     56%  PASS  
+ blk_aligned_mt_nd       64 128  8 288     130.1    114.1    131.2   26.9%   16.5030  16.4189  16.6469     56%  PASS  
+ locbuf_blk_mt           64 256 16 288     128.6    102.1    132.0   26.6%   16.6939  16.3829  17.3278     55%  PASS  
+ blk_aligned_mt          64 128 32 288     128.4     96.3    130.7   26.5%   16.7310  16.4839  20.1778     55%  PASS  
+ blk_aligned_mt_c2       64   8  8 288     128.4    113.1    129.1   26.6%   16.7196  16.6638  18.4505     55%  PASS  
+ blk_aligned_c2          64   8  8 288     127.6     69.3    129.0   26.4%   16.8350  16.6936  18.6124     55%  PASS  
+ rm_blk_mt_nd            64 256 32 288     126.3     17.8    132.3   26.1%   16.9979  16.6855  17.9450     54%  PASS  
+ locbuf_blk_nd           64 512  8 288     122.4    102.1    124.1   25.3%   17.5390  17.4374  17.9078     52%  PASS  
+ blk_naive_c2_nd         64  16  8 288     122.2    105.4    126.5   25.3%   17.5786  17.1462  18.6618     52%  PASS  
+ blk_naive_nd            64  16  8 288     121.4     80.3    125.3   25.1%   17.6895  17.2722  18.7697     52%  PASS  
+ locbuf_blk_mt_nd        64 512 32 288     120.7    118.1    125.1   25.0%   17.7934  17.3837  18.1030     52%  PASS  
+ rm_blk                  64 128  8 288     119.4     99.0    123.1   24.7%   17.9839  17.4975  20.4171     51%  PASS  
+ rm_blk_mt_nd            64 512  8 288     116.2    108.5    124.1   24.0%   18.4771  17.4168  18.9232     50%  PASS  
+ locbuf_blk_mt_nd        64 256  8 288     115.9    107.6    117.7   24.0%   18.5345  18.3176  18.8984     50%  PASS  
+ blk_aligned_mt          64 256  4 288     115.7     93.9    118.8   23.9%   18.5615  18.1536  21.9023     49%  PASS  
+ blk_aligned_mt          64 512  4 288     113.7    107.0    114.9   23.5%   18.8920  18.7558  19.3831     49%  PASS  
+ rm_blk_nd               64 256  8 288     113.7     61.3    118.2   23.5%   18.8864  18.4375  19.2772     49%  PASS  
+ rm_blk_mt               64 256 32 288     112.2     88.5    115.4   23.2%   19.1441  18.6729  22.7976     48%  PASS  
+ locbuf_blk_mt_c2_nd     64 256  4 288     109.6     49.2    116.0   22.7%   19.5875  18.5479  22.6746     47%  PASS  
+ locbuf_blk_mt           64 128  4 288     108.4     67.5    109.3   22.4%   19.8181  19.7102  20.5817     46%  PASS  
+ rm_blk_mt_nd            64 512  4 288     108.1    100.7    121.9   22.4%   19.8646  17.8052  20.3573     46%  PASS  
+ blk_aligned             64   8  8 288     107.8     88.9    110.0   22.3%   19.9244  19.6851  21.2144     46%  PASS  
+ blk_aligned_mt          64   8  8 288     106.0     87.7    108.0   21.9%   20.2640  19.9798  21.7322     45%  PASS  
+ locbuf_blk_mt_c2        64 256  4 288     104.7     27.1    109.5   21.7%   20.5096  19.7348  23.4279     45%  PASS  
+ rm_blk_mt_nd            64 512 16 288     101.5     97.1    103.5   21.0%   21.1550  20.8550  21.6059     43%  PASS  
+ blk_aligned             64 512  8 288      97.1     93.2     98.0   20.1%   22.1226  21.9821  22.4989     42%  PASS  
+ blk_aligned             64 256  8 288      96.8     79.7     98.5   20.0%   22.1955  21.8898  25.2385     41%  PASS  
+ locbuf_blk_mt_nd        64 128  4 288      96.1     85.4     96.9   19.9%   22.3540  22.2219  23.4010     41%  PASS  
+ rm_blk_mt               64 512 16 288      94.9     64.1     95.7   19.6%   22.6209  22.5076  23.9657     41%  PASS  
+ rm_blk_mt               64 512  4 288      93.6     86.2     97.5   19.4%   22.9431  22.1196  23.6785     40%  PASS  
+ rm_blk_mt               64 512  8 288      92.1     84.7     93.9   19.1%   23.3099  23.0345  23.8314     39%  PASS  
+ blk_aligned_mt_nd       64 256 32 288      91.7     85.3     93.3   19.0%   23.4300  23.2229  23.8748     39%  PASS  
+ rm_blk_mt               64 256 16 288      87.8     73.9     91.8   18.1%   24.4715  23.7216  27.3838     38%  PASS  
+ blk_aligned_mt          64 256 16 288      85.6     74.5     92.2   17.7%   25.0956  23.3609  28.0382     37%  PASS  
+ blk_aligned_nd          64 512  8 288      85.4     80.7     85.8   17.7%   25.1546  25.0619  25.3631     37%  PASS  
+ rm_blk_mt               64 256  4 288      85.3     69.7     91.1   17.6%   25.1714  24.1458  30.3934     36%  PASS  
+ rm_blk_mt_nd            64 512 32 288      84.8     16.8     90.0   17.5%   25.3180  24.0857  26.9356     36%  PASS  
+ rm_blk                  64 256  8 288      83.1     76.3     83.5   17.2%   25.8445  25.7439  27.5027     36%  PASS  
+ blk_aligned_mt_nd       64 512  4 288      82.0     49.3     84.0   17.0%   26.1785  25.6623  27.0203     35%  PASS  
+ locbuf_blk_mt_nd        64 512 16 288      81.8     71.5     97.4   16.9%   26.2616  23.8604  28.4014     35%  PASS  
+ rm_blk_mt               64 256  8 288      80.8     53.0     86.8   16.7%   26.5639  25.1668  36.6604     35%  PASS  
+ rm_blk                  64 512  8 288      79.6     44.3     81.6   16.5%   26.9750  26.5256  28.5403     34%  PASS  
+ blk_aligned_mt          64 256  8 288      79.3     61.3     82.7   16.4%   27.0795  26.1288  30.8627     34%  PASS  
+ locbuf_blk_mt_nd        64 512  8 288      79.1     76.9     79.8   16.4%   27.1595  26.9907  27.4420     34%  PASS  
+ rm_blk_mt               64 512 32 288      72.7     66.5     73.4   15.0%   29.5260  29.3321  29.9713     31%  PASS  
+ rm_blk_nd               64 512  8 288      69.5     61.7     71.8   14.4%   30.8770  30.1672  31.7888     30%  PASS  
+ blk_naive_c2            64  64  8 288      60.7     53.6     61.6   12.5%   35.3945  34.9790  37.4367     26%  PASS  
+ blk_aligned_mt_nd       64 256  8 288      54.7     53.1     55.3   11.3%   39.2790  38.9675  39.7066     23%  PASS  
+ blk_aligned_mt_nd       64 512 32 288      52.9     45.6     53.7   10.9%   40.6185  40.3197  41.3912     23%  PASS  
+ blk_naive               64 512  8 288      52.8     49.5     53.5   10.9%   40.6401  40.2138  41.1336     23%  PASS  
+ locbuf_blk_mt_c2        64 512  4 288      51.7     23.5     54.4   10.7%   41.5545  39.5291  43.5143     22%  PASS  
+ locbuf_blk_mt_c2_nd     64 512  4 288      51.7     40.3     53.8   10.7%   41.4995  40.1824  43.0382     22%  PASS  
+ blk_aligned_mt_nd       64 256 16 288      48.5     46.8     48.9   10.0%   44.2636  44.0127  44.8895     21%  PASS  
+ naive                   64  32  8 288      47.7     43.5     48.2    9.9%   45.0541  44.7332  46.6555     20%  PASS  
+ blk_naive_c2            64 128  8 288      47.3     44.5     48.4    9.8%   45.4044  44.6737  46.8232     20%  PASS  
+ blk_naive               64  64  8 288      43.9     40.7     45.3    9.1%   48.9320  47.9476  50.1274     19%  PASS  
+ blk_naive_c2            64 256  8 288      42.9     33.9     43.8    8.9%   50.0629  49.2431  50.7632     18%  PASS  
+ blk_naive_nd            64   8  8 288      42.5     39.3     42.9    8.8%   50.5264  50.3033  51.7337     18%  PASS  
+ blk_naive_c2            64 512  8 288      42.2     40.5     43.6    8.7%   50.8560  49.8934  52.1885     18%  PASS  
+ naive_c2                64  32  8 288      40.8     38.8     41.3    8.4%   52.6191  52.2780  53.5544     17%  PASS  
+ blk_naive_c2_nd         64   8  8 288      40.7     38.6     41.0    8.4%   52.7755  52.5359  53.7970     17%  PASS  
+ blk_naive               64 128  8 288      36.7     35.1     37.2    7.6%   58.4650  57.8405  60.0722     16%  PASS  
+ blk_naive               64 256  8 288      34.7     33.2     35.1    7.2%   61.8501  61.3851  63.4714     15%  PASS  
+ locbuf_blk_mt           64 256  4 288      30.0     23.0     32.2    6.2%   71.6450  67.0605  73.1054     13%  PASS  
+ naive_c2_nd             64  32  8 288      27.8     27.0     28.1    5.8%   77.1490  76.7441  77.8890     12%  PASS  
+ locbuf_blk_mt_nd        64 256  4 288      27.6     25.6     27.8    5.7%   77.6800  77.2814  80.3309     12%  PASS  
+ blk_aligned_mt          64 512  8 288      27.0     19.9     27.3    5.6%   79.5784  78.7867  81.0270     12%  PASS  
+ blk_naive_c2            64  32  8 288      26.7     25.4     27.6    5.5%   80.4706  77.8925  83.4313     11%  PASS  
+ naive_nd                64  32  8 288      26.6     25.4     26.8    5.5%   80.8131  80.4270  81.3432     11%  PASS  
+ blk_naive               64  32  8 288      26.3     15.8     27.3    5.4%   81.6270  79.0953  85.7593     11%  PASS  
+ blk_naive               64  16  8 288      25.6     16.1     26.1    5.3%   83.7585  82.6452  85.6571     11%  PASS  
+ blk_aligned_mt          64 512 16 288      24.8     23.3     24.9    5.1%   86.7341  86.3799  88.9700     11%  PASS  
+ blk_aligned_mt_nd       64 512  8 288      20.4     20.0     20.8    4.2%  105.0400 104.3108 105.3652      9%  PASS  
+ blk_naive_c2            64  16  8 288      19.8     13.6     20.0    4.1%  108.3405 107.6724 115.3409      8%  PASS  
+ blk_aligned_mt_nd       64 512 16 288      17.6     16.9     18.0    3.6%  121.8824 120.0637 125.6090      8%  PASS  
+ blk_naive               64   8  8 288      10.8      8.6     12.1    2.2%  198.1860 184.1486 224.5833      5%  PASS  
+ locbuf_blk_mt           64 512  4 288       7.2      6.6      7.2    1.5%  297.5585 297.0213 298.5559      3%  PASS  
+ locbuf_blk_mt_nd        64 512  4 288       7.0      6.6      7.0    1.5%  305.7145 304.9615 306.7144      3%  PASS  
+ blk_naive_c2            64   8  8 288       1.7      1.5      2.3    0.3%  1277.6181 1156.4317 1376.4681      1%  PASS  
+
+ Best library : hptt_patient_blk SB=256 -> 877.2 GB/s (181.4% peak)
+ Best kernel  : locbuf_blk_mt_c2_nd TB=64 SB=16 MT=16 -> 1085.7 GB/s (224.5% peak)  (464% of best library)
+
+ Per-category bests:
+   Row-major naive        naive                  SB=32 TB=64 MT=8  -> 47.7 GB/s (9.9% peak)
+   Row-major tiled        tiled_c2               SB=32 TB=64 MT=8  -> 223.2 GB/s (46.2% peak)
+   Blocked aligned        blk_aligned_c2_nd      SB=128 TB=64 MT=8  -> 749.2 GB/s (154.9% peak)
+   Locbuf row-major       locbuf_c2              SB=32 TB=16 MT=8  -> 299.0 GB/s (61.8% peak)
+   Locbuf blocked         locbuf_blk_mt_c2_nd    SB=16 TB=64 MT=16  -> 1085.7 GB/s (224.5% peak)
+   RM blk schedule        rm_blk_mt_c2_nd        SB=64 TB=64 MT=8  -> 330.3 GB/s (68.3% peak)
+   HPTT                   hptt_patient_blk       SB=256 TB=0 MT=0  -> 877.2 GB/s (181.4% peak)
+
+Per-iteration: /capstor/scratch/cscs/ybudanaz/SC26-Layout-AD/Experiments/E3_Transpose/results/daint/transpose_cpu_raw.csv
+Aggregated:    /capstor/scratch/cscs/ybudanaz/SC26-Layout-AD/Experiments/E3_Transpose/results/daint/transpose_cpu_results.csv

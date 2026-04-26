@@ -1,0 +1,198 @@
+[E1 daint] host=nid005536 threads=288
+Layout-conflict benchmark (CPU)
+  M=16384  N=16384  reps=100  warmup=5
+  threads=288  page=65536 B  NUMA=yes  nodes=36
+  A: row-major   B: col-major   C: row-major
+  cache line = 64 B  ->  8 doubles/line
+
+Initializing row-major arrays (NUMA bind+touch) ...
+
+=== Naive schedules ===
+  row_major                    T=0     median   425.1 GB/s  [  251.6 ..   440.0]  PASS
+  col_major                    T=0     median   139.1 GB/s  [   95.4 ..   143.6]  PASS
+  all_rowmajor                 T=0     median  1525.8 GB/s  [ 1137.8 ..  1576.0]  PASS
+
+=== Tiled schedules (stack-local B transpose) ===
+  tiled                        T=8     median  1163.6 GB/s  [  636.7 ..  1194.9]  PASS
+  tiled                        T=16    median  1027.3 GB/s  [  312.6 ..  1045.2]  PASS
+  tiled                        T=32    median   865.6 GB/s  [  574.0 ..   880.2]  PASS
+  tiled                        T=64    median   941.1 GB/s  [  606.6 ..   983.9]  PASS
+  tiled                        T=128   median   870.1 GB/s  [  809.4 ..   893.1]  PASS
+
+=== Blocked storage (SB×SB contiguous blocks) ===
+
+  --- Blocked SB=8 ---
+  blk_all_rm                   T=8     median  1531.9 GB/s  [  843.6 ..  1561.6]  PASS
+  blk_conflict                 T=8     median  1537.7 GB/s  [  971.9 ..  1584.3]  PASS
+
+  --- Blocked SB=16 ---
+  blk_all_rm                   T=16    median  1579.2 GB/s  [ 1047.8 ..  1614.3]  PASS
+  blk_conflict                 T=16    median  1557.2 GB/s  [ 1057.7 ..  1602.2]  PASS
+
+  --- Blocked SB=32 ---
+  blk_all_rm                   T=32    median  1531.5 GB/s  [  838.6 ..  1568.7]  PASS
+  blk_conflict                 T=32    median  1541.0 GB/s  [ 1063.2 ..  1594.4]  PASS
+
+  --- Blocked SB=64 ---
+  blk_all_rm                   T=64    median  1514.4 GB/s  [  817.9 ..  1542.2]  PASS
+  blk_conflict                 T=64    median  1503.1 GB/s  [  723.0 ..  1545.7]  PASS
+
+  --- Blocked SB=128 ---
+  blk_all_rm                   T=128   median  1525.9 GB/s  [  757.7 ..  1568.1]  PASS
+  blk_conflict                 T=128   median  1511.5 GB/s  [  994.0 ..  1552.9]  PASS
+
+Wrote 1800 records to results/daint/madd_daint_cpu.csv
+
+=== Summary ===
+  Row-major schedules:
+    best tiled:    1163.6 GB/s
+    row_major:      425.1 GB/s  (2.7x vs tiled)
+    col_major:      139.1 GB/s  (8.4x vs tiled)
+    all_rowmajor:  1525.8 GB/s  (peak control)
+  Blocked storage:
+    blk_all_rm:    1579.2 GB/s  SB=16  (103.5% of all_rowmajor)
+    blk_conflict:  1557.2 GB/s  SB=16  (98.6% of blk_all_rm)
+  Conflict cost absorbed by blocking:
+    row_major conflict:  3.6x slowdown vs all_rowmajor
+    blocked conflict:    1.0x slowdown vs blk_all_rm
+
+=== Model (B_eff=8) ===
+  row_major predicted:  3.3x  (cost 10 vs 3)
+  col_major predicted:  5.7x  (cost 17 vs 3)
+Layout-conflict benchmark (GPU: NVIDIA GH200 120GB)
+  M=16384  N=16384  reps=100
+  A: row-major   B: col-major   C: row-major
+  Warp=32  L2-line=128B → 16 doubles/txn
+
+Kernel                                                                Median          BW
+------------------------------------------------------------------------------------------------
+  direct        BX=32  BY=1   TX=1  TY=1   tile=1x32                 5.067 ms    1695.2 GB/s  OK
+  direct        BX=32  BY=1   TX=4  TY=1   tile=1x128                2.898 ms    2964.0 GB/s  OK
+  direct        BX=128 BY=1   TX=1  TY=1   tile=1x128                2.921 ms    2941.2 GB/s  OK
+  direct        BX=256 BY=1   TX=1  TY=1   tile=1x256                2.932 ms    2929.8 GB/s  OK
+  direct        BX=16  BY=16  TX=1  TY=1   tile=16x16                2.371 ms    3622.3 GB/s  OK
+  direct        BX=32  BY=8   TX=1  TY=1   tile=8x32                 2.551 ms    3367.2 GB/s  OK
+  direct        BX=32  BY=8   TX=2  TY=2   tile=16x64                2.386 ms    3600.6 GB/s  OK
+  direct        BX=32  BY=4   TX=4  TY=4   tile=16x128               3.172 ms    2707.9 GB/s  OK
+  direct        BX=32  BY=8   TX=4  TY=4   tile=32x128               2.393 ms    3589.0 GB/s  OK
+  direct        BX=32  BY=2   TX=1  TY=1   tile=2x32                 2.605 ms    3297.9 GB/s  OK
+  direct        BX=32  BY=4   TX=1  TY=1   tile=4x32                 2.528 ms    3398.2 GB/s  OK
+  direct        BX=32  BY=16  TX=1  TY=1   tile=16x32                2.436 ms    3526.7 GB/s  OK
+  direct        BX=32  BY=32  TX=1  TY=1   tile=32x32                2.532 ms    3392.2 GB/s  OK
+  direct        BX=32  BY=8   TX=1  TY=2   tile=16x32                2.456 ms    3497.1 GB/s  OK
+  direct        BX=32  BY=8   TX=1  TY=4   tile=32x32                2.346 ms    3662.0 GB/s  OK
+  direct        BX=32  BY=8   TX=4  TY=1   tile=8x128                2.434 ms    3528.4 GB/s  OK
+  direct        BX=64  BY=1   TX=1  TY=1   tile=1x64                 2.915 ms    2947.0 GB/s  OK
+  direct        BX=64  BY=1   TX=2  TY=1   tile=1x128                2.901 ms    2961.0 GB/s  OK
+  direct        BX=64  BY=1   TX=4  TY=1   tile=1x256                2.805 ms    3062.0 GB/s  OK
+  direct        BX=64  BY=2   TX=1  TY=1   tile=2x64                 2.604 ms    3299.3 GB/s  OK
+  direct        BX=64  BY=4   TX=1  TY=1   tile=4x64                 2.545 ms    3374.9 GB/s  OK
+  direct        BX=64  BY=4   TX=2  TY=2   tile=8x128                2.439 ms    3522.3 GB/s  OK
+  direct        BX=64  BY=8   TX=1  TY=1   tile=8x64                 2.619 ms    3279.4 GB/s  OK
+  direct        BX=64  BY=8   TX=2  TY=1   tile=8x128                2.516 ms    3413.9 GB/s  OK
+  direct        BX=64  BY=8   TX=2  TY=2   tile=16x128               2.394 ms    3587.5 GB/s  OK
+  direct        BX=64  BY=16  TX=1  TY=1   tile=16x64                2.545 ms    3374.6 GB/s  OK
+  direct        BX=64  BY=4   TX=4  TY=4   tile=16x256               2.536 ms    3387.2 GB/s  OK
+  direct        BX=128 BY=2   TX=1  TY=1   tile=2x128                2.623 ms    3274.4 GB/s  OK
+  direct        BX=128 BY=4   TX=1  TY=1   tile=4x128                2.579 ms    3330.8 GB/s  OK
+  direct        BX=128 BY=4   TX=2  TY=2   tile=8x256                2.441 ms    3519.7 GB/s  OK
+  direct        BX=128 BY=8   TX=1  TY=1   tile=8x128                2.747 ms    3127.1 GB/s  OK
+  direct        BX=128 BY=8   TX=2  TY=2   tile=16x256               2.395 ms    3586.3 GB/s  OK
+  direct        BX=256 BY=2   TX=1  TY=1   tile=2x256                2.650 ms    3241.9 GB/s  OK
+  direct        BX=256 BY=4   TX=1  TY=1   tile=4x256                2.645 ms    3248.0 GB/s  OK
+  direct        BX=512 BY=1   TX=1  TY=1   tile=1x512                2.973 ms    2889.3 GB/s  OK
+  direct        BX=512 BY=2   TX=1  TY=1   tile=2x512                2.722 ms    3156.2 GB/s  OK
+  direct        BX=1024 BY=1   TX=1  TY=1   tile=1x1024              3.004 ms    2859.1 GB/s  OK
+  direct_T      BX=32  BY=1   TX=1  TY=1   tile=32x1                13.613 ms     631.0 GB/s  OK
+  direct_T      BX=128 BY=1   TX=1  TY=1   tile=128x1               12.736 ms     674.5 GB/s  OK
+  direct_T      BX=16  BY=16  TX=1  TY=1   tile=16x16                3.311 ms    2594.1 GB/s  OK
+  direct_T      BX=32  BY=8   TX=1  TY=1   tile=32x8                 8.715 ms     985.7 GB/s  OK
+  direct_T      BX=32  BY=8   TX=2  TY=2   tile=64x16                7.322 ms    1173.2 GB/s  OK
+  direct_T      BX=32  BY=4   TX=1  TY=1   tile=32x4                 8.428 ms    1019.3 GB/s  OK
+  direct_T      BX=32  BY=16  TX=1  TY=1   tile=32x16                4.330 ms    1983.8 GB/s  OK
+  direct_T      BX=32  BY=32  TX=1  TY=1   tile=32x32                5.188 ms    1655.7 GB/s  OK
+  direct_T      BX=16  BY=16  TX=2  TY=2   tile=32x32                3.249 ms    2643.5 GB/s  OK
+  direct_T      BX=16  BY=16  TX=4  TY=1   tile=64x16                3.251 ms    2642.3 GB/s  OK
+  direct_T      BX=16  BY=16  TX=1  TY=4   tile=16x64                3.250 ms    2643.2 GB/s  OK
+  direct_T      BX=64  BY=1   TX=1  TY=1   tile=64x1                12.709 ms     675.9 GB/s  OK
+  direct_T      BX=64  BY=4   TX=1  TY=1   tile=64x4                 8.567 ms    1002.7 GB/s  OK
+  direct_T      BX=64  BY=4   TX=2  TY=2   tile=128x8                7.394 ms    1161.7 GB/s  OK
+  direct_T      BX=64  BY=8   TX=1  TY=1   tile=64x8                 9.076 ms     946.4 GB/s  OK
+  direct_T      BX=64  BY=8   TX=2  TY=2   tile=128x16               7.881 ms    1090.0 GB/s  OK
+  direct_T      BX=64  BY=16  TX=1  TY=1   tile=64x16                4.330 ms    1984.0 GB/s  OK
+  direct_T      BX=128 BY=4   TX=1  TY=1   tile=128x4                8.724 ms     984.6 GB/s  OK
+  direct_T      BX=128 BY=8   TX=1  TY=1   tile=128x8                9.451 ms     908.9 GB/s  OK
+  direct_T      BX=32  BY=8   TX=4  TY=1   tile=128x8                7.631 ms    1125.6 GB/s  OK
+  direct_T      BX=32  BY=8   TX=1  TY=4   tile=32x32                7.704 ms    1115.0 GB/s  OK
+  tiled+smem    BX=16  BY=16  TX=1  TY=1   tile=16x16                3.011 ms    2853.0 GB/s  OK
+  tiled+smem    BX=16  BY=16  TX=2  TY=2   tile=32x32                2.351 ms    3653.2 GB/s  OK
+  tiled+smem    BX=32  BY=1   TX=1  TY=32  tile=32x32                6.200 ms    1385.5 GB/s  OK
+  tiled+smem    BX=32  BY=8   TX=1  TY=1   tile=8x32                 3.148 ms    2729.1 GB/s  OK
+  tiled+smem    BX=32  BY=8   TX=2  TY=2   tile=16x64                2.394 ms    3588.7 GB/s  OK
+  tiled+smem    BX=32  BY=8   TX=2  TY=4   tile=32x64                2.691 ms    3192.5 GB/s  OK
+  tiled+smem    BX=32  BY=4   TX=2  TY=8   tile=32x64                3.725 ms    2306.2 GB/s  OK
+  tiled+smem    BX=32  BY=8   TX=4  TY=4   tile=32x128               3.838 ms    2238.3 GB/s  OK
+  tiled+smem    BX=16  BY=16  TX=4  TY=4   tile=64x64                3.855 ms    2228.3 GB/s  OK
+  tiled+smem    BX=32  BY=8   TX=4  TY=8   tile=64x128               6.547 ms    1312.0 GB/s  OK
+  tiled+smem    BX=32  BY=8   TX=8  TY=8   tile=64x256            SKIP (smem 394752 > 232448 hw limit)
+  tiled+smem    BX=32  BY=4   TX=8  TY=16  tile=64x256            SKIP (smem 394752 > 232448 hw limit)
+  tiled+smem    BX=32  BY=2   TX=1  TY=1   tile=2x32                 3.013 ms    2851.2 GB/s  OK
+  tiled+smem    BX=32  BY=4   TX=1  TY=1   tile=4x32                 3.007 ms    2856.9 GB/s  OK
+  tiled+smem    BX=32  BY=4   TX=2  TY=2   tile=8x64                 2.762 ms    3109.7 GB/s  OK
+  tiled+smem    BX=32  BY=16  TX=1  TY=1   tile=16x32                3.072 ms    2796.3 GB/s  OK
+  tiled+smem    BX=32  BY=32  TX=1  TY=1   tile=32x32                3.196 ms    2687.4 GB/s  OK
+  tiled+smem    BX=16  BY=16  TX=2  TY=1   tile=16x32                2.773 ms    3097.6 GB/s  OK
+  tiled+smem    BX=16  BY=16  TX=1  TY=2   tile=32x16                2.796 ms    3071.9 GB/s  OK
+  tiled+smem    BX=32  BY=8   TX=1  TY=2   tile=16x32                2.773 ms    3098.2 GB/s  OK
+  tiled+smem    BX=32  BY=8   TX=1  TY=4   tile=32x32                2.351 ms    3653.1 GB/s  OK
+  tiled+smem    BX=32  BY=8   TX=4  TY=1   tile=8x128                2.757 ms    3116.2 GB/s  OK
+  tiled+smem    BX=64  BY=2   TX=1  TY=1   tile=2x64                 3.087 ms    2782.9 GB/s  OK
+  tiled+smem    BX=64  BY=4   TX=1  TY=1   tile=4x64                 3.121 ms    2752.6 GB/s  OK
+  tiled+smem    BX=64  BY=4   TX=1  TY=2   tile=8x64                 2.965 ms    2897.2 GB/s  OK
+  tiled+smem    BX=64  BY=4   TX=2  TY=1   tile=4x128                2.965 ms    2897.5 GB/s  OK
+  tiled+smem    BX=64  BY=4   TX=2  TY=2   tile=8x128                2.757 ms    3116.2 GB/s  OK
+  tiled+smem    BX=64  BY=4   TX=2  TY=4   tile=16x128               2.750 ms    3123.4 GB/s  OK
+  tiled+smem    BX=64  BY=8   TX=1  TY=1   tile=8x64                 3.263 ms    2632.7 GB/s  OK
+  tiled+smem    BX=64  BY=8   TX=1  TY=2   tile=16x64                2.852 ms    3011.9 GB/s  OK
+  tiled+smem    BX=64  BY=8   TX=2  TY=1   tile=8x128                3.048 ms    2818.0 GB/s  OK
+  tiled+smem    BX=64  BY=8   TX=2  TY=2   tile=16x128               2.436 ms    3526.2 GB/s  OK
+  tiled+smem    BX=64  BY=16  TX=1  TY=1   tile=16x64                3.271 ms    2625.8 GB/s  OK
+  tiled+smem    BX=64  BY=16  TX=2  TY=1   tile=16x128               2.972 ms    2889.9 GB/s  OK
+  tiled+smem    BX=128 BY=2   TX=1  TY=1   tile=2x128                3.179 ms    2701.7 GB/s  OK
+  tiled+smem    BX=128 BY=2   TX=2  TY=2   tile=4x256                3.020 ms    2844.4 GB/s  OK
+  tiled+smem    BX=128 BY=4   TX=1  TY=1   tile=4x128                3.253 ms    2640.5 GB/s  OK
+  tiled+smem    BX=128 BY=4   TX=1  TY=2   tile=8x128                3.050 ms    2816.5 GB/s  OK
+  tiled+smem    BX=128 BY=4   TX=2  TY=2   tile=8x256                2.772 ms    3098.8 GB/s  OK
+  tiled+smem    BX=128 BY=8   TX=1  TY=1   tile=8x128                3.431 ms    2503.9 GB/s  OK
+  tiled+smem    BX=256 BY=2   TX=1  TY=1   tile=2x256                3.294 ms    2608.0 GB/s  OK
+  tiled+smem    BX=256 BY=4   TX=1  TY=1   tile=4x256                3.422 ms    2509.9 GB/s  OK
+  all_rowmajor  BX=32  BY=8   TX=1  TY=1   (control)                 2.275 ms    3776.3 GB/s  OK
+  all_rowmajor  BX=32  BY=8   TX=4  TY=4   (control)                 2.300 ms    3735.3 GB/s  OK
+  all_rowmajor  BX=16  BY=16  TX=1  TY=1   (control)                 2.286 ms    3758.2 GB/s  OK
+  all_rowmajor  BX=32  BY=32  TX=1  TY=1   (control)                 2.296 ms    3741.2 GB/s  OK
+  all_rowmajor  BX=32  BY=8   TX=2  TY=2   (control)                 2.279 ms    3768.6 GB/s  OK
+  all_rowmajor  BX=32  BY=4   TX=1  TY=1   (control)                 2.275 ms    3775.1 GB/s  OK
+  all_rowmajor  BX=32  BY=4   TX=2  TY=2   (control)                 2.279 ms    3768.9 GB/s  OK
+  all_rowmajor  BX=64  BY=1   TX=1  TY=1   (control)                 2.529 ms    3396.0 GB/s  OK
+  all_rowmajor  BX=64  BY=4   TX=1  TY=1   (control)                 2.275 ms    3776.3 GB/s  OK
+  all_rowmajor  BX=64  BY=4   TX=2  TY=2   (control)                 2.279 ms    3768.8 GB/s  OK
+  all_rowmajor  BX=64  BY=8   TX=1  TY=1   (control)                 2.276 ms    3774.6 GB/s  OK
+  all_rowmajor  BX=64  BY=8   TX=2  TY=2   (control)                 2.278 ms    3770.3 GB/s  OK
+  all_rowmajor  BX=64  BY=16  TX=1  TY=1   (control)                 2.296 ms    3741.5 GB/s  OK
+  all_rowmajor  BX=128 BY=4   TX=1  TY=1   (control)                 2.273 ms    3778.9 GB/s  OK
+  all_rowmajor  BX=128 BY=4   TX=2  TY=2   (control)                 2.277 ms    3772.1 GB/s  OK
+  all_rowmajor  BX=128 BY=8   TX=1  TY=1   (control)                 2.284 ms    3760.4 GB/s  OK
+  all_rowmajor  BX=256 BY=2   TX=1  TY=1   (control)                 2.273 ms    3779.7 GB/s  OK
+  all_rowmajor  BX=256 BY=4   TX=1  TY=1   (control)                 2.279 ms    3768.8 GB/s  OK
+
+=== Summary (best of each category) ===
+  Best tiled+smem : 2.351 ms  (baseline)
+  Best direct     : 2.346 ms  (1.0x vs tiled)  — B uncoalesced
+  Best direct_T   : 3.249 ms  (1.4x vs tiled)  — A,C uncoalesced
+  Best control    : 2.273 ms  (0.97x vs tiled)  — all row-major
+
+  Peak BW (best control): 3779.7 GB/s
+  Tiled recovery:         3653.2 GB/s
+
+Wrote 11600 records to results/daint/madd_daint_gpu.csv
+[E1 daint] done. CSVs under results/daint/
