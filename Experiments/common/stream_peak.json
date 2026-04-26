@@ -1,12 +1,18 @@
 {
   "peaks_tbs": {
-    "MI300A Zen CPU": 1.161,
-    "GH200 Grace CPU": 1.80662,
-    "MI300A GPU": 4.294,
-    "GH200 Hopper GPU": 3.780
+    "MI300A Zen CPU": 0.9675,
+    "GH200 Grace CPU": 1.6143,
+    "MI300A GPU": 3.5514,
+    "GH200 Hopper GPU": 3.7832
   },
   "platform_labels": {
-    "beverin": {"cpu": "MI300A Zen CPU", "gpu": "MI300A GPU"},
-    "daint":   {"cpu": "GH200 Grace CPU", "gpu": "GH200 Hopper GPU"}
+    "beverin": {
+      "cpu": "MI300A Zen CPU",
+      "gpu": "MI300A GPU"
+    },
+    "daint": {
+      "cpu": "GH200 Grace CPU",
+      "gpu": "GH200 Hopper GPU"
+    }
   }
 }

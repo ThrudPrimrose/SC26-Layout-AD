@@ -57,44 +57,55 @@ PermMap = Dict[str, Perm]
 # is rank-3 after the AoS->SoA expansion, not the rank-2 form in the
 # Fortran-level analysis).
 #
-# Sweep architecture (matches paper §IV-A, "5 distinct loop patterns ...
-# 7 layout-equivalent groups"):
+# Sweep architecture (matches paper §IV-A: "5 compute patterns + level
+# reduction, 7 layout-equivalent groups, top-k=2 per group, Cartesian
+# sweep, <1000 candidates after pruning").
 #
-# E6 V_k naming convention (see E6_VelocityTendencies/_analysis_util.py):
-#   V1 = h_first + SoA-conn       (identity baseline)
-#   V2 = h_first + AoS-conn       (only conn layout differs from V1)
-#   V3..V5,V7 = v_first + SoA-conn (schedule variants of v_first/SoA)
-#   V6 = v_first + AoS-conn       (the v_first/AoS empirical winner)
-# E6's empirical winners across the 6 micro-bench loopnests are V1, V2,
-# V6 (generate_v123_candidates.py default ``--covered V1,V2,V6``). The
-# sweep below covers all three at every named & sweep cell, plus the
-# extra v_first/SoA corner via ``cv1_ch1_f1_s1_n012_em1_lv1_*``.
+# V_k semantics per group (the three E6 winner candidates V1, V2, V6):
 #
-# Mapping the 8-axis sweep onto E6 V_k:
+#   V1 (identity / original)
+#       Every group keeps its Fortran-source layout. For data arrays
+#       this is h_first (nproma is innermost-after-nlev or innermost
+#       depending on rank); for connectivity (nproma, nblks, N) this
+#       is the original (identity) layout.
 #
-#   E6-classified groups -- binary axis (V1-equivalent vs v_first/level-first):
-#     cv  -- rank-3 vertical-accumulation work arrays   (cv=0 -> h_first; cv=1 -> v_first)
-#     ch  -- rank-3 horizontal-stencil work arrays      (ch=0 -> h_first; ch=1 -> v_first)
-#     f   -- rank-3 prog/diag + rank-4 ddt fields       (f =0 -> h_first; f =1 -> v_first, ntl last)
-#     s   -- rank-3 read-only metrics + interpolation   (s =0 -> h_first; s =1 -> v_first)
-#     lv  -- rank-2 ``gpu_levmask``                     (lv=0 -> identity; lv=1 -> [1,0])
+#   V2 (short-dim earlier in connectivity; data unchanged)
+#       Index-lookup arrays (connectivity) move the short dimension N
+#       inward by one position: (nproma, nblks, N) -> (nproma, N, nblks)
+#       = [0, 2, 1]. Data arrays are unchanged from V1 because they
+#       have no "short / index" dimension to reposition. V2 thus
+#       differs from V1 only on the connectivity axis.
 #
-#   Untouched groups -- full permutation sweep:
-#     n   -- rank-3 connectivity tables (6 permutations; controls the
-#            SoA vs AoS axis. n=012 is V_k SoA-conn, n=021/120/201/210
-#            are AoS-conn variants, n=102 is the validated empirical
-#            winner [0,2,1] in this codebase)
-#     em  -- rank-2 edge / cell scalar metrics (2 permutations = binary)
+#   V6 (level-first data + short-dim innermost in connectivity)
+#       Data arrays put nlev innermost: rank-3 -> [1, 0, 2], rank-4
+#       (ddt with trailing ntl) -> [1, 0, 2, 3], rank-2 -> [1, 0].
+#       Connectivity puts the short dim N innermost-or-first depending
+#       on access: (nproma, nblks, N) -> (N, nproma, nblks) = [2, 0, 1].
+#       This is the strict V6 from E6/_analysis_util.py.
 #
-# Reading off V_k from a sweep-cell name:
-#   V1 (h+SoA)   = cv0_ch0_f0_s0_n012_em0_lv0_*
-#   V2 (h+AoS)   = cv0_ch0_f0_s0_n<aos>_em0_lv0_*  (any non-identity n)
-#   V3 (v+SoA)   = cv1_ch1_f1_s1_n012_em1_lv1_*
-#   V6 (v+AoS)   = cv1_ch1_f1_s1_n<aos>_em1_lv1_*  -- the v_first/AoS winner
+# 7 layout-equivalent groups (paper §IV-A):
+#   cv -- rank-3 vertical-accumulation work arrays
+#   ch -- rank-3 horizontal-stencil work arrays
+#   f  -- rank-3 prog/diag + rank-4 ddt fields
+#   s  -- rank-3 read-only metrics + interpolation
+#   lv -- rank-2 ``gpu_levmask``
+#   em -- rank-2 edge / cell scalar metrics
+#   n  -- rank-3 connectivity tables (the only "index lookup" group)
 #
-# Total sweep cells: 2^5 (E6 binary) * 6 (n) * 2 (em) * 2 (sm) - 1 = 767.
-# Blocking is omitted globally (paper §IV-A, "blocking candidates are
-# pruned analogously"; empirical sweep showed no gain).
+# Globally-uniform named configs: winner_v1, winner_v2, winner_v6
+# apply one V_k to every group. winner_v1 is the Fig. 13 ``Original
+# Layout`` baseline; winner_v6 is the ``Optimized Layout`` adopted
+# in §IV-D; winner_v2 is the connectivity-only-permuted intermediate.
+#
+# Cross-product follow-up sweep (paper Step 5): each axis is one
+# group; the Cartesian product enumerates per-group V_k combinations.
+# cv/ch/f/s/lv/em are binary (V1 == V2 for data groups, only V6
+# differs). n is 6-way (covers V1, V2, V6 plus the three other
+# permutations to confirm they don't beat V6). sm is binary (loop
+# reorder on/off, paper §IV-A's "loop orders are permuted to match").
+# Total: 2^6 * 6 * 2 - 1 = 767 sweep cells, plus named/per-nest.
+# Blocking omitted globally (paper §IV-A, "blocking candidates pruned
+# analogously"; empirical sweep showed no gain on velocity tendencies).
 # ---------------------------------------------------------------------------
 
 # cv -- COMPUTE_VERT: vertical-accumulation arrays. jk is the natural
@@ -203,8 +214,50 @@ _CONN_ARRAYS: List[str] = [
 # and partition metadata (``gpu___CG_p_patch__CG_cells__CG_decomp_info__m_owner_mask``).
 # These don't carry a layout to permute.
 
-_ID_CONN: Perm = [0, 1, 2]
+# V_k connectivity permutations (see file header):
+#   V1  = identity                  (nproma, nblks, N)
+#   V2  = N moved to middle         (nproma, N, nblks)  = [0, 2, 1]
+#   V6  = N innermost / first       (N, nproma, nblks)  = [2, 0, 1]
+_V1_CONN: Perm = [0, 1, 2]
+_V2_CONN: Perm = [0, 2, 1]
+_V6_CONN: Perm = [2, 0, 1]
+
+_ID_CONN: Perm = _V1_CONN
 _ALL_CONN_PERMS: List[Perm] = [list(p) for p in _iter_perms([0, 1, 2])]
+
+
+# ---------------------------------------------------------------------------
+# Globally-uniform V_k builders. Each function returns the full PermMap
+# for one V_k applied across every layout-equivalent group. winner_v1 is
+# trivially empty (identity = no permutations); winner_v2 differs from
+# winner_v1 only on connectivity; winner_v6 permutes data and connectivity.
+# ---------------------------------------------------------------------------
+
+
+def _winner_v1_map() -> PermMap:
+    # V1 = identity everywhere. Empty permute_map = no-op for every group.
+    return {}
+
+
+def _winner_v2_map() -> PermMap:
+    # V2 = data identity (same as V1 because data groups have no
+    # short-dim axis to reposition) + connectivity at [0, 2, 1].
+    return {arr: list(_V2_CONN) for arr in _CONN_ARRAYS}
+
+
+def _winner_v6_map() -> PermMap:
+    # V6 = level-first across data groups + connectivity at [2, 0, 1]
+    # (short dim N innermost). The data-side maps already store their
+    # V6 (level-first) permutation in the per-group _<group>_PERMUTED
+    # dicts.
+    out: PermMap = {}
+    for group in (_COMPUTE_VERT_PERMUTED, _COMPUTE_HORIZ_PERMUTED,
+                  _FIELDS_PERMUTED, _STENCIL_PERMUTED,
+                  _LEVMASK_PERMUTED, _EDGE_METRIC_PERMUTED):
+        out.update(group)
+    for arr in _CONN_ARRAYS:
+        out[arr] = list(_V6_CONN)
+    return out
 
 
 def _label(p: Perm) -> str:
@@ -324,21 +377,21 @@ _CURATED_NLEV_FIRST: PermMap = {
     "gpu___CG_p_patch__CG_edges__m_inv_dual_edge_length":   [1, 0],
     "gpu___CG_p_patch__CG_edges__m_tangent_orientation":    [1, 0],
     "gpu___CG_p_patch__CG_cells__m_area":                   [1, 0],
-    # Connectivity (validated [0, 2, 1])
-    "gpu___CG_p_patch__CG_verts__m_cell_blk":       [0, 2, 1],
-    "gpu___CG_p_patch__CG_verts__m_cell_idx":       [0, 2, 1],
-    "gpu___CG_p_patch__CG_verts__m_edge_idx":       [0, 2, 1],
-    "gpu___CG_p_patch__CG_verts__m_edge_blk":       [0, 2, 1],
-    "gpu___CG_p_patch__CG_edges__m_cell_idx":       [0, 2, 1],
-    "gpu___CG_p_patch__CG_edges__m_cell_blk":       [0, 2, 1],
-    "gpu___CG_p_patch__CG_cells__m_edge_idx":       [0, 2, 1],
-    "gpu___CG_p_patch__CG_cells__m_edge_blk":       [0, 2, 1],
-    "gpu___CG_p_patch__CG_edges__m_vertex_idx":     [0, 2, 1],
-    "gpu___CG_p_patch__CG_edges__m_vertex_blk":     [0, 2, 1],
-    "gpu___CG_p_patch__CG_edges__m_quad_idx":       [0, 2, 1],
-    "gpu___CG_p_patch__CG_edges__m_quad_blk":       [0, 2, 1],
-    "gpu___CG_p_patch__CG_cells__m_neighbor_idx":   [0, 2, 1],
-    "gpu___CG_p_patch__CG_cells__m_neighbor_blk":   [0, 2, 1],
+    # Connectivity (V6 strict: short dim N innermost = [2, 0, 1])
+    "gpu___CG_p_patch__CG_verts__m_cell_blk":       [2, 0, 1],
+    "gpu___CG_p_patch__CG_verts__m_cell_idx":       [2, 0, 1],
+    "gpu___CG_p_patch__CG_verts__m_edge_idx":       [2, 0, 1],
+    "gpu___CG_p_patch__CG_verts__m_edge_blk":       [2, 0, 1],
+    "gpu___CG_p_patch__CG_edges__m_cell_idx":       [2, 0, 1],
+    "gpu___CG_p_patch__CG_edges__m_cell_blk":       [2, 0, 1],
+    "gpu___CG_p_patch__CG_cells__m_edge_idx":       [2, 0, 1],
+    "gpu___CG_p_patch__CG_cells__m_edge_blk":       [2, 0, 1],
+    "gpu___CG_p_patch__CG_edges__m_vertex_idx":     [2, 0, 1],
+    "gpu___CG_p_patch__CG_edges__m_vertex_blk":     [2, 0, 1],
+    "gpu___CG_p_patch__CG_edges__m_quad_idx":       [2, 0, 1],
+    "gpu___CG_p_patch__CG_edges__m_quad_blk":       [2, 0, 1],
+    "gpu___CG_p_patch__CG_cells__m_neighbor_idx":   [2, 0, 1],
+    "gpu___CG_p_patch__CG_cells__m_neighbor_blk":   [2, 0, 1],
 }
 
 _CURATED_INDEX_ONLY: PermMap = {

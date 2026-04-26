@@ -347,23 +347,22 @@ def extended_configs_from_candidates(json_path: str | Path,
         configs.append(cfg)
         seen.add(cfg.name)
 
-    # E6 V_k aliases -- explicit named configs that map to the V1 / V2 /
-    # V6 empirical-winner variants from
-    # ``E6_VelocityTendencies/generate_v123_candidates.py``. These are
-    # what the AD reproduces from the paper (§IV-D, "indirect stencils
-    # favor vertical-first" + Table IV showing V6 as the v_first/AoS
-    # winner). Defined as aliases over already-emitted configs so the
-    # AD reader can submit ``winner_v1`` / ``winner_v2`` / ``winner_v6``
-    # without translating axis-flag names back to V_k.
-    #
-    #   winner_v1 -- h_first + SoA-conn (identity baseline)
-    #   winner_v2 -- h_first + AoS-conn (only connectivity permuted to
-    #                the validated [0, 2, 1])
-    #   winner_v6 -- v_first + AoS-conn (full level-first across all
-    #                E6-classified groups + connectivity at [0, 2, 1])
-    _add_winner_alias(configs, seen, 'winner_v1', 'unpermuted_lv0_sm0')
-    _add_winner_alias(configs, seen, 'winner_v2', 'index_only_lv0_sm0')
-    _add_winner_alias(configs, seen, 'winner_v6', 'nlev_first_lv1_sm0')
+    # E6 V_k winners -- ``winner_v1``, ``winner_v2``, ``winner_v6`` are
+    # built directly from
+    # ``E6_VelocityTendencies/access_analysis/layout_groups.json``,
+    # which is the auditable spec for the per-group V_k permutations.
+    # The JSON lists the seven layout-equivalent groups, the array
+    # members of each, and the V1/V2/V6 permutation each group takes.
+    # By driving the named configs from the JSON the AD reader can
+    # trace any winner back to a single document without reading
+    # Python source. The doubled ``_sm0`` / ``_sm1`` variants are
+    # emitted for both loop orders (paper §IV-A: "loop orders are
+    # permuted to match the chosen array dimensions").
+    for winner_cfg in _winner_configs_from_json(sdfg_arrays):
+        if winner_cfg.name in seen:
+            continue
+        configs.append(winner_cfg)
+        seen.add(winner_cfg.name)
 
     # Apply force-permute overrides (e.g. levmask -> [1, 0]) uniformly
     # across every emitted config -- including ``unpermuted`` and the
@@ -372,19 +371,95 @@ def extended_configs_from_candidates(json_path: str | Path,
     return _apply_force_permuted(configs, sdfg_arrays)
 
 
-def _add_winner_alias(configs: List[PermuteConfig], seen: set,
-                      alias: str, source: str) -> None:
-    """Append ``alias`` as a copy of the config named ``source``. Silent
-    no-op if ``source`` isn't in ``configs`` (e.g. SDFG-side filtering
-    dropped its permute map)."""
-    if alias in seen:
-        return
-    src = next((c for c in configs if c.name == source), None)
-    if src is None:
-        return
-    configs.append(PermuteConfig(
-        name=alias,
-        permute_map=dict(src.permute_map),
-        shuffle_map=src.shuffle_map,
-    ))
-    seen.add(alias)
+_LAYOUT_GROUPS_JSON_PATH = (
+    Path(__file__).resolve().parent.parent.parent.parent
+    / "E6_VelocityTendencies" / "access_analysis" / "layout_groups.json"
+)
+
+
+def _load_layout_groups() -> dict | None:
+    """Load ``layout_groups.json`` -- the JSON-driven V_k spec emitted by
+    ``access_analysis/generate_layout_groups.py``. Returns ``None`` when
+    the file isn't present (for installs that don't ship E6); callers
+    silently skip the JSON-driven winners in that case."""
+    if not _LAYOUT_GROUPS_JSON_PATH.is_file():
+        return None
+    try:
+        return json.loads(_LAYOUT_GROUPS_JSON_PATH.read_text())
+    except (OSError, json.JSONDecodeError):
+        return None
+
+
+def _vk_perm_for_array(group: dict, vk: str, ndim: int) -> List[int] | None:
+    """Pick the right per-rank permutation for ``vk`` in ``group``. Most
+    groups carry a single ``vk_perms`` table (one rank); the ``f``
+    fields group has both rank-3 (prog/diag) and rank-4 (ddt) members
+    and stores a separate ``vk_perms_rank4`` for the latter."""
+    table = group.get("vk_perms", {})
+    if ndim == 4 and "vk_perms_rank4" in group:
+        table = group["vk_perms_rank4"]
+    perm = table.get(vk)
+    if perm is None or len(perm) != ndim:
+        return None
+    return list(perm)
+
+
+def _winner_configs_from_json(
+        sdfg_arrays: Dict[str, int] | None) -> List[PermuteConfig]:
+    """Build every named V_k winner declared in ``layout_groups.json``.
+
+    Each ``named_configs[<name>]`` entry with a ``uniform_vk`` field
+    yields one ``<name>_sm0`` (no map shuffle) and one ``<name>_sm1``
+    (with map shuffle) ``PermuteConfig``. The permute_map is composed
+    by walking every group, looking up the V_k permutation for that
+    group, and emitting one ``{array: perm}`` entry per group member
+    -- skipping arrays the SDFG doesn't have at the expected rank.
+    Identity perms ([0,1,2,...]) are dropped so the resulting map only
+    carries actual reorderings.
+    """
+    spec = _load_layout_groups()
+    if spec is None:
+        return []
+    groups = spec.get("groups", [])
+    named = spec.get("named_configs", {})
+    out: List[PermuteConfig] = []
+    for name, entry in named.items():
+        vk = entry.get("uniform_vk")
+        if vk is None:
+            continue
+        pmap: Dict[str, List[int]] = {}
+        for group in groups:
+            for rank_key, arr_key in (("rank", "arrays"),
+                                       ("rank4", "arrays_rank4")):
+                ndim = group.get(rank_key) if rank_key == "rank" else 4
+                arrays = group.get(arr_key, [])
+                if not arrays:
+                    continue
+                perm = _vk_perm_for_array(group, vk, ndim)
+                if perm is None:
+                    continue
+                if perm == list(range(ndim)):
+                    continue  # identity -- no entry needed
+                for arr in arrays:
+                    if sdfg_arrays is not None:
+                        if sdfg_arrays.get(arr) != ndim:
+                            continue
+                    pmap[arr] = list(perm)
+        # Emit both loop orders -- paper §IV-A's "loop orders are
+        # permuted to match the chosen array dimensions" heuristic
+        # is a SCHEDULE choice independent of the LAYOUT, so every
+        # named V_k winner is reported under both schedule variants.
+        for sm in (0, 1):
+            out.append(PermuteConfig(
+                name=f"{name}_sm{sm}" if not name.endswith(("sm0", "sm1")) else name,
+                permute_map=dict(pmap),
+                shuffle_map=bool(sm),
+            ))
+        # Also emit the bare name (no _sm suffix) for backward-
+        # compatible CLI invocation; defaults to no map shuffle.
+        out.append(PermuteConfig(
+            name=name,
+            permute_map=dict(pmap),
+            shuffle_map=False,
+        ))
+    return out

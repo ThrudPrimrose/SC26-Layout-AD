@@ -41,10 +41,24 @@ Experiments/E3_Transpose/transpose_cpu
 Experiments/E3_Transpose/transpose_gpu
 Experiments/E3_Transpose/transpose_hptt
 Experiments/E3_Transpose/transpose_lib
+# E7 compiles per-config velocity-tendencies binaries plus per-stage
+# pipeline binaries (velocity_stage1..4 + one velocity_stage5a_<config>
+# per layout config in CONFIGS). They land in the experiment root next
+# to main.cpp -- O(MB) each, never tracked.
+Experiments/E7_FullVelocityTendencies/velocity_stage*
+Experiments/E7_FullVelocityTendencies/main.o
+Experiments/E7_FullVelocityTendencies/main
 
 # ---- Per-experiment results directories (CSV output of runs) ---------------
 Experiments/*/results/
 Experiments/E6_VelocityTendencies/*/results/
+
+# ---- Per-experiment local data directories (downloaded payloads) -----------
+# data_r02b05/ is the ICON dataset; data_<resolution>/ generalises in case
+# higher-resolution variants (R02B06, etc.) get added later. Always
+# user-provided via tools/download_data.sh.
+Experiments/*/data_r02b05/
+Experiments/*/data_*/
 
 # ---- Downloaded / generated data -------------------------------------------
 Experiments/E4_GAS/bin/

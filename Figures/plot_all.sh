@@ -53,7 +53,11 @@ declare -gA GROUPS=(
     [Replay]="replay.py"
 )
 
-DEFAULT_ORDER=(AccessCost Pebble_Game LayoutTransformations Replay Peaks Runtime)
+# Peaks first: every Runtime plot normalizes "% of STREAM peak" against
+# common/stream_peak.json. Refresh that JSON from measured CSVs (or the
+# .out fallback parser in E0_NUMA/plot_paper.py) before any figure is
+# rendered so percentages reflect the latest measurements.
+DEFAULT_ORDER=(Peaks AccessCost Pebble_Game LayoutTransformations Replay Runtime)
 
 if (( $# == 0 )); then
     targets=("${DEFAULT_ORDER[@]}")

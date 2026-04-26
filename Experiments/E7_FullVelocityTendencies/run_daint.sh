@@ -18,7 +18,11 @@
 # switching). For an F90 -> stage 4 regeneration, run
 # tools/regenerate_baselines.sh first.
 
-set -euo pipefail
+# Note: no `set -e` / `pipefail`. A crashed binary on one config (e.g.
+# std::out_of_range from a missing data field) must not abort the whole
+# batch -- subsequent configs still need to run. We handle setup
+# failures explicitly where they matter (JSON missing, codegen fails).
+set -u
 
 # --verify retains the per-timestep got/want numerical-comparison blobs
 # (O(GB) each) for offline validation against a reference run. Default
@@ -57,7 +61,9 @@ export ICON_DATA_PATH="${ICON_DATA_PATH:-${EXP_DIR}/data_r02b05}"
 #   index_only_lv*_sm*  conn-only ablations
 # Override at submission time, e.g.
 #   CONFIGS="winner_v1 winner_v2 winner_v6" sbatch run_daint.sh
-CONFIGS="${CONFIGS:-winner_v1 winner_v2 winner_v6 \
+CONFIGS="${CONFIGS:-winner_v1_sm0 winner_v1_sm1 \
+winner_v2_sm0 winner_v2_sm1 \
+winner_v6_sm0 winner_v6_sm1 \
 unpermuted_lv0_sm0 unpermuted_lv0_sm1 \
 nlev_first_lv0_sm0 nlev_first_lv0_sm1 nlev_first_lv1_sm0 nlev_first_lv1_sm1 \
 index_only_lv0_sm0 index_only_lv0_sm1}"
