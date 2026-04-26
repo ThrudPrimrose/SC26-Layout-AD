@@ -135,7 +135,17 @@ def _collect_rewrites(assignments: Dict[str, str]) -> Dict[str, str]:
 
 def _promote_mangled_targets(sdfg: SDFG, targets: Set[str]):
     """Ensure each name in ``targets`` exists as a DaCe symbol. Scalar /
-    length-1 array data descriptors of the same name are deleted first."""
+    length-1 array data descriptors of the same name are deleted first.
+
+    When a descriptor is demoted to a symbol, any AccessNode still
+    referencing it must also be cleaned up: its read consumers (tasklets
+    via in-connectors) are rewritten to reference the bare symbol in
+    their code, the connectors and edges are dropped, and the AccessNode
+    itself is removed. Without this cleanup, the SDFG becomes invalid
+    (``Array "<name>" not found in SDFG`` from validate_state).
+    """
+    import re
+    promoted_to_symbol: Set[str] = set()
     for name in targets:
         if name in sdfg.symbols:
             continue
@@ -149,3 +159,49 @@ def _promote_mangled_targets(sdfg: SDFG, targets: Set[str]):
             dtype = desc.dtype
             sdfg.remove_data(name, validate=False)
             sdfg.add_symbol(name, dtype)
+            promoted_to_symbol.add(name)
+
+    if not promoted_to_symbol:
+        return
+
+    # Walk every state (including nested SDFGs) and clean up dangling
+    # AccessNodes that still reference the just-demoted names.
+    for nested in sdfg.all_sdfgs_recursive():
+        for state in nested.states():
+            stale = [n for n in state.nodes()
+                     if isinstance(n, dace.nodes.AccessNode)
+                     and n.data in promoted_to_symbol]
+            for an in stale:
+                sym_name = an.data
+                # Read consumers: the tasklet's in-connector becomes a
+                # free reference to the symbol.
+                for oe in list(state.out_edges(an)):
+                    consumer = oe.dst
+                    conn = oe.dst_conn
+                    if conn is not None and isinstance(consumer, dace.nodes.Tasklet):
+                        # Token-bounded replace of `conn` -> `sym_name` in tasklet code.
+                        try:
+                            old_code = consumer.code.as_string
+                            new_code = re.sub(
+                                rf"(?<!\w){re.escape(conn)}(?!\w)",
+                                sym_name,
+                                old_code,
+                            )
+                            if new_code != old_code:
+                                consumer.code = properties.CodeBlock(
+                                    new_code, language=consumer.code.language
+                                )
+                        except Exception:
+                            pass
+                    if conn is not None and conn in getattr(consumer, "in_connectors", {}):
+                        consumer.remove_in_connector(conn)
+                    state.remove_edge(oe)
+
+                # Write producers (init-style): the symbol is set from
+                # outside, so any in-edge here is dead -- drop it.
+                for ie in list(state.in_edges(an)):
+                    if ie.src_conn is not None and ie.src_conn in getattr(ie.src, "out_connectors", {}):
+                        ie.src.remove_out_connector(ie.src_conn)
+                    state.remove_edge(ie)
+
+                state.remove_node(an)

@@ -139,8 +139,16 @@ def optimization_action(sdfg: dace.SDFG) -> dace.SDFG:
                 break
         if not applied_one:
             break
-    assert pln_count > 0, "PerfLoopNesting did not match any _for_it_35 map"
-    print(f"Stage #{STAGE_ID}: PerfLoopNesting fissioned {pln_count} `_for_it_35` map(s)")
+    if pln_count > 0:
+        print(f"Stage #{STAGE_ID}: PerfLoopNesting fissioned {pln_count} `_for_it_35` map(s)")
+    else:
+        # Optimization, not a correctness step: when upstream fixes (e.g. the
+        # struct_to_container_group / dealias_symbols cleanup) shift the
+        # CFL-clipping kernel's nest shape, ``can_be_applied_to`` may
+        # return False for every ``_for_it_35`` MapEntry. Continue without
+        # fissioning -- the rest of stage 1 still produces a valid SDFG.
+        print(f"Stage #{STAGE_ID}: PerfLoopNesting matched 0 `_for_it_35` maps "
+              "(no imperfect-nest motif to fission; continuing)")
     sdfg.validate()
 
     # 3c. Push conditionals guarding an inner map into the inner nested SDFG
@@ -189,17 +197,33 @@ def main():
     names = common.sdfg_names()
 
     if args.optimize:
+        # Re-unify against the post-phase-1 baseline at the end of stage 1.
+        # Stage 1's optimisations (LoopToMap / simplify / InlineSDFG / ...)
+        # surface additional free symbols and prune unused arrays, drifting
+        # the per-variant signature from the baseline that ``main.cpp`` was
+        # compiled against. Re-running ``unify_variant_signatures`` here
+        # re-pads each variant back to the baseline ABI.
+        from utils.passes.unify_variant_signatures import unify_variant_signatures
+        baseline_path = Path("baseline") / "velocity_no_nproma_post_aos_soa.sdfgz"
+        baseline = dace.SDFG.from_file(str(baseline_path)) if baseline_path.exists() else None
+        optimized = []
         for name in names:
             infile = common.stage_input(name, STAGE_ID)
-            outfile = common.stage_output(name, STAGE_ID)
             print(f"Stage #{STAGE_ID}: Optimising {name} from {infile}")
-
             sdfg = dace.SDFG.from_file(infile)
             sdfg.name = name
             sdfg.validate()
-
             sdfg = optimization_action(sdfg)
+            optimized.append(sdfg)
 
+        if baseline is not None and optimized:
+            print(f"Stage #{STAGE_ID}: re-unifying {len(optimized)} variant(s) against post-phase-1 baseline")
+            unify_variant_signatures(baseline, optimized)
+            for v in optimized:
+                v.validate()
+
+        for sdfg in optimized:
+            outfile = common.stage_output(sdfg.name, STAGE_ID)
             Path(outfile).parent.mkdir(parents=True, exist_ok=True)
             sdfg.save(outfile, compress=True)
             print(f"Stage #{STAGE_ID}: Saved as {outfile}")

@@ -14,7 +14,7 @@
 #include <ctime>
 #include <cassert>
 
-#if __HIP_PLATFORM_AMD__
+#ifdef __HIP_PLATFORM_AMD__
 #endif
 
 #define CUDA_LAUNCH_CHECK() do {                                           \

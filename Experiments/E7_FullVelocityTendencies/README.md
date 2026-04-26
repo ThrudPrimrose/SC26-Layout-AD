@@ -45,25 +45,37 @@ python tools/list_layout_configs.py            # see all available configs
 
 ## Optional: regenerate from F90
 
-`tools/regenerate_baselines.sh` walks F90 → SDFG → stage 5. Phase 0
-(f2dace frontend) needs DaCe on `f2dace/staging`; the rest run on
-`yakup/dev`. Branch switching is the **caller's responsibility** — the
-script never mutates `$DACE_DIR`. Reviewers consuming the shipped
-stage 5 SDFGs never need this.
+`tools/regenerate_baselines.sh` walks F90 → SDFG → stage 5. **Phase 0
+(f2dace frontend) is marked dangerous**: the DaCe Fortran frontend on
+`f2dace/staging` is unstable and the AoS→SoA rewrite that follows
+(phase 1, `StructToContainerGroups`) regularly raises rename collisions
+on the velocity AST. Reviewers should **use the shipped
+`baseline/velocity_no_nproma.sdfgz`** and run with `SKIP_F2DACE=1`
+instead of regenerating from F90.
+
+The remaining phases (`yakup/dev`, the day-to-day branch) consume the
+shipped baseline and produce `codegen/stage{1..5}/<variant>.sdfgz`.
+Branch switching is the **caller's responsibility** — the script never
+mutates `$DACE_DIR`.
 
 ```bash
+# Default (recommended): skip phase 0, use the shipped baseline.
+SKIP_F2DACE=1 bash tools/regenerate_baselines.sh
+
+# Full flow (only if phase 0's f2dace frontend is known good on the
+# checkout you have AND you have time to debug rename collisions):
 ( cd "$DACE_DIR" && git checkout f2dace/staging )
 bash tools/regenerate_baselines.sh
 ( cd "$DACE_DIR" && git checkout yakup/dev )
 ```
 
-| Phase | Output | Driver |
-|-------|--------|--------|
-| 0 | `baseline/velocity_no_nproma.sdfgz` | `python tools/sdfg_from_velocity_f90.py` |
-| 1 | `baseline/..._{0,1}_istep_{1,2}.sdfgz` | `python generate_baselines.py` |
-| 2..6 | `codegen/stage{1..5}/<variant>.sdfgz` | `python -m utils.stages.stage{1..5} --optimize` |
+| Phase | Output | Driver | Stability |
+|-------|--------|--------|-----------|
+| 0 ⚠️  | `baseline/velocity_no_nproma.sdfgz` | `python tools/sdfg_from_velocity_f90.py` | **dangerous** — needs `f2dace/staging`; unstable on the velocity AST |
+| 1 | `baseline/..._{0,1}_istep_{1,2}.sdfgz` | `python generate_baselines.py` | brittle — `StructToContainerGroups` may raise rename collisions |
+| 2..6 | `codegen/stage{1..5}/<variant>.sdfgz` | `python -m utils.stages.stage{1..5} --optimize` | stable on `yakup/dev` |
 
-Env: `PYTHON`, `SKIP_F2DACE`, `ONLY_PHASE`, `STAGE_FLAGS`.
+Env: `PYTHON`, `SKIP_F2DACE` (recommended `=1`), `ONLY_PHASE`, `STAGE_FLAGS`.
 
 ## Stage 6 — the permutation stage
 
@@ -98,8 +110,9 @@ permuted regardless of the chosen config (merged into every emitted
 E7_FullVelocityTendencies/
 ├── README.md                                this file
 ├── run_{daint,beverin}.sh                   static SBATCH drivers
-├── baseline_inputs/velocity_modified.f90    self-contained Fortran AST
-├── baseline/                                f2dace + 4 specialised SDFG variants  (gitignored)
+├── baseline_inputs/velocity_modified.f90    self-contained Fortran AST (only consumed by the dangerous phase 0)
+├── baseline/velocity_no_nproma.sdfgz        SHIPPED post-phase-0 SDFG (committed; consumed by phase 1+)
+├── baseline/                                + 4 specialised SDFG variants from phase 1   (gitignored)
 ├── SDFGs/stage5/                            shipped stage 5 SDFGs (default-flow input)
 ├── codegen/stageN/                          per-stage outputs                      (gitignored)
 ├── data_r02b05/                             populated by tools/download_data.sh    (gitignored)

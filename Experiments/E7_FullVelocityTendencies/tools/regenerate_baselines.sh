@@ -1,23 +1,26 @@
 #!/usr/bin/env bash
 # regenerate_baselines.sh -- F90 -> stage 5 driver for E7.
 #
-# E7 is fully self-contained: this script runs everything inside ${EXP_DIR}
-# (the E7 directory). No PIPELINE_DIR delegation; utils/, generate_baselines.py,
-# and friends already live next to baseline_inputs/.
+# DEFAULT FLOW (recommended): SKIP_F2DACE=1 and rely on the SHIPPED
+# baseline/velocity_no_nproma.sdfgz. Phase 0 (the f2dace Fortran frontend
+# on f2dace/staging) is UNSTABLE on the velocity AST -- it occasionally
+# produces SDFGs that phase 1's StructToContainerGroups cannot flatten,
+# raising rename-collision KeyErrors. The shipped post-phase-0 SDFG is the
+# maintainer-validated input that phases 1..6 are tested against.
 #
 # Phases:
-#   0. f2dace (stage 2): velocity_modified.f90 -> baseline/velocity_no_nproma.sdfgz
-#   1. generate_baselines.py: AoS -> SoA + symbol resolution + 4 specialised variants
-#   2..6. utils.stages.stage{1..5} --optimize  -> codegen/stageN/<variant>.sdfgz
+#   0  (DANGEROUS): velocity_modified.f90 -> baseline/velocity_no_nproma.sdfgz
+#   1: generate_baselines.py: AoS -> SoA + symbol resolution + 4 specialised variants
+#   2..6: utils.stages.stage{1..5} --optimize  -> codegen/stageN/<variant>.sdfgz
 #
-# Phase 0 needs DaCe checked out on a branch that ships the Fortran frontend
-# (typically ``f2dace/staging``). The remaining phases run on the day-to-day
-# branch (``yakup/dev``). DaCe branch switching is the caller's responsibility.
+# Phase 0 needs DaCe on f2dace/staging; the rest run on yakup/dev. Branch
+# switching is the caller's responsibility -- this script never mutates
+# $DACE_DIR.
 #
 # Env overrides:
 #   PYTHON              python interpreter (default: python)
-#   SKIP_F2DACE         set to 1 to skip phase 0 (use the existing
-#                       baseline/velocity_no_nproma.sdfgz)
+#   SKIP_F2DACE         set to 1 to skip phase 0 (use the shipped
+#                       baseline/velocity_no_nproma.sdfgz). RECOMMENDED.
 #   ONLY_PHASE          run a single phase: 0..6 (default: all)
 #   STAGE_FLAGS         extra args forwarded to each utils.stages.stage*
 #                       invocation (default: --optimize)
@@ -26,7 +29,7 @@ set -euo pipefail
 
 EXP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PYTHON="${PYTHON:-python}"
-SKIP_F2DACE="${SKIP_F2DACE:-0}"
+SKIP_F2DACE="${SKIP_F2DACE:-1}"   # default-skip phase 0; opt in by setting to 0
 ONLY_PHASE="${ONLY_PHASE:-all}"
 STAGE_FLAGS="${STAGE_FLAGS:---optimize}"
 

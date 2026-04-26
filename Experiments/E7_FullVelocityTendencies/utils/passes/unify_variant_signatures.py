@@ -29,7 +29,15 @@ import dace
 from dace import SDFG
 
 
-_DEAD_SYMBOLS = ("lvn_only", "istep")
+# Names that ``specialize_vt`` folds to constants and removes (both
+# ``sdfg.arrays`` and ``sdfg.symbols`` are dropped). Skip them everywhere
+# in the unify path so they don't get re-padded from the baseline (which
+# still carries them as length-1 Scalar arrays from f2dace) and so they
+# never appear in the unified arglist. yakup/dev's validator rejects
+# names that exist as both an array and a symbol; keeping them out
+# avoids that.
+_FOLDED_CONFIG_NAMES = ("lvn_only", "istep", "lextra_diffu", "ldeepatmo")
+_DEAD_SYMBOLS: tuple = ()  # legacy; intentionally empty
 
 # Names matching these patterns are specialisation-local loop iterators /
 # loop bounds that disappear entirely from some variants (loop removed by
@@ -40,7 +48,7 @@ _IGNORED_DRIFT_RE = re.compile(r"^(?:_for_it_|i_(?:start|end)blk)")
 
 
 def _is_ignored_drift_name(name: str) -> bool:
-    return bool(_IGNORED_DRIFT_RE.match(name))
+    return bool(_IGNORED_DRIFT_RE.match(name)) or name in _FOLDED_CONFIG_NAMES
 
 
 def _shape_free_symbols(desc) -> Set[str]:

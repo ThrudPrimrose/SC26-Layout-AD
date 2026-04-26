@@ -33,6 +33,20 @@ def specialize_vt(sdfg: dace.SDFG, config: dict) -> dace.SDFG:
         LiftTrivialIf().apply_pass(out, {})
         out.validate()
     out.simplify(skip=["ScalarToSymbolPromotion"])
+
+    # ``propagate_if_cond`` folds the config dict (lvn_only / istep /
+    # lextra_diffu / ldeepatmo) to literal constants in expressions and
+    # prunes dead branches, but the f2dace baseline carries them as
+    # length-1 Scalar data descriptors AND yakup/dev's deserializer also
+    # registers them as symbols. After specialisation, neither use
+    # survives; leaving the residual descriptor + symbol pair trips
+    # yakup/dev's "duplicated names" validator on stage 1 load. Drop both.
+    for name in {**_FIXED, **config}.keys():
+        if name in out.arrays:
+            out.remove_data(name, validate=False)
+        if name in out.symbols:
+            del out.symbols[name]
+
     out.validate()
     return out
 
