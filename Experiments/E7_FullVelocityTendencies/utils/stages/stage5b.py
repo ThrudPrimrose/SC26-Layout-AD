@@ -206,7 +206,7 @@ def optimization_action(sdfg: dace.SDFG,
     sdfg_arrays = {n: len(a.shape) for n, a in sdfg.arrays.items()}
     cfg = _build_permute_config(_FORCED_PERMUTE, json_path, config_name, sdfg_arrays)
     if cfg.permute_map:
-        count = permute_layout(sdfg, cfg, shuffle_map=True)
+        count = permute_layout(sdfg, cfg, shuffle_map=cfg.shuffle_map)
         names_str = ", ".join(sorted(cfg.permute_map))
         print(f"Stage #{STAGE_ID}: permute_layout [{cfg.name}] permuted "
               f"{count} array(s) (target arrays: {names_str})")
@@ -219,11 +219,11 @@ def optimization_action(sdfg: dace.SDFG,
 
 def main():
     repo_root = Path(__file__).resolve().parent.parent.parent
-    default_json = (
-        Path("/home/primrose/Work/SC26-Layout-AD")
-        / "Experiments" / "E6_VelocityTendencies"
-        / "access_analysis" / "layout_candidates.json"
-    )
+    # Resolve E6's access-analysis JSON relative to the script so the
+    # path is portable (cluster checkouts don't share /home/primrose).
+    # Override at submission via ``--candidates`` if your layout differs.
+    default_json = (repo_root.parent / "E6_VelocityTendencies"
+                    / "access_analysis" / "layout_candidates.json")
 
     argp = argparse.ArgumentParser()
     argp.add_argument("--optimize", action=argparse.BooleanOptionalAction, default=False)

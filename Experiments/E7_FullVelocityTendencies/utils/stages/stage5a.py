@@ -69,11 +69,11 @@ def _select_configs(name_filter: str | None, json_path: Path,
 
 def main():
     repo_root = Path(__file__).resolve().parent.parent.parent
-    default_json = (
-        Path("/home/primrose/Work/SC26-Layout-AD")
-        / "Experiments" / "E6_VelocityTendencies"
-        / "access_analysis" / "layout_candidates.json"
-    )
+    # Resolve E6's access-analysis JSON relative to the script so the
+    # path is portable (cluster checkouts don't share /home/primrose).
+    # Override at submission via ``--candidates`` if your layout differs.
+    default_json = (repo_root.parent / "E6_VelocityTendencies"
+                    / "access_analysis" / "layout_candidates.json")
 
     argp = argparse.ArgumentParser()
     argp.add_argument("--optimize", action=argparse.BooleanOptionalAction, default=False)
@@ -109,7 +109,7 @@ def main():
             for cfg in configs:
                 permuted = copy.deepcopy(sdfg)
                 permuted.name = name
-                count = permute_layout(permuted, cfg, shuffle_map=True)
+                count = permute_layout(permuted, cfg, shuffle_map=cfg.shuffle_map)
                 print(f"  [{cfg.name}] permuted {count} array(s)")
 
                 outfile = (repo_root / common.CODEGEN_DIR / f"stage{STAGE_ID}"

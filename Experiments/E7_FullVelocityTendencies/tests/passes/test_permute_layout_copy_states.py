@@ -2,18 +2,21 @@
 
 After stage 4, the SDFG carries explicit copy-in / copy-out states::
 
-    _cpu_to_gpu_copy_in  (X            -> gpu_X)
+    _cpu_to_gpu_copy_in  (X     -> gpu_X)
     _sync_after_copy_in  (cuStreamSync)
     <body states using gpu_*>
-    _gpu_to_cpu_copy_out (gpu_X        -> X)
+    _gpu_to_cpu_copy_out (gpu_X -> X)
     _sync_after_copy_out (cuStreamSync)
 
-When ``permute_layout`` is applied to the ``gpu_*`` transients, the
-permutation MUST land between ``_sync_after_copy_in`` and the first
-body state, and the inverse permutation MUST land between the last
-body state and ``_gpu_to_cpu_copy_out``. Otherwise either the body
-operates on un-permuted data (incorrect kernel layout) or the host
-sees permuted data after copy-out (silent data corruption).
+The cudaMemcpy in copy_in / copy_out is a flat byte blit, so it must
+target the *unpermuted* ``gpu_X``. The actual layout transpose is a
+GPU<->GPU Map+Tasklet kernel inserted as a fresh state
+(``permute_after_<gpu_X>`` right after copy_in;
+``permute_before_<gpu_X>`` right before copy_out). The
+``_restore_boundary_copy_targets`` post-pass in
+:mod:`utils.passes.permute_layout` enforces this -- without it,
+``PermuteDimensions``'s body-rename loop redirects the cudaMemcpy
+output to ``permuted_gpu_X`` and bytes land in the wrong layout.
 
 These tests are skipped when DaCe doesn't ship the ``permute_dimensions``
 module (i.e. on branches where the layout pass is being rewritten).
@@ -108,74 +111,85 @@ def _memlets_targeting(state, name: str):
     return [e.data for e in state.edges() if e.data is not None and e.data.data == name]
 
 
-def test_no_extra_permute_state_inserted_when_copy_exists():
-    """With the copy-replacement design, the existing copy_in/copy_out
-    states ARE the permute states. No extra ``permute_after_<T>`` is
-    inserted, no body re-write, no orphaned reads."""
+def _access_node_names(state) -> set:
+    """Set of AccessNode.data values currently present in ``state``."""
+    import dace as _dace
+    return {n.data for n in state.nodes()
+            if isinstance(n, _dace.nodes.AccessNode) and n.data is not None}
+
+
+def test_copy_in_keeps_unpermuted_gpu_target():
+    """``_cpu_to_gpu_copy_in`` must still hold an AccessNode for
+    ``gpu_X`` (not ``permuted_gpu_X``). The cudaMemcpy is a flat byte
+    blit; pointing it at ``permuted_gpu_X`` would land bytes in a
+    permuted-stride array. ``_restore_boundary_copy_targets`` undoes
+    the rename PermuteDimensions's body-rename loop applied here."""
     sdfg = _stage4_shaped_sdfg()
     cfg = PermuteConfig(name="t", permute_map={"gpu_X": [1, 0, 2], "gpu_Y": [1, 0, 2]})
     permute_layout(sdfg, cfg, shuffle_map=False)
     sdfg.validate()
 
-    labels = {st.label for st in sdfg.all_states()}
-    extras = [s for s in labels if "permute_after" in s or "permute_in" in s
-              or "permute_out" in s]
-    assert not extras, (
-        f"expected zero extra permute states (copy_in/copy_out should "
-        f"BECOME the permute states); got {extras}"
-    )
-
-    # The original five states are intact and in order.
-    expected = {"_cpu_to_gpu_copy_in", "_sync_after_copy_in", "body",
-                "_gpu_to_cpu_copy_out", "_sync_after_copy_out"}
-    assert expected.issubset(labels), (
-        f"copy/sync state structure broken; expected {expected} subset of {labels}"
-    )
-
-
-def test_copy_in_becomes_forward_permute_for_input_transient():
-    """``_cpu_to_gpu_copy_in`` now writes ``permuted_gpu_X`` (not
-    ``gpu_X``) -- the rename loop turned the lifted access->access copy
-    into a Map+Tasklet that bakes the forward permutation into the
-    write subscript."""
-    sdfg = _stage4_shaped_sdfg()
-    cfg = PermuteConfig(name="t", permute_map={"gpu_X": [1, 0, 2]})
-    permute_layout(sdfg, cfg, shuffle_map=False)
-    sdfg.validate()
-
     copy_in = _state_by_label(sdfg, "_cpu_to_gpu_copy_in")
-
-    # gpu_X is no longer referenced; permuted_gpu_X took its place.
-    assert not _memlets_targeting(copy_in, "gpu_X"), (
-        "copy_in still references gpu_X; rename did not convert it to permuted_gpu_X"
+    names = _access_node_names(copy_in)
+    assert "gpu_X" in names, (
+        f"copy_in lost its gpu_X AccessNode; boundary-strip post-pass "
+        f"failed. Got: {sorted(names)}"
     )
-    assert _memlets_targeting(copy_in, "permuted_gpu_X"), (
-        "copy_in does not write permuted_gpu_X; lift/rename failed"
+    assert "permuted_gpu_X" not in names, (
+        f"copy_in still has permuted_gpu_X AccessNode; boundary-strip "
+        f"post-pass did not undo the rename. Got: {sorted(names)}"
     )
 
 
-def test_copy_out_becomes_inverse_permute_for_output_transient():
-    """``_gpu_to_cpu_copy_out`` reads ``permuted_gpu_Y`` (with permuted
-    subscript so the host receives data in the ORIGINAL layout). No
-    body->copy_out direct edge; no inserted state in between."""
+def test_copy_out_keeps_unpermuted_gpu_source():
+    """Mirror: cudaMemcpy reads ``gpu_Y`` (unpermuted) and writes the
+    host-side ``Y``. The ``permute_before_<gpu_Y>`` state inserted just
+    before is what actually transposes ``permuted_gpu_Y`` -> ``gpu_Y``."""
     sdfg = _stage4_shaped_sdfg()
     cfg = PermuteConfig(name="t", permute_map={"gpu_Y": [1, 0, 2]})
     permute_layout(sdfg, cfg, shuffle_map=False)
     sdfg.validate()
 
     copy_out = _state_by_label(sdfg, "_gpu_to_cpu_copy_out")
-
-    assert not _memlets_targeting(copy_out, "gpu_Y"), (
-        "copy_out still references gpu_Y; rename did not convert it to permuted_gpu_Y"
+    names = _access_node_names(copy_out)
+    assert "gpu_Y" in names, (
+        f"copy_out lost its gpu_Y AccessNode; boundary-strip post-pass "
+        f"failed. Got: {sorted(names)}"
     )
-    assert _memlets_targeting(copy_out, "permuted_gpu_Y"), (
-        "copy_out does not read permuted_gpu_Y; lift/rename failed"
+    assert "permuted_gpu_Y" not in names, (
+        f"copy_out still has permuted_gpu_Y AccessNode; boundary-strip "
+        f"post-pass did not undo the rename. Got: {sorted(names)}"
+    )
+    assert "Y" in names, "copy_out must still write the host-side Y array"
+
+
+def test_permute_after_inserted_for_input_transient():
+    """``PermuteDimensions``'s per-transient logic inserts a
+    ``permute_after_<gpu_X>`` state right after the copy-in containing
+    a GPU<->GPU Map+Tasklet that does the actual transpose."""
+    sdfg = _stage4_shaped_sdfg()
+    cfg = PermuteConfig(name="t", permute_map={"gpu_X": [1, 0, 2]})
+    permute_layout(sdfg, cfg, shuffle_map=False)
+    sdfg.validate()
+
+    labels = {st.label for st in sdfg.all_states()}
+    assert "permute_after_gpu_X" in labels, (
+        f"expected permute_after_gpu_X state to be inserted; got {sorted(labels)}"
     )
 
-    # And the host array Y must be written in its ORIGINAL layout
-    # (i.e. there is a memlet writing to "Y" with full extent).
-    y_writes = _memlets_targeting(copy_out, "Y")
-    assert y_writes, "copy_out must still write the host-side Y array"
+
+def test_permute_before_inserted_for_output_transient():
+    """Mirror: ``permute_before_<gpu_Y>`` is inserted right before the
+    copy-out, holding the inverse-transpose Map+Tasklet."""
+    sdfg = _stage4_shaped_sdfg()
+    cfg = PermuteConfig(name="t", permute_map={"gpu_Y": [1, 0, 2]})
+    permute_layout(sdfg, cfg, shuffle_map=False)
+    sdfg.validate()
+
+    labels = {st.label for st in sdfg.all_states()}
+    assert "permute_before_gpu_Y" in labels, (
+        f"expected permute_before_gpu_Y state to be inserted; got {sorted(labels)}"
+    )
 
 
 def test_permute_layout_returns_zero_on_empty_map():

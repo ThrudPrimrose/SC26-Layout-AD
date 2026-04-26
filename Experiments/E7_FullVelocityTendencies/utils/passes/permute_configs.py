@@ -50,12 +50,23 @@ _CONN_PERM:           List[int] = [2, 0, 1]   # (nproma, nblks, nshape) -> (nsha
 # ``gpu_<name>`` siblings, and post-stage-4 SDFGs reference the GPU
 # name only. The bare ``levmask`` entry stays for callers that run
 # permute_layout pre-stage-4 (e.g. test fixtures).
-# TEMPORARILY DISABLED while debugging stage 6 numerics on the
-# velocity pipeline -- the rename loop's subscript rewrite for
-# pure-scratch transients with multiple body writers is producing
-# wrong output. Re-enable by restoring the levmask + gpu_levmask
-# entries once that's resolved.
+# ``levelmask`` and ``gpu_levelmask`` are 1-D ``(nlev,)``; the dim
+# filter in ``_apply_force_permuted`` skips them automatically (a
+# 1-element permutation has no effect anyway).
+#
+# Empty by design: ``levmask`` is grouped on the new ``lv`` axis of the
+# curated / named cross-product, so it is permuted only when the
+# selected config asks for it. Always-on force-permute is wrong because
+# ``unpermuted`` would no longer be a true identity baseline.
 _FORCE_PERMUTED: Dict[str, List[int]] = {
+}
+
+# Per-array map for the ``lv`` axis: when the cross-product cell sets
+# ``lv=1``, this map is merged into the config's ``permute_map``. The
+# post-stage-4 SDFG only carries the ``gpu_levmask`` GPU mirror (the
+# host ``levmask`` is renamed in place by ``OffloadVelocityToGPU``).
+_LV_PERMUTED: Dict[str, List[int]] = {
+    "gpu_levmask": [1, 0],
 }
 
 
@@ -105,6 +116,31 @@ def fortran_to_sdfg_array_name(s: str) -> str:
     return '__CG_' + s.replace('%', '__m_').strip()
 
 
+def _resolve_gpu_name(host_name: str,
+                      sdfg_arrays: Dict[str, int] | None) -> str | None:
+    """Pick the post-stage-4 name for ``host_name``.
+
+    Stage 4's ``OffloadVelocityToGPU`` either renames a pure-scratch
+    transient in place to ``gpu_<name>`` (host gone) or mirrors a
+    non-transient host array into a sibling ``gpu_<name>`` (both
+    present). After stage 4 the kernel side always references the
+    ``gpu_`` form, so the permute map needs to be keyed on it.
+
+    Returns the SDFG-resident name, or ``None`` when neither variant
+    exists. When ``sdfg_arrays`` is ``None`` (callers that just want
+    name normalization without filtering), prefer the ``gpu_`` form
+    by default since this module is post-stage-4 only.
+    """
+    gpu_name = "gpu_" + host_name
+    if sdfg_arrays is None:
+        return gpu_name
+    if gpu_name in sdfg_arrays:
+        return gpu_name
+    if host_name in sdfg_arrays:
+        return host_name
+    return None
+
+
 def _array_dim(name: str, sdfg_arrays: Dict[str, int] | None) -> int | None:
     if sdfg_arrays is None:
         return None
@@ -128,7 +164,10 @@ def configs_from_candidates(json_path: str | Path,
     for nest in data.get('all_nests', []):
         shape = nest.get('shape', '')
         for fortran_name in nest.get('arrays', []):
-            name = fortran_to_sdfg_array_name(fortran_name)
+            host = fortran_to_sdfg_array_name(fortran_name)
+            name = _resolve_gpu_name(host, sdfg_arrays)
+            if name is None:
+                continue
             if shape == 'v.h':
                 nlev_first_3d.add(name)
             elif shape == 'h':
@@ -140,30 +179,91 @@ def configs_from_candidates(json_path: str | Path,
         # 'shape' label; the analysis tags them via class_label.
         if 'connectivity' in (nest.get('class_label') or '').lower():
             for fortran_name in nest.get('arrays', []):
-                conn_arrays.add(fortran_to_sdfg_array_name(fortran_name))
+                host = fortran_to_sdfg_array_name(fortran_name)
+                name = _resolve_gpu_name(host, sdfg_arrays)
+                if name is not None:
+                    conn_arrays.add(name)
 
     def _filter_by_dim(names: set[str], wanted_dim: int) -> set[str]:
         if sdfg_arrays is None:
             return names
         return {n for n in names if sdfg_arrays.get(n) == wanted_dim}
 
-    configs: List[PermuteConfig] = [PermuteConfig(name='unpermuted', permute_map={})]
+    # Build the base configs. ``nlev_first`` and ``index_only`` use the
+    # researcher-tuned ``_CURATED_NLEV_FIRST`` / ``_CURATED_INDEX_ONLY``
+    # maps so coverage is complete: the JSON heuristic alone missed
+    # connectivity arrays (their nests aren't tagged ``v.h``), 4-D
+    # ``ddt_*_pc`` fields (the heuristic only handled rank 2 and 3),
+    # and a few 3-D arrays that the access analysis didn't reach. The
+    # JSON-derived sets are still computed for the per-nest configs
+    # below and as a sanity reference.
+    base: List[PermuteConfig] = [PermuteConfig(name='unpermuted', permute_map={})]
 
-    nlev_first_map: Dict[str, List[int]] = {}
-    for n in _filter_by_dim(nlev_first_3d, 3):
-        nlev_first_map[n] = list(_THREE_D_LEVEL_FIRST)
-    for n in _filter_by_dim(nlev_first_2d, 2):
-        nlev_first_map[n] = list(_TWO_D_LEVEL_FIRST)
+    # Late import to avoid a circular dep at module load: curated_configs
+    # imports from this module via ``permute_layout``.
+    from .curated_configs import _CURATED_NLEV_FIRST, _CURATED_INDEX_ONLY
+
+    nlev_first_map = {n: list(p) for n, p in _CURATED_NLEV_FIRST.items()}
+    if sdfg_arrays is not None:
+        nlev_first_map = {n: p for n, p in nlev_first_map.items()
+                          if sdfg_arrays.get(n) == len(p)}
     if nlev_first_map:
-        configs.append(PermuteConfig(name='nlev_first', permute_map=nlev_first_map))
+        base.append(PermuteConfig(name='nlev_first', permute_map=nlev_first_map))
 
-    index_only_map: Dict[str, List[int]] = {}
-    for n in _filter_by_dim(conn_arrays, 3):
-        index_only_map[n] = list(_CONN_PERM)
+    index_only_map = {n: list(p) for n, p in _CURATED_INDEX_ONLY.items()}
+    if sdfg_arrays is not None:
+        index_only_map = {n: p for n, p in index_only_map.items()
+                          if sdfg_arrays.get(n) == len(p)}
     if index_only_map:
-        configs.append(PermuteConfig(name='index_only', permute_map=index_only_map))
+        base.append(PermuteConfig(name='index_only', permute_map=index_only_map))
 
-    return _apply_force_permuted(configs, sdfg_arrays)
+    expanded = _double_on_sm(_double_on_lv(base, sdfg_arrays))
+    return _apply_force_permuted(expanded, sdfg_arrays)
+
+
+def _double_on_lv(configs: List['PermuteConfig'],
+                  sdfg_arrays: Dict[str, int] | None) -> List['PermuteConfig']:
+    """Expand each input config into a ``_lv0`` (identity for the
+    levmask group) and ``_lv1`` (levmask permuted) pair. Filtering by
+    SDFG-side dimensionality is applied to the ``lv=1`` overlay --
+    arrays that don't exist or have a different rank are silently
+    dropped."""
+    lv1_overlay: Dict[str, List[int]] = {}
+    for name, perm in _LV_PERMUTED.items():
+        if sdfg_arrays is not None:
+            ndim = sdfg_arrays.get(name)
+            if ndim is None or ndim != len(perm):
+                continue
+        lv1_overlay[name] = list(perm)
+
+    out: List[PermuteConfig] = []
+    for c in configs:
+        out.append(PermuteConfig(name=f"{c.name}_lv0",
+                                 permute_map=dict(c.permute_map),
+                                 shuffle_map=c.shuffle_map))
+        merged = dict(c.permute_map)
+        merged.update(lv1_overlay)
+        out.append(PermuteConfig(name=f"{c.name}_lv1",
+                                 permute_map=merged,
+                                 shuffle_map=c.shuffle_map))
+    return out
+
+
+def _double_on_sm(configs: List['PermuteConfig']) -> List['PermuteConfig']:
+    """Expand each input config into a ``_sm0`` (loops left alone) and
+    ``_sm1`` (loop axes shuffled to match the array permutation) pair.
+    The two variants share the same ``permute_map`` and differ only in
+    ``shuffle_map`` -- so the SDFG codegen / launch grid changes but
+    the on-disk array layout is identical."""
+    out: List[PermuteConfig] = []
+    for c in configs:
+        out.append(PermuteConfig(name=f"{c.name}_sm0",
+                                 permute_map=dict(c.permute_map),
+                                 shuffle_map=False))
+        out.append(PermuteConfig(name=f"{c.name}_sm1",
+                                 permute_map=dict(c.permute_map),
+                                 shuffle_map=True))
+    return out
 
 
 def _nest_config_name(nid: int, shape: str) -> str:
@@ -175,8 +275,9 @@ def _per_nest_permute_map(nest: dict,
     shape = nest.get('shape', '')
     pmap: Dict[str, List[int]] = {}
     for fortran_name in nest.get('arrays', []):
-        name = fortran_to_sdfg_array_name(fortran_name)
-        if sdfg_arrays is not None and name not in sdfg_arrays:
+        host = fortran_to_sdfg_array_name(fortran_name)
+        name = _resolve_gpu_name(host, sdfg_arrays)
+        if name is None:
             continue
         ndim = sdfg_arrays.get(name) if sdfg_arrays is not None else None
         if shape == 'v.h':
@@ -189,7 +290,10 @@ def _per_nest_permute_map(nest: dict,
                 pmap[name] = list(_TWO_D_LEVEL_FIRST)
     if 'connectivity' in (nest.get('class_label') or '').lower():
         for fortran_name in nest.get('arrays', []):
-            name = fortran_to_sdfg_array_name(fortran_name)
+            host = fortran_to_sdfg_array_name(fortran_name)
+            name = _resolve_gpu_name(host, sdfg_arrays)
+            if name is None:
+                continue
             if sdfg_arrays is not None and sdfg_arrays.get(name) != 3:
                 continue
             pmap[name] = list(_CONN_PERM)

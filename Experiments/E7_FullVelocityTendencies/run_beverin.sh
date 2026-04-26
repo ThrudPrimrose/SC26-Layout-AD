@@ -2,7 +2,7 @@
 #SBATCH --job-name=E7_velocity_beverin
 #SBATCH --nodes=1
 #SBATCH --partition=mi300
-#SBATCH --time=06:00:00
+#SBATCH --time=18:00:00
 #SBATCH --ntasks=1
 #SBATCH --gpus-per-task=1
 #SBATCH --cpus-per-task=192
@@ -29,21 +29,63 @@ cd "${EXP_DIR}"
     || bash tools/download_data.sh
 export ICON_DATA_PATH="${ICON_DATA_PATH:-${EXP_DIR}/data_r02b05}"
 
-CONFIGS="${CONFIGS:-unpermuted nlev_first index_only}"
+CONFIGS="${CONFIGS:-unpermuted_lv0_sm0 unpermuted_lv0_sm1 \
+nlev_first_lv0_sm0 nlev_first_lv0_sm1 nlev_first_lv1_sm0 nlev_first_lv1_sm1 \
+index_only_lv0_sm0 index_only_lv0_sm1}"
+
+# Per-binary run knobs. Default to TS={7,9} -- the cells used in the
+# paper's reported numbers; each timestep runs as a separate binary
+# invocation (one CSV per ts/<config>). REPS=100 timed reps after
+# WARMUP=5 untimed warm-up reps follows the Hoefler & Belli convention.
+TIMESTEPS="${TIMESTEPS:-7,9}"
+REPS="${REPS:-100}"
+WARMUP="${WARMUP:-5}"
 
 echo "[E7 beverin] host=$(hostname) threads=$OMP_NUM_THREADS data=$ICON_DATA_PATH"
 echo "[E7 beverin] configs=$CONFIGS"
+echo "[E7 beverin] timesteps=$TIMESTEPS reps=$REPS warmup=$WARMUP"
 
 if [[ ! -d "${EXP_DIR}/codegen/stage4" ]] && [[ -d "${EXP_DIR}/SDFGs/stage4" ]]; then
   mkdir -p "${EXP_DIR}/codegen"
   ln -sfn "${EXP_DIR}/SDFGs/stage4" "${EXP_DIR}/codegen/stage4"
 fi
 
+# E7 reads E6's access-analysis output (layout_candidates.json). Prefer
+# the committed copy; if it's missing -- e.g. cluster checkout pulled
+# only E7 -- regenerate it from the committed analysis.md.
+LAYOUT_JSON="${EXP_DIR}/../E6_VelocityTendencies/access_analysis/layout_candidates.json"
+if [[ ! -f "${LAYOUT_JSON}" ]]; then
+  echo "[E7 beverin] ${LAYOUT_JSON} missing; running select_loopnests.py"
+  python "${EXP_DIR}/../E6_VelocityTendencies/access_analysis/select_loopnests.py"
+fi
+
 for CFG in ${CONFIGS}; do
-  echo "[E7 beverin] running config=${CFG}"
+  echo "[E7 beverin] codegen + compile config=${CFG}"
   python -m utils.stages.stage5a --release --optimize --compile --config "${CFG}"
+
+  bin="${EXP_DIR}/velocity_stage5a_${CFG}"
+  if [[ ! -x "${bin}" ]]; then
+    echo "[E7 beverin] WARN: ${bin} not built; skipping run for ${CFG}" >&2
+    continue
+  fi
+
+  # Run the binary once per timestep so each timestep lands in its
+  # own output dir (results/beverin/<config>/ts<N>/...) -- matches
+  # what Figures/plot_paper_snapshot.sh expects.
+  for TS in ${TIMESTEPS//,/ }; do
+    out_dir="${EXP_DIR}/results/beverin/${CFG}/ts${TS}"
+    mkdir -p "${out_dir}"
+    echo "[E7 beverin] running ${CFG} TS=${TS} reps=${REPS} warmup=${WARMUP}"
+    "${bin}" \
+        --data "${ICON_DATA_PATH}" \
+        --reps "${REPS}" \
+        --warmup "${WARMUP}" \
+        --timesteps "${TS}" \
+        --output-dir "${out_dir}"
+  done
 done
 
+# Mirror any CSVs that landed inside the per-config codegen tree.
 for d in "${EXP_DIR}/codegen/stage5a"/*/; do
   cfg="$(basename "${d}")"
   mkdir -p "${EXP_DIR}/results/beverin/${cfg}"

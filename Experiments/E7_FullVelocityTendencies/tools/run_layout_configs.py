@@ -286,7 +286,7 @@ def main():
 
                 permuted = copy.deepcopy(sdfg)
                 permuted.name = name
-                count = permute_layout(permuted, pc, shuffle_map=True)
+                count = permute_layout(permuted, pc, shuffle_map=pc.shuffle_map)
                 print(f"  [{cname}] {name}: permuted {count} array(s)")
 
                 outfile = (repo_root / common.CODEGEN_DIR / f"stage{STAGE_ID}"

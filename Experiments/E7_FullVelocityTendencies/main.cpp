@@ -142,8 +142,10 @@ static void print_help(const char *prog) {
       << "Options:\n"
       << "  --data <path>         Data root with <name>.<ts>.data files\n"
       << "                        (default: data_r02b05)\n"
-      << "  --reps <int>          Rep count of __program_ per timestep\n"
-      << "                        (default: 20)\n"
+      << "  --reps <int>          Timed reps of __program_ per timestep\n"
+      << "                        (default: 100)\n"
+      << "  --warmup <int>        Untimed warm-up reps before --reps\n"
+      << "                        (default: 5)\n"
       << "  --timesteps a,b,c     Comma-separated timesteps to process\n"
       << "                        (default: 1,2,7,9,43,93,463)\n"
       << "  --output-dir <path>   got/want dump dir\n"
@@ -162,7 +164,8 @@ int main(int argc, char *argv[]) {
     return EXIT_SUCCESS;
   }
   const auto root = args.get<std::string>("data", "data_r02b05");
-  const int rep = args.get<int>("reps", 20);
+  const int rep = args.get<int>("reps", 100);
+  const int warmup = args.get<int>("warmup", 5);
   const auto timesteps_csv = args.get<std::string>("timesteps", "");
 
   const std::filesystem::path ROOT{root};
@@ -286,6 +289,14 @@ int main(int argc, char *argv[]) {
         VELOCITY_INIT_ARGS(global_data, p_diag, p_int, p_metrics, p_patch, p_prog,                       \
                            z_kin_hor_e, z_vt_ie, z_w_concorr_me,                                         \
                            dt_linintp_ubc, dtime, istep, ldeepatmo, lvn_only, ntnd));                    \
+    /* Warm-up iterations (untimed). */                                                                  \
+    for (int j = 0; j < warmup; j++) {                                                                   \
+      __program_velocity_no_nproma_if_prop_##suffix(                                                     \
+          h,                                                                                             \
+          VELOCITY_CALL_ARGS(global_data, p_diag, p_int, p_metrics, p_patch, p_prog,                     \
+                             z_kin_hor_e, z_vt_ie, z_w_concorr_me,                                       \
+                             dt_linintp_ubc, dtime, istep, ldeepatmo, lvn_only, ntnd));                  \
+    }                                                                                                    \
     for (int j = 0; j < rep; j++) {                                                                      \
       __program_velocity_no_nproma_if_prop_##suffix(                                                     \
           h,                                                                                             \
