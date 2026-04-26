@@ -5,7 +5,7 @@
  * Minimal changes from the original fast version: only API compatibility
  * fixes for new bench_common.h / icon_data_loader.h (N_e/N_c/N_v).
  *
- * Compile (NVIDIA): nvcc -O3 -arch=sm_90 -std=c++17 -Xcompiler -fopenmp bench_gpu_oldstyle.cu -o bench_gpu_old
+ * Compile (NVIDIA): nvcc -O3 -Xcompiler=-fno-vect-cost-model -arch=sm_90 -std=c++17 -Xcompiler -fopenmp bench_gpu_oldstyle.cu -o bench_gpu_old
  * Compile (AMD):    hipcc -O3 -std=c++17 -fopenmp bench_gpu_oldstyle.cu -o bench_gpu_old
  */
 #include "../../common/gpu_compat.cuh"

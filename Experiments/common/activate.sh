@@ -38,18 +38,18 @@ VENV_DIR="${VENV_DIR:-${_COMMON_DIR}/venv}"
 DACE_DIR="${DACE_DIR:-${_COMMON_DIR}/dace}"
 DACE_BRANCH="${DACE_BRANCH:-yakup/dev}"
 
+# Python source: spack on beverin (zen3), system python3.11 on daint
+# (aarch64). See setup.sh for the rationale (Capstor scratch purge).
 case "$(uname -m)" in
   x86_64)
     : "${SC26_PYTHON_SPEC:=python/asgm25z}"   # python@3.13.8, zen3
     SPACK_DEPS=(
         sqlite/atf6liaa     # sqlite@3.50.4
     )
+    USE_SPACK_PYTHON=1
     ;;
   aarch64)
-    : "${SC26_PYTHON_SPEC:=python/6kewgi6}"   # python@3.13.8, neoverse_v2
-    SPACK_DEPS=(
-        sqlite/aynz7gpz     # sqlite@3.50.4
-    )
+    USE_SPACK_PYTHON=0
     ;;
   *)
     echo "[activate] ERROR: unsupported arch $(uname -m)." >&2
@@ -62,15 +62,17 @@ if [[ ! -x "${VENV_DIR}/bin/python" ]]; then
   return 1 2>/dev/null || exit 1
 fi
 
-if ! command -v spack >/dev/null 2>&1; then
-  echo "[activate] ERROR: spack not found on PATH." >&2
-  return 1 2>/dev/null || exit 1
+if (( USE_SPACK_PYTHON )); then
+  if ! command -v spack >/dev/null 2>&1; then
+    echo "[activate] ERROR: spack not found on PATH." >&2
+    return 1 2>/dev/null || exit 1
+  fi
+  spack load "${SPACK_DEPS[@]}"
+  spack load "${SC26_PYTHON_SPEC}"
 fi
 
-spack load "${SPACK_DEPS[@]}"
-spack load "${SC26_PYTHON_SPEC}"
-
-# Manual venv activation — spack's CPython doesn't generate bin/activate.
+# Manual venv activation (spack's CPython lacks bin/activate; we use the
+# same code path on daint for symmetry).
 export VIRTUAL_ENV="${VENV_DIR}"
 export PATH="${VENV_DIR}/bin:${PATH}"
 unset PYTHONHOME

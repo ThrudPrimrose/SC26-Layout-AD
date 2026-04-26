@@ -2,7 +2,7 @@
 #SBATCH --job-name=E3_transpose_daint
 #SBATCH --nodes=1
 #SBATCH --partition=normal
-#SBATCH --time=05:00:00
+#SBATCH --time=04:30:00
 #SBATCH --account=g177-1
 #SBATCH --ntasks=1
 #SBATCH --gpus-per-task=1
@@ -13,6 +13,10 @@
 #SBATCH --error=results/daint/E3_transpose_daint_%j.err
 #
 # E3 Matrix Transpose (Figure 9, Table III) on Daint.Alps.
+
+# Suppress core dumps: HPTT planner has been seen to segfault on Grace,
+# and each core is ~4.5 GB of resident working set on scratch.
+ulimit -c 0
 
 EXP_DIR="${SLURM_SUBMIT_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}"
 COMMON_DIR="$(cd "${EXP_DIR}/../common" && pwd)"

@@ -38,4 +38,11 @@ if [[ ! -d bin_data_addusxx ]]; then
   exit 1
 fi
 
-echo "[E5 download] done -- $(ls bin_data_addusxx | wc -l) files under bin_data_addusxx/"
+# The archive unpacks into bin_data_addusxx/, but main_*.{cpp,cu,_hip.cpp}
+# load via './bin/<fn>' paths. Rename the directory (not a symlink —
+# real dir keeps everything portable under `cp -r`, `tar`, rsync, etc.).
+if [[ ! -e bin ]]; then
+  mv bin_data_addusxx bin
+fi
+
+echo "[E5 download] done -- $(ls bin | wc -l) files under bin/"

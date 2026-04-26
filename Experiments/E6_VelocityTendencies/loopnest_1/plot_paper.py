@@ -30,10 +30,17 @@ CPU_AMD_CSV = f"results/beverin/{KERNEL}_cpu.csv"
 GPU_NV_CSV  = f"results/daint/{KERNEL}_gpu.csv"
 CPU_NV_CSV  = f"results/daint/{KERNEL}_cpu.csv"
 
-STREAM_PEAK = {
-    "MI300A Zen CPU": 1228*1e-3,  "Grace CPU": 1700.62*1e-3,
-    "MI300A GPU":       4294*1e-3,     "GH200 GPU": 3780*1e-3,
-}
+# --- Shared plotting helpers (common/plot_util.py) --------------------
+import os as _os, sys as _sys
+_here = _os.path.dirname(_os.path.abspath(__file__))
+_d = _here
+while _os.path.basename(_d) != "Experiments" and _os.path.dirname(_d) != _d:
+    _d = _os.path.dirname(_d)
+if _os.path.basename(_d) == "Experiments":
+    _sys.path.insert(0, _os.path.join(_d, "common"))
+from plot_util import load_stream_peaks as _load_stream_peaks
+
+STREAM_PEAK = _load_stream_peaks()
 
 SUBPLOT_W = 5.5   # wider to fit 3 distributions
 SUBPLOT_H = 3.5   # inches per row
@@ -74,7 +81,7 @@ DIST_LABEL = {
 }
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--add-peak', action='store_true')
+parser.add_argument('--add-peak', action='store_true', default=True)
 args = parser.parse_args()
 
 def compute_bandwidth(df):
@@ -117,7 +124,8 @@ def get_overall_best_data(df_full, fcol, dist, nlev):
     """
     sub = df_full[(df_full["variant"].isin([3, 4, 5, 6, 7])) &
                   (df_full["cell_dist"] == dist) &
-                  (df_full["nlev"] == nlev)]
+                  (df_full["nlev"] == nlev) &
+                  (~df_full["is_blocked"])]
     if sub.empty:
         return np.array([])
     sub = sub.copy()
@@ -130,9 +138,94 @@ def get_overall_best_data(df_full, fcol, dist, nlev):
     return sub.loc[mask, "bandwidth"].values
 
 
+def get_blocked_best_data(df_full, fcol, dist, nlev):
+    """
+    Green violin: pick whichever blocked layout (block factor / tile size)
+    gives the highest median bandwidth. `is_blocked` is set per-row during
+    load and already abstracts over both CSV schemas.
+    """
+    sub = df_full[(df_full["is_blocked"]) &
+                  (df_full["cell_dist"] == dist) &
+                  (df_full["nlev"] == nlev)]
+    if sub.empty:
+        return np.array([]), None
+    sub = sub.copy()
+    sub["bandwidth"] = compute_bandwidth(sub)
+    # Group by the "blocked label" (e.g. block factor or tile size) + schedule
+    # col, and pick the (block, schedule) pair with highest median.
+    medians = sub.groupby(["blocked_label", fcol])["bandwidth"].median()
+    if medians.empty:
+        return np.array([]), None
+    best_blk, best_cfg = medians.idxmax()
+    mask = (sub["blocked_label"] == best_blk) & (sub[fcol] == best_cfg)
+    return sub.loc[mask, "bandwidth"].values, (best_blk, best_cfg)
+
+
 # ---------------------------------------------------------------------------
 #  Main
 # ---------------------------------------------------------------------------
+
+def _normalise_schema(df: pd.DataFrame) -> pd.DataFrame:
+    """Accept both the L1 and L2-6 CSV schemas and annotate blocked rows.
+
+    L1 uses `variant, parallelization, N_c, N_v`; L2-6 use `V, schedule`
+    and no `N_c`/`N_v`. Rename the L2-6 columns to the L1 names so the
+    rest of this script works unchanged across all six loopnests.
+
+    Also adds two derived columns:
+      - is_blocked   : True iff the row uses a blocked/tiled storage layout
+      - blocked_label: the block factor (or tile dim) for blocked rows,
+                       empty string for unblocked rows.
+    """
+    renames = {}
+    if "variant" not in df.columns and "V" in df.columns:
+        renames["V"] = "variant"
+    if "parallelization" not in df.columns and "schedule" in df.columns:
+        renames["schedule"] = "parallelization"
+    if renames:
+        df = df.rename(columns=renames)
+
+    df = df.copy()
+    df["is_blocked"] = False
+    df["blocked_label"] = ""
+
+    # L1 CPU schema: explicit `blocking` column. variant==0 and blocking>0
+    # is the blocked/tiled row family.
+    if "blocking" in df.columns:
+        try:
+            blk = pd.to_numeric(df["blocking"], errors="coerce").fillna(0).astype(int)
+        except Exception:
+            blk = df["blocking"].astype(str)
+        is_blk = (df["variant"].astype(int) == 0) & (blk.astype(int) > 0)
+        df.loc[is_blk, "is_blocked"] = True
+        df.loc[is_blk, "blocked_label"] = "B" + blk.astype(str)
+        return df
+
+    # L2-6 CPU schema: `layout` column is the layout id (V1/V2/.../B8/B16/...)
+    if "layout" in df.columns:
+        lay = df["layout"].astype(str)
+        is_blk = lay.str.startswith("B") | lay.str.fullmatch(r"\d+")
+        df.loc[is_blk, "is_blocked"] = True
+        # Normalize bare-digit layout ids to "B{n}"
+        df.loc[is_blk, "blocked_label"] = lay[is_blk].where(
+            lay[is_blk].str.startswith("B"),
+            "B" + lay[is_blk]
+        )
+        return df
+
+    # GPU schemas: config_label encodes the layout.
+    #   L1 GPU: "t{TX}x{TY}" on variant==0 is the tiled-storage family.
+    #   L2-6 GPU: "B{n}_..." is the blocked-storage family.
+    if "config_label" in df.columns:
+        cfg = df["config_label"].astype(str)
+        is_b = cfg.str.startswith("B")
+        is_t = cfg.str.startswith("t") & (df["variant"].astype(int) == 0)
+        is_blk = is_b | is_t
+        df.loc[is_blk, "is_blocked"] = True
+        df.loc[is_b, "blocked_label"] = cfg[is_b].str.split("_", n=1).str[0]
+        df.loc[is_t, "blocked_label"] = cfg[is_t].str.split("_", n=1).str[0]
+    return df
+
 
 def main():
     raw = {}
@@ -140,9 +233,14 @@ def main():
         for label, csv, fcol, fval, _ in row:
             if label not in raw:
                 try:
-                    raw[label] = (pd.read_csv(csv), fcol, fval)
+                    df = _normalise_schema(pd.read_csv(csv))
                 except FileNotFoundError:
-                    print(f"  [WARN] {csv} not found"); return
+                    # Missing panel -> leave it blank, don't abort the figure.
+                    print(f"  [WARN] {csv} not found (panel will be empty)")
+                    continue
+                raw[label] = (df, fcol, fval)
+    if not raw:
+        print("  [WARN] no CSVs loaded; nothing to plot"); return
 
     plt.rcParams.update({
         "font.size": 14, "axes.titlesize": 15, "axes.labelsize": 14,
@@ -170,6 +268,14 @@ def main():
     for ri, row_data in enumerate(GRID):
         for ci, (label, csv, fcol, fval, _) in enumerate(row_data):
             ax = axes[ri, ci]
+            if label not in raw:
+                # CSV missing: show an empty placeholder instead of crashing.
+                ax.text(0.5, 0.5, f"(no {label} data)",
+                        ha='center', va='center', fontsize=12, color='gray',
+                        transform=ax.transAxes)
+                ax.set_xticks([]); ax.set_yticks([])
+                ax.set_title(label, loc='left')
+                continue
             df_full = raw[label][0]
             positions, data_all, col_all = [], [], []
             medians_for_pct = []   # (pos, median_bw, key)
@@ -286,6 +392,8 @@ def main():
     print("-" * 102)
     for row_data in GRID:
         for label, csv, fcol, fval, _ in row_data:
+            if label not in raw:
+                continue   # CSV was missing -- no summary row for this panel.
             df_full = raw[label][0]
             for dist in DISTS:
                 # --- orange (V1 best) ---

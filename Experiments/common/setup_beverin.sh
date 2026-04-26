@@ -35,11 +35,11 @@ export SLURM_CPU_BIND=cores
 
 # --- build flags ---------------------------------------------------------
 export CPU_CXX="${CPU_CXX:-g++}"
-export CPU_CXXFLAGS="${CPU_CXXFLAGS:--O3 -march=native -mtune=native -fopenmp -ffast-math -fno-vect-cost-model -std=c++17}"
+export CPU_CXXFLAGS="${CPU_CXXFLAGS:--O3 -march=native -mtune=native -fopenmp -ffast-math -fno-trapping-math -fno-math-errno -fno-vect-cost-model -std=c++17}"
 export CPU_LDFLAGS="${CPU_LDFLAGS:--lnuma}"
 
 export GPU_CXX="${GPU_CXX:-hipcc}"
-export GPU_CXXFLAGS="${GPU_CXXFLAGS:--O3 -std=c++17 --offload-arch=${ARCH} -march=native -mtune=native -ffast-math -munsafe-fp-atomics -mllvm -amdgpu-early-inline-all=true -mllvm -amdgpu-function-calls=false -fgpu-flush-denormals-to-zero -D__HIP_PLATFORM_AMD__=1 -DHIP_PLATFORM_AMD=1 -fopenmp=libgomp}"
+export GPU_CXXFLAGS="${GPU_CXXFLAGS:--O3 -std=c++17 --offload-arch=${ARCH} -march=native -mtune=native -ffast-math -fno-trapping-math -fno-math-errno -munsafe-fp-atomics -mllvm -amdgpu-early-inline-all=true -mllvm -amdgpu-function-calls=false -fgpu-flush-denormals-to-zero -D__HIP_PLATFORM_AMD__=1 -DHIP_PLATFORM_AMD=1 -fopenmp=libgomp}"
 export GPU_LDFLAGS="${GPU_LDFLAGS:--lnuma}"
 
 # Optional: OpenBLAS for CPU baselines (E3 transpose uses this).
@@ -63,4 +63,19 @@ if [[ -n "${SCRATCH:-}" ]]; then
   export LIBRARY_PATH=$SCRATCH/lib:$SCRATCH/lib64:$LIBRARY_PATH
   export LD_LIBRARY_PATH=$SCRATCH/lib:$SCRATCH/lib64:$LD_LIBRARY_PATH
   export PATH=$SCRATCH/bin:$PATH
+fi
+
+# --- Auto-fetch experiment data if missing -------------------------------
+# Each download_*.sh is internally idempotent (skips when target is
+# already populated). EXP_DIR is set by the caller (run_<exp>_beverin.sh)
+# before sourcing this script.
+if [[ -n "${EXP_DIR:-}" ]]; then
+  shopt -s nullglob
+  for _dl in "${EXP_DIR}/download_data.sh" "${EXP_DIR}"/scripts/download_*_data.sh; do
+    [[ -f "${_dl}" ]] || continue
+    echo "[setup_beverin] data check via $(basename "${_dl}")"
+    ( cd "$(dirname "${_dl}")" && bash "$(basename "${_dl}")" )
+  done
+  shopt -u nullglob
+  unset _dl
 fi

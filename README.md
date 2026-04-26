@@ -118,6 +118,44 @@ generalize to any cluster with comparable cache-line sizes (64 B CPU,
 
 Full description in `Latex/sc26_ad_ae_template.tex`.
 
+## Canonical compile flags
+
+All GCC / nvcc / hipcc compilations in this repo use a single canonical
+flag set, centralized in `Experiments/common/setup_{daint,beverin}.sh`
+as `CPU_CXXFLAGS` / `GPU_CXXFLAGS`.
+
+- **GCC (CPU, both platforms)**:
+  `-O3 -ffast-math -fno-trapping-math -fno-math-errno -march=native -mtune=native -fno-vect-cost-model -fopenmp -std=c++17`
+- **nvcc (Daint GPU)**: device-side `-O3 --use_fast_math`; host-side
+  GCC pass receives the full CPU set via `-Xcompiler=...`.
+- **hipcc (Beverin GPU)**: same set as GCC except no
+  `-fno-vect-cost-model` (Clang does not implement it — accepted
+  exception), plus HIP-specific `-munsafe-fp-atomics` /
+  `-mllvm -amdgpu-early-inline-all=true`.
+
+`-fno-trapping-math` and `-fno-math-errno` are already implied by
+`-ffast-math`; they are listed explicitly so intent survives any
+future `-ffast-math` definition drift. `-fno-vect-cost-model` forces
+GCC's loop vectorizer to ignore its cost model (Clang has no
+equivalent; rely on `-O3`'s vectorizer there).
+
+## OpenMP scheduling policy
+
+Every OpenMP loop in the repo uses `schedule(static)`, and both platform
+setup scripts export `OMP_SCHEDULE=static`. No `schedule(dynamic)` /
+`schedule(guided)` / `schedule(runtime)` / `schedule(auto)` anywhere in
+our sources — dynamic scheduling introduces jitter that can mask or
+exaggerate bandwidth effects and defeats reproducibility. CPU pinning
+is handled via `SLURM_CPU_BIND=cores` (set in the setup scripts) rather
+than `#SBATCH --cpu-bind` flags.
+
+## Utilities
+
+- [`Experiments/clean_core_dumps.sh`](Experiments/clean_core_dumps.sh)
+  — recursively removes `core_nid*` core dumps from the Experiments
+  tree. Dry-run by default; pass `--delete [-y]` to actually remove
+  them. Cleans up after any benchmark crash on Alps / Daint.
+
 ## Reviewer hint — `# TODO: VERSION`
 
 Version-sensitive pins are tagged `# TODO: VERSION` at the call site.

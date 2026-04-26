@@ -52,12 +52,17 @@ DIST_LABEL = {
     "qe":      "BaTiO$_3$",
 }
 
-STREAM_PEAK = {
-    "MI300A Zen CPU":     1161    * 1e-3,
-    "GH200 Grace CPU":   1806.62 * 1e-3,
-    "MI300A GPU":         4294    * 1e-3,
-    "GH200 Hopper GPU":  3780    * 1e-3,
-}
+# --- Shared plotting helpers (common/plot_util.py) --------------------
+import os as _os, sys as _sys
+_here = _os.path.dirname(_os.path.abspath(__file__))
+_d = _here
+while _os.path.basename(_d) != "Experiments" and _os.path.dirname(_d) != _d:
+    _d = _os.path.dirname(_d)
+if _os.path.basename(_d) == "Experiments":
+    _sys.path.insert(0, _os.path.join(_d, "common"))
+from plot_util import load_stream_peaks as _load_stream_peaks
+
+STREAM_PEAK = _load_stream_peaks()
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -294,7 +299,7 @@ def main():
     ap.add_argument("--amd-dir", default="results/beverin")
     ap.add_argument("--nv-dir",  default="results/daint")
     ap.add_argument("--with-cpu", action="store_true")
-    ap.add_argument("--add-peak", action="store_true")
+    ap.add_argument("--add-peak", action="store_true", default=True)
     args = ap.parse_args()
 
     print("Loading GPU AMD:")

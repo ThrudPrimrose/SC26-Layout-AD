@@ -6,7 +6,7 @@
 // Arrays allocated via mmap, first-touched in parallel for NUMA placement.
 //
 // Compile:
-//   g++ -O3 -std=c++17 -fopenmp -lnuma zaxpy_indirect_sweep_cpu.cpp -o zaxpy_indirect_sweep_cpu
+//   g++ -O3 -fno-vect-cost-model -std=c++17 -fopenmp -lnuma zaxpy_indirect_sweep_cpu.cpp -o zaxpy_indirect_sweep_cpu
 //   # or with clang: clang++ -O3 -std=c++17 -fopenmp -lnuma ...
 
 #include <algorithm>
@@ -559,6 +559,24 @@ int main(int argc, char **argv)
 {
     const char *csv_small_path = (argc > 1) ? argv[1] : "zaxpy_sweep_small.csv";
     const char *csv_1gb_path   = (argc > 2) ? argv[2] : "zaxpy_sweep_1gb.csv";
+
+    /* NUMA-partitioned kernels (kern_aos_partitioned / kern_soa_partitioned)
+     * use manual thread-id partitioning and assume threads are pinned close
+     * to their local NUMA node. If OMP_PROC_BIND != close, thread→node
+     * mapping is undefined and the partition→node assumption silently
+     * breaks. Warn loudly so this can't be missed in a log. */
+    {
+        omp_proc_bind_t pb = omp_get_proc_bind();
+        if (pb != omp_proc_bind_close) {
+            static const char* pb_name[] = {"false","true","master","close","spread"};
+            int idx = (int)pb;
+            fprintf(stderr,
+                "[zaxpy][WARN] OMP_PROC_BIND=%s (expected 'close'); "
+                "NUMA-partitioned kernel results may be unreliable. "
+                "Set OMP_PROC_BIND=close via setup_*.sh before running.\n",
+                (idx >= 0 && idx < 5) ? pb_name[idx] : "?");
+        }
+    }
 
     /* Canonical across the whole artifact: 100 timed reps, 5 warmups. */
     constexpr int ITERS  = 100;

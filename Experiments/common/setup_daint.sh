@@ -19,20 +19,26 @@ export CPLUS_INCLUDE_PATH=$CUDA_HOME/include:$CUTENSOR_HOME/include:${CPLUS_INCL
 export ARCH=sm_90
 export DAINT=1
 
+# Daint special case: alias `python` to system python3.11 outside the venv.
+# Inside the venv, ${VIRTUAL_ENV}/bin/python wins via PATH precedence and
+# this alias is shadowed.
+alias python=/usr/bin/python3.11
+
 # --- OpenMP / SLURM pinning (Grace: 4 NUMA × 72 cores) -------------------
 export OMP_NUM_THREADS=288
 export OMP_PROC_BIND=close
 export OMP_PLACES="{0}:72:1,{72}:72:1,{144}:72:1,{216}:72:1"
+export OMP_SCHEDULE=static
 export OMP_DISPLAY_ENV=TRUE
 export SLURM_CPU_BIND=cores
 
 # --- build flags ---------------------------------------------------------
 export CPU_CXX="${CPU_CXX:-g++}"
-export CPU_CXXFLAGS="${CPU_CXXFLAGS:--O3 -march=native -mtune=native -fopenmp -ffast-math -fno-vect-cost-model -std=c++17}"
+export CPU_CXXFLAGS="${CPU_CXXFLAGS:--O3 -march=native -mtune=native -fopenmp -ffast-math -fno-trapping-math -fno-math-errno -fno-vect-cost-model -std=c++17}"
 export CPU_LDFLAGS="${CPU_LDFLAGS:--lnuma}"
 
 export GPU_CXX="${GPU_CXX:-nvcc}"
-export GPU_CXXFLAGS="${GPU_CXXFLAGS:--O3 -arch=${ARCH} -std=c++17 -Xcompiler=-fopenmp}"
+export GPU_CXXFLAGS="${GPU_CXXFLAGS:--O3 --use_fast_math -arch=${ARCH} -std=c++17 -Xcompiler=-fopenmp -Xcompiler=-ffast-math -Xcompiler=-fno-trapping-math -Xcompiler=-fno-math-errno -Xcompiler=-fno-vect-cost-model -Xcompiler=-march=native -Xcompiler=-mtune=native}"
 export GPU_LDFLAGS="${GPU_LDFLAGS:--lnuma}"
 
 # Optional: OpenBLAS for CPU baselines (E3).
@@ -50,4 +56,19 @@ if [[ -n "${SCRATCH:-}" ]]; then
   export LIBRARY_PATH=$SCRATCH/lib:$SCRATCH/lib64:$LIBRARY_PATH
   export LD_LIBRARY_PATH=$SCRATCH/lib:$SCRATCH/lib64:$LD_LIBRARY_PATH
   export PATH=$SCRATCH/bin:$PATH
+fi
+
+# --- Auto-fetch experiment data if missing -------------------------------
+# Each download_*.sh is internally idempotent (skips when target is
+# already populated). EXP_DIR is set by the caller (run_<exp>_daint.sh)
+# before sourcing this script.
+if [[ -n "${EXP_DIR:-}" ]]; then
+  shopt -s nullglob
+  for _dl in "${EXP_DIR}/download_data.sh" "${EXP_DIR}"/scripts/download_*_data.sh; do
+    [[ -f "${_dl}" ]] || continue
+    echo "[setup_daint] data check via $(basename "${_dl}")"
+    ( cd "$(dirname "${_dl}")" && bash "$(basename "${_dl}")" )
+  done
+  shopt -u nullglob
+  unset _dl
 fi

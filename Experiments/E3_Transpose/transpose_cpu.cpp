@@ -1,6 +1,6 @@
 /*  transpose_cpu.cpp — Fully-templated CPU transpose with NUMA.
  *  TB, SB, MT as template params; dispatch macro instantiates all swept combos.
- *  Compile:  g++ -O3 -march=native -fopenmp -o transpose_cpu transpose_cpu.cpp
+ *  Compile:  g++ -O3 -fno-vect-cost-model -march=native -fopenmp -o transpose_cpu transpose_cpu.cpp
  */
 #include <algorithm>
 #include <cmath>
@@ -27,7 +27,10 @@ static int detect_numa_nodes() { return numa_num_nodes(); }
 static void bind_pages(void *a, size_t l, int node) {
     if (!l || node < 0) return;
     unsigned long m = 1UL << node;
-    mbind(a, l, MPOL_BIND, &m, 64, 0);
+    /* MPOL_MF_MOVE so already-faulted pages (from a previous sweep setup
+     * on the same allocation) are migrated rather than left on the wrong
+     * node. Matches the policy in common/numa_util.h:bind_and_touch. */
+    mbind(a, l, MPOL_BIND, &m, 64, MPOL_MF_MOVE);
 }
 
 enum NumaPolicy { NP_NONE = 0, NP_CONTIG = 1, NP_CYCLIC = 2, NP_TRANSPOSE = 3 };

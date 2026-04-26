@@ -20,7 +20,11 @@
  *                              cyclic). Kept as a comparison point.
  *
  *   kernel:   1d_rows_static        -- omp for schedule(static) over rows
- *             1d_rows_dynamic       -- omp for schedule(dynamic) over rows
+ *             1d_rows_dynamic       -- omp for schedule(static) over
+ *                                      chunks of rows (variant retained
+ *                                      for setup comparison; schedule
+ *                                      switched to static per project
+ *                                      policy)
  *             1d_flat_static        -- manual flat 1D element partition
  *                                      (matches common/bench_stream.cpp)
  *             4_stripe_aware        -- manual partition in which thread
@@ -116,7 +120,7 @@ static void k_1d_rows_dynamic(float *__restrict__ A, const float *__restrict__ B
                               size_t N1d) {
     const float s = 1.0001f;
     const size_t chunk = std::max<size_t>(1, N1d / (size_t)(4 * omp_get_max_threads()));
-    #pragma omp parallel for schedule(dynamic, 1) firstprivate(chunk)
+    #pragma omp parallel for schedule(static) firstprivate(chunk)
     for (size_t cy = 0; cy < N1d; cy += chunk) {
         size_t cyhi = std::min(cy + chunk, N1d);
         for (size_t y = cy; y < cyhi; y++) {

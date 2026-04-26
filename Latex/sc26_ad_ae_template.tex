@@ -180,6 +180,19 @@ libnuma & system & NUMA-aware allocation \\
 
 DaCe is at \url{https://github.com/spcl/dace}; the default flow uses \texttt{yakup/dev}. Platform setup and activation are centralized under \texttt{Experiments/common/}: \texttt{setup.sh} (first-time install), \texttt{activate.sh} (per-session), and \texttt{setup\_\{daint,beverin\}.sh}. Every experiment's \texttt{run\_\{daint,beverin\}.sh} sources these, so a single \texttt{common/setup.sh} covers all experiments.
 
+\paragraph{Compile flags.}
+Both setup scripts export a single canonical flag set via \texttt{CPU\_CXXFLAGS} and \texttt{GPU\_CXXFLAGS}.
+Every ad-hoc \texttt{g++} / \texttt{nvcc} / \texttt{hipcc} invocation in the Python drivers (E3, E6) carries the same set.
+The CPU flag set is \texttt{-O3 -ffast-math -fno-trapping-math -fno-math-errno -march=native -mtune=native -fno-vect-cost-model -fopenmp -std=c++17}.
+\texttt{nvcc} uses \texttt{-O3 --use\_fast\_math} on the device side and the full CPU set is forwarded to the host GCC pass via \texttt{-Xcompiler=}.
+\texttt{hipcc} uses the same set minus \texttt{-fno-vect-cost-model} (Clang has no equivalent; \texttt{-O3}'s vectorizer is the accepted fallback), plus HIP-specific \texttt{-munsafe-fp-atomics} and early-inlining flags.
+\texttt{-fno-trapping-math} and \texttt{-fno-math-errno} are already implied by \texttt{-ffast-math}; they are listed explicitly so intent survives any future \texttt{-ffast-math} definition drift.
+
+\paragraph{OpenMP scheduling.}
+\texttt{OMP\_SCHEDULE=static} is exported by both setup scripts, and every \texttt{\#pragma omp parallel for} in our sources uses \texttt{schedule(static)} explicitly (no dynamic / guided / runtime / auto scheduling anywhere).
+This choice minimizes timing jitter across repetitions.
+CPU-to-core pinning is handled via \texttt{SLURM\_CPU\_BIND=cores}; no \texttt{\#SBATCH --cpu-bind} flags are used.
+
 \artinpart{Datasets / Inputs}
 
 Microbenchmarks (E1--E4) generate all input data synthetically at runtime.
@@ -225,10 +238,14 @@ Experiment~E6 follows a multi-stage pipeline that mirrors the paper's optimizati
 \begin{description}
 \item[$T_{6.1}$] \textbf{Download data:} the per-loopnest \texttt{loopnest\_1/download\_data.sh} fetches the R02B05 dataset (auto-invoked by \texttt{run\_\{daint,beverin\}.sh}; idempotent).
 
-\item[$T_{6.2}$] \textbf{Access analysis:} \texttt{access\_analysis/analyze\_access.py} (plus \texttt{select\_loopnests.py}, \texttt{jaccard.py}, \texttt{coaccess.py}) canonicalizes the 25~loop nests into 6~pattern classes, groups the 50~arrays into 7~layout-equivalent groups, and computes $\mu$/$\Delta$ for each candidate layout per group.
-Outputs the candidate configuration file \texttt{layout\_candidates.json}.
+\item[$T_{6.2}$] \textbf{Access analysis (LOKI):} \texttt{access\_analysis/analyze\_access.py} parses \texttt{velocity\_advection\_preprocessed.f90} with LOKI and extracts the 25~leaf loop nests and their role-tagged array access patterns (\texttt{h:S~v:S~b:S}, \texttt{h:U~v:S~b:S}, \ldots); \texttt{select\_loopnests.py} groups the nests by pattern class and picks one representative per class (6~nests total), writing \texttt{layout\_candidates.json} and \texttt{chosen\_loopnests.md}.
 
-\item[$T_{6.3}$] \textbf{Per-loopnest evaluation:} each \texttt{loopnest\_\{1..6\}/} folder is a full benchmark suite that sweeps V1--V4 dimension orderings, 1D blocking, and (where meaningful) 2D tiling.
+\item[$T_{6.3}$] \textbf{Canonical 5-group taxonomy:} \texttt{access\_analysis/generate\_canonical\_groups.py} assigns each array touched by a representative nest to one of five groups --- \texttt{cv}~(COMPUTE\_VERT), \texttt{ch}~(COMPUTE\_HORIZ), \texttt{f}~(FIELDS), \texttt{s}~(STENCIL), \texttt{n}~(CONN) --- by name/role rule, mirroring the split used in the reference DaCe sweep (\texttt{icon-artifacts/velocity/sc26\_layout/permute\_stage8.py}).
+Each group is tagged with its storage axis: cv/ch/f/s consume the \emph{IC}~axis (whether \texttt{je} or \texttt{jk} is innermost on the (h,v,b)~arrays), and n consumes the \emph{IN}~axis (SoA vs.\ AoS on the 2-column connectivity).
+Connectivity aliases (\texttt{icidx}, \texttt{ivblk}, \ldots) are force-added to \texttt{n} because LOKI filters them out of per-nest array lists.
+Writes \texttt{canonical\_array\_groups.json}.
+
+\item[$T_{6.4}$] \textbf{Per-loopnest evaluation:} each \texttt{loopnest\_\{1..6\}/} folder is a full benchmark suite that sweeps V1--V7 dimension orderings and, where meaningful, blocked factors B8--B128 at nlev=256.
 Each folder's \texttt{run\_\{daint,beverin\}.sh} compiles, runs, and writes CSVs to \texttt{results/\{daint,beverin\}/}; the per-folder \texttt{README.md} explains the Fortran reference nest and the mapping between the code's macros and the nest class.
 
 \item[$T_{6.4}$] \textbf{Conflict resolution:} the per-loopnest rankings from $T_{6.3}$ are combined offline by weighting each loopnest by its call frequency (Config~A: 1/6, Config~B: 5/6); the resulting cross-product of locally-optimal layouts is documented in \texttt{conflict\_resolution/README.md} and consumed by E7 alongside \texttt{layout\_candidates.json}.

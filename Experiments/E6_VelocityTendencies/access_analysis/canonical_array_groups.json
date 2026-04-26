@@ -1,0 +1,97 @@
+{
+  "source": "derived from layout_candidates.json + CONN alias list (local-alias connectivity names are hardcoded because LOKI's INDIRECT_ARRAYS filter strips them from per-nest array lists).",
+  "group_ids": [
+    "cv",
+    "ch",
+    "f",
+    "s",
+    "n"
+  ],
+  "group_labels": {
+    "cv": "COMPUTE_VERT   (2D/3D work arrays written in jk-outer loops)",
+    "ch": "COMPUTE_HORIZ  (work arrays written by horizontal stencils)",
+    "f": "FIELDS         (prognostic + diagnostic state)",
+    "s": "STENCIL        (read-only metric + interp coefficients)",
+    "n": "CONN           (edge/vertex/cell index connectivity tables)"
+  },
+  "group_axis": {
+    "cv": "IC",
+    "ch": "IC",
+    "f": "IC",
+    "s": "IC",
+    "n": "IN"
+  },
+  "arrays": {
+    "cv": [
+      "z_ekinh",
+      "z_kin_hor_e",
+      "z_v_grad_w",
+      "z_vt_ie",
+      "z_w_con_c",
+      "z_w_con_c_full",
+      "z_w_v",
+      "zeta"
+    ],
+    "ch": [
+      "cfl_clipping",
+      "levelmask",
+      "levmask",
+      "z_w_concorr_mc",
+      "z_w_concorr_me"
+    ],
+    "f": [
+      "p_diag%ddt_vn_apc_pc",
+      "p_diag%ddt_vn_cor_pc",
+      "p_diag%ddt_w_adv_pc",
+      "p_diag%vn_ie",
+      "p_diag%vn_ie_ubc",
+      "p_diag%vt",
+      "p_diag%w_concorr_c",
+      "p_prog%vn",
+      "p_prog%w"
+    ],
+    "s": [
+      "p_int%c_lin_e",
+      "p_int%e_bln_c_s",
+      "p_int%geofac_grdiv",
+      "p_int%geofac_n2s",
+      "p_int%rbf_vec_coeff_e",
+      "p_metrics%coeff1_dwdz",
+      "p_metrics%coeff2_dwdz",
+      "p_metrics%coeff_gradekin",
+      "p_metrics%ddqz_z_full_e",
+      "p_metrics%ddqz_z_half",
+      "p_metrics%ddxn_z_full",
+      "p_metrics%ddxt_z_full",
+      "p_metrics%deepatmo_gradh_ifc",
+      "p_metrics%deepatmo_gradh_mc",
+      "p_metrics%deepatmo_invr_ifc",
+      "p_metrics%deepatmo_invr_mc",
+      "p_metrics%wgtfac_c",
+      "p_metrics%wgtfac_e",
+      "p_metrics%wgtfacq_e",
+      "p_patch%cells%area",
+      "p_patch%cells%decomp_info%owner_mask",
+      "p_patch%edges%area_edge",
+      "p_patch%edges%f_e",
+      "p_patch%edges%fn_e",
+      "p_patch%edges%ft_e",
+      "p_patch%edges%inv_dual_edge_length",
+      "p_patch%edges%inv_primal_edge_length",
+      "p_patch%edges%tangent_orientation"
+    ],
+    "n": [
+      "icblk",
+      "icidx",
+      "ieblk",
+      "ieidx",
+      "incblk",
+      "incidx",
+      "iqblk",
+      "iqidx",
+      "ivblk",
+      "ividx"
+    ]
+  },
+  "unclassified": []
+}

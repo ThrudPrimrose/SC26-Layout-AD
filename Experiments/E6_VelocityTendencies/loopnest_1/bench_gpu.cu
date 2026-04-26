@@ -7,7 +7,7 @@
  * V6:    flat 1D, padded nlev
  * V7:    flat 1D with TX, unpadded nlev
  *
- * Compile (NVIDIA): nvcc -O3 -arch=sm_90 -std=c++17 -Xcompiler -fopenmp bench_gpu.cu -o bench_gpu
+ * Compile (NVIDIA): nvcc -O3 -Xcompiler=-fno-vect-cost-model -arch=sm_90 -std=c++17 -Xcompiler -fopenmp bench_gpu.cu -o bench_gpu
  * Compile (AMD):    hipcc -O3 -std=c++17 -fopenmp bench_gpu.cu -o bench_gpu
  */
 #include "../../common/gpu_compat.cuh"

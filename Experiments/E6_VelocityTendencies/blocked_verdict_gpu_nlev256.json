@@ -1,0 +1,97 @@
+{
+  "meta": {
+    "nlev": 256,
+    "cell_dist": "exact",
+    "threshold": 1.25,
+    "backend": "gpu"
+  },
+  "rows": [
+    {
+      "loopnest": 1,
+      "platform": "beverin",
+      "backend": "gpu",
+      "csv": "loopnest_1/results/beverin/z_v_grad_w_gpu.csv",
+      "best_V_id": "V6",
+      "best_V_ms": 0.5736435,
+      "n_unblocked_measured": 7
+    },
+    {
+      "loopnest": 2,
+      "platform": "beverin",
+      "backend": "gpu",
+      "csv": "loopnest_2/results/beverin/z_w_concorr_me_gpu.csv",
+      "best_V_id": "V1",
+      "best_V_ms": 0.4781875,
+      "n_unblocked_measured": 5,
+      "best_B_id": "B32",
+      "best_B_ms": 0.5095525,
+      "n_blocked_measured": 3,
+      "speedup": 0.9384459893730284
+    },
+    {
+      "loopnest": 3,
+      "platform": "beverin",
+      "backend": "gpu",
+      "csv": "loopnest_3/results/beverin/z_v_grad_w_full_gpu.csv",
+      "best_V_id": "V2",
+      "best_V_ms": 0.5524235,
+      "n_unblocked_measured": 5,
+      "best_B_id": "B32",
+      "best_B_ms": 0.651844,
+      "n_blocked_measured": 3,
+      "speedup": 0.8474780775768435
+    },
+    {
+      "loopnest": 5,
+      "platform": "beverin",
+      "backend": "gpu",
+      "csv": "loopnest_5/results/beverin/vn_ie_boundary_gpu.csv",
+      "best_V_id": "V1",
+      "best_V_ms": 0.0162805,
+      "n_unblocked_measured": 4,
+      "best_B_id": "B32",
+      "best_B_ms": 0.01824,
+      "n_blocked_measured": 3,
+      "speedup": 0.8925712719298246
+    },
+    {
+      "loopnest": 6,
+      "platform": "beverin",
+      "backend": "gpu",
+      "csv": "loopnest_6/results/beverin/levelmask_gpu.csv",
+      "best_V_id": "V1",
+      "best_V_ms": 0.1817805,
+      "n_unblocked_measured": 5,
+      "best_B_id": "B64",
+      "best_B_ms": 0.1926005,
+      "n_blocked_measured": 4,
+      "speedup": 0.9438215373272655
+    }
+  ],
+  "verdict_per_loopnest": {
+    "1": {
+      "max_speedup": 1.0,
+      "keep_blocked": false
+    },
+    "2": {
+      "max_speedup": 1.0,
+      "keep_blocked": false
+    },
+    "3": {
+      "max_speedup": 1.0,
+      "keep_blocked": false
+    },
+    "4": {
+      "max_speedup": 1.0,
+      "keep_blocked": false
+    },
+    "5": {
+      "max_speedup": 1.0,
+      "keep_blocked": false
+    },
+    "6": {
+      "max_speedup": 1.0,
+      "keep_blocked": false
+    }
+  }
+}

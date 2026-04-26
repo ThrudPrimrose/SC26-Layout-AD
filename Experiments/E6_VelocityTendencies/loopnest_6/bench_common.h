@@ -41,18 +41,18 @@
 #include <omp.h>
 #endif
 
-static constexpr int NLEVS[]        = {96};
-static constexpr int N_NLEVS        = 1;
+static constexpr int NLEVS[] = {256};
+static constexpr int N_NLEVS = 1;
 static constexpr int WARMUP         = 5;
 static constexpr int NRUNS          = 100;
-static constexpr int BLOCK_SIZES[]  = {8, 16, 32, 64, 128};
-static constexpr int N_BLOCK_SIZES  = 5;
+static constexpr int BLOCK_SIZES[] = {8, 16, 32, 48, 64, 96, 128};
+static constexpr int N_BLOCK_SIZES = 7;
 static constexpr int NUMA_DOMAINS   = 4;
 
-static constexpr int TILE_X_VALUES[]   = {8, 16, 32, 64};
-static constexpr int N_TILE_X          = 4;
-static constexpr int TILE_Y_VALUES[]   = {0, 8, 16, 32, 64};
-static constexpr int N_TILE_Y          = 5;
+static constexpr int TILE_X_VALUES[]   = {8, 16, 32, 64, 128};
+static constexpr int N_TILE_X          = 5;
+static constexpr int TILE_Y_VALUES[]   = {0, 8, 16, 32, 64, 128};
+static constexpr int N_TILE_Y          = 6;
 static constexpr int TILE_Y_MATCH_NLEV = 0;
 
 static constexpr double MASK_P_TRUE = 0.15;

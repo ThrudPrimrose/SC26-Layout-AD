@@ -11,7 +11,7 @@
  *
  * Supports unblocked (V1-V4) + blocked (B=8..128) + exact ICON dist
  *
- * Compile: g++ -O3 -std=c++17 -fopenmp -o cost_metrics cost_metrics.cpp
+ * Compile: g++ -O3 -fno-vect-cost-model -std=c++17 -fopenmp -o cost_metrics cost_metrics.cpp
  * Run:     ./cost_metrics [N] [nlev] [beta] [alpha] [gamma] [P_NUMA] [L1_bytes]
  */
 #include <cstdio>
