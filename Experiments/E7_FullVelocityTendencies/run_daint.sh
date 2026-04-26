@@ -20,8 +20,19 @@
 
 set -euo pipefail
 
+# --verify retains the per-timestep got/want numerical-comparison blobs
+# (O(GB) each) for offline validation against a reference run. Default
+# is to delete them after each binary invocation.
+VERIFY=0
+for arg in "$@"; do
+  case "${arg}" in
+    --verify) VERIFY=1 ;;
+    *) echo "[E7 daint] unrecognised arg: ${arg}" >&2 ;;
+  esac
+done
+
 EXP_DIR="${SLURM_SUBMIT_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}"
-COMMON_DIR="$(cd "${EXP_DIR}/../../common" && pwd)"
+COMMON_DIR="$(cd "${EXP_DIR}/../common" && pwd)"
 
 source "${COMMON_DIR}/activate.sh"
 source "${COMMON_DIR}/setup_daint.sh"
@@ -35,11 +46,19 @@ cd "${EXP_DIR}"
     || bash tools/download_data.sh
 export ICON_DATA_PATH="${ICON_DATA_PATH:-${EXP_DIR}/data_r02b05}"
 
-# Layout configs to run. Default: the three named heuristics emitted by
-# utils.passes.permute_configs.configs_from_candidates from the E6
-# access analysis. Override at submission time, e.g.
-#   CONFIGS="unpermuted curated_nlev_first" sbatch run_daint.sh
-CONFIGS="${CONFIGS:-unpermuted_lv0_sm0 unpermuted_lv0_sm1 \
+# Layout configs to run. Default reproduces the paper's V1/V2/V6
+# winner-comparison (§IV-D, Table IV) plus the lv-axis variants of
+# nlev_first / index_only for the layout-conflict-resolution discussion:
+#   winner_v1           V1 = h_first + SoA-conn (identity baseline)
+#   winner_v2           V2 = h_first + AoS-conn (only connectivity permuted)
+#   winner_v6           V6 = v_first + AoS-conn (the empirical winner)
+#   unpermuted_lv*_sm*  baseline + map-shuffle ablations
+#   nlev_first_lv*_sm*  v_first ablations (lv0 keeps levmask, lv1 transposes)
+#   index_only_lv*_sm*  conn-only ablations
+# Override at submission time, e.g.
+#   CONFIGS="winner_v1 winner_v2 winner_v6" sbatch run_daint.sh
+CONFIGS="${CONFIGS:-winner_v1 winner_v2 winner_v6 \
+unpermuted_lv0_sm0 unpermuted_lv0_sm1 \
 nlev_first_lv0_sm0 nlev_first_lv0_sm1 nlev_first_lv1_sm0 nlev_first_lv1_sm1 \
 index_only_lv0_sm0 index_only_lv0_sm1}"
 
@@ -84,17 +103,30 @@ for CFG in ${CONFIGS}; do
 
   # Run the binary once per timestep so each timestep lands in its
   # own output dir (results/daint/<config>/ts<N>/...) -- matches what
-  # Figures/plot_paper_snapshot.sh expects.
+  # Figures/plot_paper_snapshot.sh expects. Stdout/stderr are tee'd to
+  # ${out_dir}/run.txt so the slurm log keeps the live output AND the
+  # per-timestep TXT records the same stream (icon-artifacts/velocity
+  # convention -- a single TXT per (config, timestep) the plotting
+  # script reads). When --verify is NOT passed, the got/want
+  # numerical-comparison blobs (O(GB) per pair) are deleted after the
+  # run; --verify keeps them for one-shot reference comparison.
   for TS in ${TIMESTEPS//,/ }; do
     out_dir="${EXP_DIR}/results/daint/${CFG}/ts${TS}"
     mkdir -p "${out_dir}"
-    echo "[E7 daint] running ${CFG} TS=${TS} reps=${REPS} warmup=${WARMUP}"
-    "${bin}" \
-        --data "${ICON_DATA_PATH}" \
-        --reps "${REPS}" \
-        --warmup "${WARMUP}" \
-        --timesteps "${TS}" \
-        --output-dir "${out_dir}"
+    txt="${out_dir}/run.txt"
+    echo "[E7 daint] running ${CFG} TS=${TS} reps=${REPS} warmup=${WARMUP} -> ${txt}"
+    {
+      echo "=== ${CFG} ts=${TS} reps=${REPS} warmup=${WARMUP} ==="
+      "${bin}" \
+          --data "${ICON_DATA_PATH}" \
+          --reps "${REPS}" \
+          --warmup "${WARMUP}" \
+          --timesteps "${TS}" \
+          --output-dir "${out_dir}"
+    } 2>&1 | tee -a "${txt}"
+    if [[ "${VERIFY}" -eq 0 ]]; then
+      find "${out_dir}" -maxdepth 1 \( -name '*.got' -o -name '*.want' \) -delete
+    fi
   done
 done
 

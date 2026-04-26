@@ -38,7 +38,7 @@ LOCAL_DATA_DIR=~/Work/icon-artifacts/velocity/data_r02b05 \
 ```
 
 `run_{daint,beverin}.sh` follow the E1–E6 convention: SBATCH header,
-source `../../common/{activate,setup_<host>}.sh`, build via
+source `../common/{activate,setup_<host>}.sh`, build via
 `CPU_CXX{,FLAGS}` / `GPU_CXX{,FLAGS}`. Default config list is
 `unpermuted nlev_first index_only`; override per submission:
 

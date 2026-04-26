@@ -347,8 +347,44 @@ def extended_configs_from_candidates(json_path: str | Path,
         configs.append(cfg)
         seen.add(cfg.name)
 
+    # E6 V_k aliases -- explicit named configs that map to the V1 / V2 /
+    # V6 empirical-winner variants from
+    # ``E6_VelocityTendencies/generate_v123_candidates.py``. These are
+    # what the AD reproduces from the paper (§IV-D, "indirect stencils
+    # favor vertical-first" + Table IV showing V6 as the v_first/AoS
+    # winner). Defined as aliases over already-emitted configs so the
+    # AD reader can submit ``winner_v1`` / ``winner_v2`` / ``winner_v6``
+    # without translating axis-flag names back to V_k.
+    #
+    #   winner_v1 -- h_first + SoA-conn (identity baseline)
+    #   winner_v2 -- h_first + AoS-conn (only connectivity permuted to
+    #                the validated [0, 2, 1])
+    #   winner_v6 -- v_first + AoS-conn (full level-first across all
+    #                E6-classified groups + connectivity at [0, 2, 1])
+    _add_winner_alias(configs, seen, 'winner_v1', 'unpermuted_lv0_sm0')
+    _add_winner_alias(configs, seen, 'winner_v2', 'index_only_lv0_sm0')
+    _add_winner_alias(configs, seen, 'winner_v6', 'nlev_first_lv1_sm0')
+
     # Apply force-permute overrides (e.g. levmask -> [1, 0]) uniformly
     # across every emitted config -- including ``unpermuted`` and the
     # listed nest_<...>/cohort_<...> configs that didn't come through
     # ``configs_from_candidates`` / ``curated_configs``.
     return _apply_force_permuted(configs, sdfg_arrays)
+
+
+def _add_winner_alias(configs: List[PermuteConfig], seen: set,
+                      alias: str, source: str) -> None:
+    """Append ``alias`` as a copy of the config named ``source``. Silent
+    no-op if ``source`` isn't in ``configs`` (e.g. SDFG-side filtering
+    dropped its permute map)."""
+    if alias in seen:
+        return
+    src = next((c for c in configs if c.name == source), None)
+    if src is None:
+        return
+    configs.append(PermuteConfig(
+        name=alias,
+        permute_map=dict(src.permute_map),
+        shuffle_map=src.shuffle_map,
+    ))
+    seen.add(alias)

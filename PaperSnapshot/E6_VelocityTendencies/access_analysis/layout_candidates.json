@@ -1,0 +1,1060 @@
+{
+  "source": "velocity_advection_preprocessed.analysis.md",
+  "tiebreaker": [
+    "widest (most unique arrays) descending",
+    "full_vert before partial_vert",
+    "lowest source-order nest id"
+  ],
+  "pinned": {
+    "loopnest_1": 6
+  },
+  "all_nests": [
+    {
+      "nid": 1,
+      "shape": "h",
+      "ranges": [
+        "full_horiz"
+      ],
+      "behavior": "compute",
+      "collapsed": "h:S",
+      "n_arrays": 6,
+      "arrays": [
+        "p_diag%vn_ie",
+        "p_diag%vt",
+        "p_metrics%wgtfacq_e",
+        "p_prog%vn",
+        "z_kin_hor_e",
+        "z_vt_ie"
+      ],
+      "pattern_key": [
+        "h",
+        [
+          "full_horiz"
+        ],
+        "compute",
+        "h:S"
+      ],
+      "class_label": "horizontal-only (boundary)"
+    },
+    {
+      "nid": 2,
+      "shape": "h",
+      "ranges": [
+        "full_horiz"
+      ],
+      "behavior": "compute",
+      "collapsed": "h:S",
+      "n_arrays": 7,
+      "arrays": [
+        "p_diag%vn_ie",
+        "p_diag%vn_ie_ubc",
+        "p_diag%vt",
+        "p_metrics%wgtfacq_e",
+        "p_prog%vn",
+        "z_kin_hor_e",
+        "z_vt_ie"
+      ],
+      "pattern_key": [
+        "h",
+        [
+          "full_horiz"
+        ],
+        "compute",
+        "h:S"
+      ],
+      "class_label": "horizontal-only (boundary)"
+    },
+    {
+      "nid": 3,
+      "shape": "v.h",
+      "ranges": [
+        "full_vert",
+        "full_horiz"
+      ],
+      "behavior": "compute",
+      "collapsed": "h:U  v:S",
+      "n_arrays": 6,
+      "arrays": [
+        "p_diag%vn_ie",
+        "p_diag%vt",
+        "p_int%rbf_vec_coeff_e",
+        "p_metrics%wgtfac_e",
+        "p_prog%vn",
+        "z_kin_hor_e"
+      ],
+      "pattern_key": [
+        "v.h",
+        [
+          "full_vert",
+          "full_horiz"
+        ],
+        "compute",
+        "h:U  v:S"
+      ],
+      "class_label": "indirect stencil, full vertical"
+    },
+    {
+      "nid": 4,
+      "shape": "v.h",
+      "ranges": [
+        "partial_vert",
+        "full_horiz"
+      ],
+      "behavior": "compute",
+      "collapsed": "h:S  v:S",
+      "n_arrays": 3,
+      "arrays": [
+        "p_diag%vt",
+        "p_metrics%wgtfac_e",
+        "z_vt_ie"
+      ],
+      "pattern_key": [
+        "v.h",
+        [
+          "partial_vert",
+          "full_horiz"
+        ],
+        "compute",
+        "h:S  v:S"
+      ],
+      "class_label": "direct stencil, partial vertical"
+    },
+    {
+      "nid": 5,
+      "shape": "v.h",
+      "ranges": [
+        "partial_vert",
+        "full_horiz"
+      ],
+      "behavior": "compute",
+      "collapsed": "h:S  v:S",
+      "n_arrays": 5,
+      "arrays": [
+        "p_diag%vt",
+        "p_metrics%ddxn_z_full",
+        "p_metrics%ddxt_z_full",
+        "p_prog%vn",
+        "z_w_concorr_me"
+      ],
+      "pattern_key": [
+        "v.h",
+        [
+          "partial_vert",
+          "full_horiz"
+        ],
+        "compute",
+        "h:S  v:S"
+      ],
+      "class_label": "direct stencil, partial vertical"
+    },
+    {
+      "nid": 6,
+      "shape": "v.h",
+      "ranges": [
+        "full_vert",
+        "full_horiz"
+      ],
+      "behavior": "compute",
+      "collapsed": "h:U  v:S",
+      "n_arrays": 8,
+      "arrays": [
+        "p_diag%vn_ie",
+        "p_patch%edges%inv_dual_edge_length",
+        "p_patch%edges%inv_primal_edge_length",
+        "p_patch%edges%tangent_orientation",
+        "p_prog%w",
+        "z_v_grad_w",
+        "z_vt_ie",
+        "z_w_v"
+      ],
+      "pattern_key": [
+        "v.h",
+        [
+          "full_vert",
+          "full_horiz"
+        ],
+        "compute",
+        "h:U  v:S"
+      ],
+      "class_label": "indirect stencil, full vertical"
+    },
+    {
+      "nid": 7,
+      "shape": "v.h",
+      "ranges": [
+        "full_vert",
+        "full_horiz"
+      ],
+      "behavior": "compute",
+      "collapsed": "h:S  v:S",
+      "n_arrays": 7,
+      "arrays": [
+        "p_diag%vn_ie",
+        "p_metrics%deepatmo_gradh_ifc",
+        "p_metrics%deepatmo_invr_ifc",
+        "p_patch%edges%fn_e",
+        "p_patch%edges%ft_e",
+        "z_v_grad_w",
+        "z_vt_ie"
+      ],
+      "pattern_key": [
+        "v.h",
+        [
+          "full_vert",
+          "full_horiz"
+        ],
+        "compute",
+        "h:S  v:S"
+      ],
+      "class_label": "direct stencil, full vertical"
+    },
+    {
+      "nid": 8,
+      "shape": "h",
+      "ranges": [
+        "full_horiz"
+      ],
+      "behavior": "compute",
+      "collapsed": "h:S",
+      "n_arrays": 1,
+      "arrays": [
+        "z_w_con_c"
+      ],
+      "pattern_key": [
+        "h",
+        [
+          "full_horiz"
+        ],
+        "compute",
+        "h:S"
+      ],
+      "class_label": "horizontal-only (boundary)"
+    },
+    {
+      "nid": 9,
+      "shape": "v",
+      "ranges": [
+        "partial_vert"
+      ],
+      "behavior": "compute",
+      "collapsed": "v:S",
+      "n_arrays": 1,
+      "arrays": [
+        "levmask"
+      ],
+      "pattern_key": [
+        "v",
+        [
+          "partial_vert"
+        ],
+        "compute",
+        "v:S"
+      ],
+      "class_label": "vertical-only (level reduction)"
+    },
+    {
+      "nid": 10,
+      "shape": "v.h",
+      "ranges": [
+        "full_vert",
+        "full_horiz"
+      ],
+      "behavior": "compute",
+      "collapsed": "h:U  v:S",
+      "n_arrays": 3,
+      "arrays": [
+        "p_int%e_bln_c_s",
+        "z_ekinh",
+        "z_kin_hor_e"
+      ],
+      "pattern_key": [
+        "v.h",
+        [
+          "full_vert",
+          "full_horiz"
+        ],
+        "compute",
+        "h:U  v:S"
+      ],
+      "class_label": "indirect stencil, full vertical"
+    },
+    {
+      "nid": 11,
+      "shape": "v.h",
+      "ranges": [
+        "partial_vert",
+        "full_horiz"
+      ],
+      "behavior": "compute",
+      "collapsed": "h:U  v:S",
+      "n_arrays": 3,
+      "arrays": [
+        "p_int%e_bln_c_s",
+        "z_w_concorr_mc",
+        "z_w_concorr_me"
+      ],
+      "pattern_key": [
+        "v.h",
+        [
+          "partial_vert",
+          "full_horiz"
+        ],
+        "compute",
+        "h:U  v:S"
+      ],
+      "class_label": "indirect stencil, partial vertical"
+    },
+    {
+      "nid": 12,
+      "shape": "v.h",
+      "ranges": [
+        "partial_vert",
+        "full_horiz"
+      ],
+      "behavior": "compute",
+      "collapsed": "h:S  v:S",
+      "n_arrays": 3,
+      "arrays": [
+        "p_diag%w_concorr_c",
+        "p_metrics%wgtfac_c",
+        "z_w_concorr_mc"
+      ],
+      "pattern_key": [
+        "v.h",
+        [
+          "partial_vert",
+          "full_horiz"
+        ],
+        "compute",
+        "h:S  v:S"
+      ],
+      "class_label": "direct stencil, partial vertical"
+    },
+    {
+      "nid": 13,
+      "shape": "v.h",
+      "ranges": [
+        "full_vert",
+        "full_horiz"
+      ],
+      "behavior": "compute",
+      "collapsed": "h:S  v:S",
+      "n_arrays": 2,
+      "arrays": [
+        "p_prog%w",
+        "z_w_con_c"
+      ],
+      "pattern_key": [
+        "v.h",
+        [
+          "full_vert",
+          "full_horiz"
+        ],
+        "compute",
+        "h:S  v:S"
+      ],
+      "class_label": "direct stencil, full vertical"
+    },
+    {
+      "nid": 14,
+      "shape": "v.h",
+      "ranges": [
+        "partial_vert",
+        "full_horiz"
+      ],
+      "behavior": "compute",
+      "collapsed": "h:S  v:S",
+      "n_arrays": 2,
+      "arrays": [
+        "p_diag%w_concorr_c",
+        "z_w_con_c"
+      ],
+      "pattern_key": [
+        "v.h",
+        [
+          "partial_vert",
+          "full_horiz"
+        ],
+        "compute",
+        "h:S  v:S"
+      ],
+      "class_label": "direct stencil, partial vertical"
+    },
+    {
+      "nid": 15,
+      "shape": "v.h",
+      "ranges": [
+        "partial_vert",
+        "full_horiz"
+      ],
+      "behavior": "reduction",
+      "collapsed": "h:S  v:S",
+      "n_arrays": 4,
+      "arrays": [
+        "cfl_clipping",
+        "levmask",
+        "p_metrics%ddqz_z_half",
+        "z_w_con_c"
+      ],
+      "pattern_key": [
+        "v.h",
+        [
+          "partial_vert",
+          "full_horiz"
+        ],
+        "reduction",
+        "h:S  v:S"
+      ],
+      "class_label": "direct stencil, reduction (CFL clip)"
+    },
+    {
+      "nid": 16,
+      "shape": "v.h",
+      "ranges": [
+        "full_vert",
+        "full_horiz"
+      ],
+      "behavior": "compute",
+      "collapsed": "h:S  v:S",
+      "n_arrays": 2,
+      "arrays": [
+        "z_w_con_c",
+        "z_w_con_c_full"
+      ],
+      "pattern_key": [
+        "v.h",
+        [
+          "full_vert",
+          "full_horiz"
+        ],
+        "compute",
+        "h:S  v:S"
+      ],
+      "class_label": "direct stencil, full vertical"
+    },
+    {
+      "nid": 17,
+      "shape": "v.h",
+      "ranges": [
+        "partial_vert",
+        "full_horiz"
+      ],
+      "behavior": "compute",
+      "collapsed": "h:S  v:S",
+      "n_arrays": 5,
+      "arrays": [
+        "p_diag%ddt_w_adv_pc",
+        "p_metrics%coeff1_dwdz",
+        "p_metrics%coeff2_dwdz",
+        "p_prog%w",
+        "z_w_con_c"
+      ],
+      "pattern_key": [
+        "v.h",
+        [
+          "partial_vert",
+          "full_horiz"
+        ],
+        "compute",
+        "h:S  v:S"
+      ],
+      "class_label": "direct stencil, partial vertical"
+    },
+    {
+      "nid": 18,
+      "shape": "v.h",
+      "ranges": [
+        "partial_vert",
+        "full_horiz"
+      ],
+      "behavior": "compute",
+      "collapsed": "h:U  v:S",
+      "n_arrays": 3,
+      "arrays": [
+        "p_diag%ddt_w_adv_pc",
+        "p_int%e_bln_c_s",
+        "z_v_grad_w"
+      ],
+      "pattern_key": [
+        "v.h",
+        [
+          "partial_vert",
+          "full_horiz"
+        ],
+        "compute",
+        "h:U  v:S"
+      ],
+      "class_label": "indirect stencil, partial vertical"
+    },
+    {
+      "nid": 19,
+      "shape": "v.h",
+      "ranges": [
+        "partial_vert",
+        "full_horiz"
+      ],
+      "behavior": "compute",
+      "collapsed": "h:U  v:S",
+      "n_arrays": 8,
+      "arrays": [
+        "cfl_clipping",
+        "p_diag%ddt_w_adv_pc",
+        "p_int%geofac_n2s",
+        "p_metrics%ddqz_z_half",
+        "p_patch%cells%area",
+        "p_patch%cells%decomp_info%owner_mask",
+        "p_prog%w",
+        "z_w_con_c"
+      ],
+      "pattern_key": [
+        "v.h",
+        [
+          "partial_vert",
+          "full_horiz"
+        ],
+        "compute",
+        "h:U  v:S"
+      ],
+      "class_label": "indirect stencil, partial vertical"
+    },
+    {
+      "nid": 20,
+      "shape": "v.h",
+      "ranges": [
+        "full_vert",
+        "full_horiz"
+      ],
+      "behavior": "compute",
+      "collapsed": "h:U  v:S",
+      "n_arrays": 11,
+      "arrays": [
+        "p_diag%ddt_vn_apc_pc",
+        "p_diag%vn_ie",
+        "p_diag%vt",
+        "p_int%c_lin_e",
+        "p_metrics%coeff_gradekin",
+        "p_metrics%ddqz_z_full_e",
+        "p_patch%edges%f_e",
+        "z_ekinh",
+        "z_kin_hor_e",
+        "z_w_con_c_full",
+        "zeta"
+      ],
+      "pattern_key": [
+        "v.h",
+        [
+          "full_vert",
+          "full_horiz"
+        ],
+        "compute",
+        "h:U  v:S"
+      ],
+      "class_label": "indirect stencil, full vertical"
+    },
+    {
+      "nid": 21,
+      "shape": "v.h",
+      "ranges": [
+        "full_vert",
+        "full_horiz"
+      ],
+      "behavior": "compute",
+      "collapsed": "h:S  v:S",
+      "n_arrays": 3,
+      "arrays": [
+        "p_diag%ddt_vn_cor_pc",
+        "p_diag%vt",
+        "p_patch%edges%f_e"
+      ],
+      "pattern_key": [
+        "v.h",
+        [
+          "full_vert",
+          "full_horiz"
+        ],
+        "compute",
+        "h:S  v:S"
+      ],
+      "class_label": "direct stencil, full vertical"
+    },
+    {
+      "nid": 22,
+      "shape": "v.h",
+      "ranges": [
+        "full_vert",
+        "full_horiz"
+      ],
+      "behavior": "compute",
+      "collapsed": "h:U  v:S",
+      "n_arrays": 15,
+      "arrays": [
+        "p_diag%ddt_vn_apc_pc",
+        "p_diag%vn_ie",
+        "p_diag%vt",
+        "p_int%c_lin_e",
+        "p_metrics%coeff_gradekin",
+        "p_metrics%ddqz_z_full_e",
+        "p_metrics%deepatmo_gradh_mc",
+        "p_metrics%deepatmo_invr_mc",
+        "p_patch%edges%f_e",
+        "p_patch%edges%ft_e",
+        "p_prog%vn",
+        "z_ekinh",
+        "z_kin_hor_e",
+        "z_w_con_c_full",
+        "zeta"
+      ],
+      "pattern_key": [
+        "v.h",
+        [
+          "full_vert",
+          "full_horiz"
+        ],
+        "compute",
+        "h:U  v:S"
+      ],
+      "class_label": "indirect stencil, full vertical"
+    },
+    {
+      "nid": 23,
+      "shape": "v.h",
+      "ranges": [
+        "full_vert",
+        "full_horiz"
+      ],
+      "behavior": "compute",
+      "collapsed": "h:U  v:S",
+      "n_arrays": 6,
+      "arrays": [
+        "p_diag%ddt_vn_cor_pc",
+        "p_diag%vt",
+        "p_int%c_lin_e",
+        "p_patch%edges%f_e",
+        "p_patch%edges%ft_e",
+        "z_w_con_c_full"
+      ],
+      "pattern_key": [
+        "v.h",
+        [
+          "full_vert",
+          "full_horiz"
+        ],
+        "compute",
+        "h:U  v:S"
+      ],
+      "class_label": "indirect stencil, full vertical"
+    },
+    {
+      "nid": 24,
+      "shape": "v.h",
+      "ranges": [
+        "partial_vert",
+        "full_horiz"
+      ],
+      "behavior": "compute",
+      "collapsed": "h:U  v:S",
+      "n_arrays": 10,
+      "arrays": [
+        "p_diag%ddt_vn_apc_pc",
+        "p_int%c_lin_e",
+        "p_int%geofac_grdiv",
+        "p_metrics%ddqz_z_full_e",
+        "p_patch%edges%area_edge",
+        "p_patch%edges%inv_primal_edge_length",
+        "p_patch%edges%tangent_orientation",
+        "p_prog%vn",
+        "z_w_con_c_full",
+        "zeta"
+      ],
+      "pattern_key": [
+        "v.h",
+        [
+          "partial_vert",
+          "full_horiz"
+        ],
+        "compute",
+        "h:U  v:S"
+      ],
+      "class_label": "indirect stencil, partial vertical"
+    },
+    {
+      "nid": 25,
+      "shape": "v",
+      "ranges": [
+        "partial_vert"
+      ],
+      "behavior": "compute",
+      "collapsed": "v:S",
+      "n_arrays": 2,
+      "arrays": [
+        "levelmask",
+        "levmask"
+      ],
+      "pattern_key": [
+        "v",
+        [
+          "partial_vert"
+        ],
+        "compute",
+        "v:S"
+      ],
+      "class_label": "vertical-only (level reduction)"
+    }
+  ],
+  "selections": [
+    {
+      "loopnest_id": 1,
+      "class_key": [
+        "v.h",
+        [
+          "full_vert",
+          "full_horiz"
+        ],
+        "compute",
+        "h:U  v:S"
+      ],
+      "class_label": "indirect stencil, full vertical",
+      "cohort_size": 6,
+      "candidates": [
+        {
+          "nid": 22,
+          "n_arrays": 15,
+          "ranges": [
+            "full_vert",
+            "full_horiz"
+          ]
+        },
+        {
+          "nid": 20,
+          "n_arrays": 11,
+          "ranges": [
+            "full_vert",
+            "full_horiz"
+          ]
+        },
+        {
+          "nid": 6,
+          "n_arrays": 8,
+          "ranges": [
+            "full_vert",
+            "full_horiz"
+          ]
+        },
+        {
+          "nid": 3,
+          "n_arrays": 6,
+          "ranges": [
+            "full_vert",
+            "full_horiz"
+          ]
+        },
+        {
+          "nid": 23,
+          "n_arrays": 6,
+          "ranges": [
+            "full_vert",
+            "full_horiz"
+          ]
+        },
+        {
+          "nid": 10,
+          "n_arrays": 3,
+          "ranges": [
+            "full_vert",
+            "full_horiz"
+          ]
+        }
+      ],
+      "chosen_nid": 6,
+      "chosen_n_arrays": 8,
+      "chosen_ranges": [
+        "full_vert",
+        "full_horiz"
+      ],
+      "reason": "pinned to loopnest_1"
+    },
+    {
+      "loopnest_id": 2,
+      "class_key": [
+        "v.h",
+        [
+          "partial_vert",
+          "full_horiz"
+        ],
+        "compute",
+        "h:S  v:S"
+      ],
+      "class_label": "direct stencil, partial vertical",
+      "cohort_size": 5,
+      "candidates": [
+        {
+          "nid": 5,
+          "n_arrays": 5,
+          "ranges": [
+            "partial_vert",
+            "full_horiz"
+          ]
+        },
+        {
+          "nid": 17,
+          "n_arrays": 5,
+          "ranges": [
+            "partial_vert",
+            "full_horiz"
+          ]
+        },
+        {
+          "nid": 4,
+          "n_arrays": 3,
+          "ranges": [
+            "partial_vert",
+            "full_horiz"
+          ]
+        },
+        {
+          "nid": 12,
+          "n_arrays": 3,
+          "ranges": [
+            "partial_vert",
+            "full_horiz"
+          ]
+        },
+        {
+          "nid": 14,
+          "n_arrays": 2,
+          "ranges": [
+            "partial_vert",
+            "full_horiz"
+          ]
+        }
+      ],
+      "chosen_nid": 5,
+      "chosen_n_arrays": 5,
+      "chosen_ranges": [
+        "partial_vert",
+        "full_horiz"
+      ],
+      "reason": "tiebreak: max-arrays, full_vert, lowest nid"
+    },
+    {
+      "loopnest_id": 3,
+      "class_key": [
+        "v.h",
+        [
+          "full_vert",
+          "full_horiz"
+        ],
+        "compute",
+        "h:S  v:S"
+      ],
+      "class_label": "direct stencil, full vertical",
+      "cohort_size": 4,
+      "candidates": [
+        {
+          "nid": 7,
+          "n_arrays": 7,
+          "ranges": [
+            "full_vert",
+            "full_horiz"
+          ]
+        },
+        {
+          "nid": 21,
+          "n_arrays": 3,
+          "ranges": [
+            "full_vert",
+            "full_horiz"
+          ]
+        },
+        {
+          "nid": 13,
+          "n_arrays": 2,
+          "ranges": [
+            "full_vert",
+            "full_horiz"
+          ]
+        },
+        {
+          "nid": 16,
+          "n_arrays": 2,
+          "ranges": [
+            "full_vert",
+            "full_horiz"
+          ]
+        }
+      ],
+      "chosen_nid": 7,
+      "chosen_n_arrays": 7,
+      "chosen_ranges": [
+        "full_vert",
+        "full_horiz"
+      ],
+      "reason": "tiebreak: max-arrays, full_vert, lowest nid"
+    },
+    {
+      "loopnest_id": 4,
+      "class_key": [
+        "v.h",
+        [
+          "partial_vert",
+          "full_horiz"
+        ],
+        "compute",
+        "h:U  v:S"
+      ],
+      "class_label": "indirect stencil, partial vertical",
+      "cohort_size": 4,
+      "candidates": [
+        {
+          "nid": 24,
+          "n_arrays": 10,
+          "ranges": [
+            "partial_vert",
+            "full_horiz"
+          ]
+        },
+        {
+          "nid": 19,
+          "n_arrays": 8,
+          "ranges": [
+            "partial_vert",
+            "full_horiz"
+          ]
+        },
+        {
+          "nid": 11,
+          "n_arrays": 3,
+          "ranges": [
+            "partial_vert",
+            "full_horiz"
+          ]
+        },
+        {
+          "nid": 18,
+          "n_arrays": 3,
+          "ranges": [
+            "partial_vert",
+            "full_horiz"
+          ]
+        }
+      ],
+      "chosen_nid": 24,
+      "chosen_n_arrays": 10,
+      "chosen_ranges": [
+        "partial_vert",
+        "full_horiz"
+      ],
+      "reason": "tiebreak: max-arrays, full_vert, lowest nid"
+    },
+    {
+      "loopnest_id": 5,
+      "class_key": [
+        "h",
+        [
+          "full_horiz"
+        ],
+        "compute",
+        "h:S"
+      ],
+      "class_label": "horizontal-only (boundary)",
+      "cohort_size": 3,
+      "candidates": [
+        {
+          "nid": 2,
+          "n_arrays": 7,
+          "ranges": [
+            "full_horiz"
+          ]
+        },
+        {
+          "nid": 1,
+          "n_arrays": 6,
+          "ranges": [
+            "full_horiz"
+          ]
+        },
+        {
+          "nid": 8,
+          "n_arrays": 1,
+          "ranges": [
+            "full_horiz"
+          ]
+        }
+      ],
+      "chosen_nid": 2,
+      "chosen_n_arrays": 7,
+      "chosen_ranges": [
+        "full_horiz"
+      ],
+      "reason": "tiebreak: max-arrays, full_vert, lowest nid"
+    },
+    {
+      "loopnest_id": 6,
+      "class_key": [
+        "v",
+        [
+          "partial_vert"
+        ],
+        "compute",
+        "v:S"
+      ],
+      "class_label": "vertical-only (level reduction)",
+      "cohort_size": 2,
+      "candidates": [
+        {
+          "nid": 25,
+          "n_arrays": 2,
+          "ranges": [
+            "partial_vert"
+          ]
+        },
+        {
+          "nid": 9,
+          "n_arrays": 1,
+          "ranges": [
+            "partial_vert"
+          ]
+        }
+      ],
+      "chosen_nid": 25,
+      "chosen_n_arrays": 2,
+      "chosen_ranges": [
+        "partial_vert"
+      ],
+      "reason": "tiebreak: max-arrays, full_vert, lowest nid"
+    }
+  ],
+  "dropped": [
+    {
+      "loopnest_id": 7,
+      "class_key": [
+        "v.h",
+        [
+          "partial_vert",
+          "full_horiz"
+        ],
+        "reduction",
+        "h:S  v:S"
+      ],
+      "class_label": "direct stencil, reduction (CFL clip)",
+      "cohort_size": 1,
+      "candidates": [
+        {
+          "nid": 15,
+          "n_arrays": 4,
+          "ranges": [
+            "partial_vert",
+            "full_horiz"
+          ]
+        }
+      ],
+      "chosen_nid": 15,
+      "chosen_n_arrays": 4,
+      "chosen_ranges": [
+        "partial_vert",
+        "full_horiz"
+      ],
+      "reason": "tiebreak: max-arrays, full_vert, lowest nid"
+    }
+  ]
+}

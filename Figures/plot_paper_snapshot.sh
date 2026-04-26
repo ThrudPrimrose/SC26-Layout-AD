@@ -57,8 +57,12 @@ for exp in "${RUNTIME_EXPS[@]}"; do
         continue
     fi
     if [[ ! -d "${snap_dir}/results" ]] \
-       || [[ -z "$(find "${snap_dir}/results" -type f -name '*.csv' -print -quit)" ]]; then
-        echo "  [skip] ${exp}: PaperSnapshot/${exp}/results/ has no CSVs"
+       || [[ -z "$(find "${snap_dir}/results" -type f \( -name '*.csv' -o -name '*.txt' \) -print -quit)" ]]; then
+        # E7 emits stdout-derived timing TXTs (icon-artifacts/velocity
+        # convention -- ``run.txt`` per (config, timestep)) alongside
+        # any DaCe-profiling CSVs; either one is sufficient evidence
+        # the experiment was actually run.
+        echo "  [skip] ${exp}: PaperSnapshot/${exp}/results/ has no CSVs or TXTs"
         continue
     fi
     echo "  [plot] ${exp}"

@@ -16,8 +16,19 @@
 
 set -euo pipefail
 
+# --verify retains the per-timestep got/want numerical-comparison blobs
+# (O(GB) each) for offline validation against a reference run. Default
+# is to delete them after each binary invocation.
+VERIFY=0
+for arg in "$@"; do
+  case "${arg}" in
+    --verify) VERIFY=1 ;;
+    *) echo "[E7 beverin] unrecognised arg: ${arg}" >&2 ;;
+  esac
+done
+
 EXP_DIR="${SLURM_SUBMIT_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}"
-COMMON_DIR="$(cd "${EXP_DIR}/../../common" && pwd)"
+COMMON_DIR="$(cd "${EXP_DIR}/../common" && pwd)"
 
 source "${COMMON_DIR}/activate.sh"
 source "${COMMON_DIR}/setup_beverin.sh"
@@ -29,7 +40,11 @@ cd "${EXP_DIR}"
     || bash tools/download_data.sh
 export ICON_DATA_PATH="${ICON_DATA_PATH:-${EXP_DIR}/data_r02b05}"
 
-CONFIGS="${CONFIGS:-unpermuted_lv0_sm0 unpermuted_lv0_sm1 \
+# Defaults reproduce the paper's V1/V2/V6 winner-comparison (§IV-D)
+# plus lv/sm ablations. Override per submission, e.g.
+#   CONFIGS="winner_v1 winner_v2 winner_v6" sbatch run_beverin.sh
+CONFIGS="${CONFIGS:-winner_v1 winner_v2 winner_v6 \
+unpermuted_lv0_sm0 unpermuted_lv0_sm1 \
 nlev_first_lv0_sm0 nlev_first_lv0_sm1 nlev_first_lv1_sm0 nlev_first_lv1_sm1 \
 index_only_lv0_sm0 index_only_lv0_sm1}"
 
@@ -70,18 +85,30 @@ for CFG in ${CONFIGS}; do
   fi
 
   # Run the binary once per timestep so each timestep lands in its
-  # own output dir (results/beverin/<config>/ts<N>/...) -- matches
-  # what Figures/plot_paper_snapshot.sh expects.
+  # own output dir (results/beverin/<config>/ts<N>/...). Stdout/stderr
+  # are tee'd to ${out_dir}/run.txt so the slurm log keeps the live
+  # output AND the per-timestep TXT records the same stream
+  # (icon-artifacts/velocity convention). When --verify is NOT passed
+  # the got/want numerical-comparison blobs (O(GB) per pair) are
+  # deleted after the run; --verify keeps them for one-shot reference
+  # comparison.
   for TS in ${TIMESTEPS//,/ }; do
     out_dir="${EXP_DIR}/results/beverin/${CFG}/ts${TS}"
     mkdir -p "${out_dir}"
-    echo "[E7 beverin] running ${CFG} TS=${TS} reps=${REPS} warmup=${WARMUP}"
-    "${bin}" \
-        --data "${ICON_DATA_PATH}" \
-        --reps "${REPS}" \
-        --warmup "${WARMUP}" \
-        --timesteps "${TS}" \
-        --output-dir "${out_dir}"
+    txt="${out_dir}/run.txt"
+    echo "[E7 beverin] running ${CFG} TS=${TS} reps=${REPS} warmup=${WARMUP} -> ${txt}"
+    {
+      echo "=== ${CFG} ts=${TS} reps=${REPS} warmup=${WARMUP} ==="
+      "${bin}" \
+          --data "${ICON_DATA_PATH}" \
+          --reps "${REPS}" \
+          --warmup "${WARMUP}" \
+          --timesteps "${TS}" \
+          --output-dir "${out_dir}"
+    } 2>&1 | tee -a "${txt}"
+    if [[ "${VERIFY}" -eq 0 ]]; then
+      find "${out_dir}" -maxdepth 1 \( -name '*.got' -o -name '*.want' \) -delete
+    fi
   done
 done
 

@@ -60,33 +60,41 @@ PermMap = Dict[str, Perm]
 # Sweep architecture (matches paper §IV-A, "5 distinct loop patterns ...
 # 7 layout-equivalent groups"):
 #
-# Naming convention: V1 ... V6 enumerate the six rank-3 permutations
-# (V1 = [0,1,2] identity, V2 = [1,0,2] level-first, V5 = [2,1,0],
-# V6 = [0,2,1] index-axis-second, etc.). E6 access analysis selects
-# the best V_k per group; for most groups V2 is the recommended
-# alternative to V1, but for connectivity-style indirect-index access
-# V6 is the validated choice (and V2 / V3 were rejected -- see comments
-# at the connectivity entries below). For untouched groups (those E6
-# doesn't classify) we sweep every V_k of the appropriate rank.
+# E6 V_k naming convention (see E6_VelocityTendencies/_analysis_util.py):
+#   V1 = h_first + SoA-conn       (identity baseline)
+#   V2 = h_first + AoS-conn       (only conn layout differs from V1)
+#   V3..V5,V7 = v_first + SoA-conn (schedule variants of v_first/SoA)
+#   V6 = v_first + AoS-conn       (the v_first/AoS empirical winner)
+# E6's empirical winners across the 6 micro-bench loopnests are V1, V2,
+# V6 (generate_v123_candidates.py default ``--covered V1,V2,V6``). The
+# sweep below covers all three at every named & sweep cell, plus the
+# extra v_first/SoA corner via ``cv1_ch1_f1_s1_n012_em1_lv1_*``.
 #
-#   E6-classified groups -- binary axis (V1 vs the E6-recommended V_k):
-#     cv  -- rank-3 vertical-accumulation work arrays   (V1 vs V2)
-#     ch  -- rank-3 horizontal-stencil work arrays      (V1 vs V2)
-#     f   -- rank-3 prog/diag + rank-4 ddt fields       (V1 vs V2 = [1,0,2,3])
-#     s   -- rank-3 read-only metrics + interpolation   (V1 vs V2)
-#     lv  -- rank-2 ``gpu_levmask``                     (V1 vs [1,0])
+# Mapping the 8-axis sweep onto E6 V_k:
+#
+#   E6-classified groups -- binary axis (V1-equivalent vs v_first/level-first):
+#     cv  -- rank-3 vertical-accumulation work arrays   (cv=0 -> h_first; cv=1 -> v_first)
+#     ch  -- rank-3 horizontal-stencil work arrays      (ch=0 -> h_first; ch=1 -> v_first)
+#     f   -- rank-3 prog/diag + rank-4 ddt fields       (f =0 -> h_first; f =1 -> v_first, ntl last)
+#     s   -- rank-3 read-only metrics + interpolation   (s =0 -> h_first; s =1 -> v_first)
+#     lv  -- rank-2 ``gpu_levmask``                     (lv=0 -> identity; lv=1 -> [1,0])
 #
 #   Untouched groups -- full permutation sweep:
-#     n   -- rank-3 connectivity tables (6 permutations; E6 also
-#            recommends V6 = [0,2,1], but we sweep all six to confirm)
-#     em  -- rank-2 edge / cell scalar metrics (2 permutations = binary;
-#            kept on its own axis so the sweep covers it independently
-#            of the s axis)
+#     n   -- rank-3 connectivity tables (6 permutations; controls the
+#            SoA vs AoS axis. n=012 is V_k SoA-conn, n=021/120/201/210
+#            are AoS-conn variants, n=102 is the validated empirical
+#            winner [0,2,1] in this codebase)
+#     em  -- rank-2 edge / cell scalar metrics (2 permutations = binary)
 #
-# Total sweep cells: 2^5 (E6 binary) * 6 (n) * 2 (em) * 2 (sm map shuffle)
-# minus the all-zero identity duplicate of ``unpermuted``.
-# Blocking is omitted globally -- empirical sweep showed no gain (paper
-# §IV-A, "blocking candidates are pruned analogously").
+# Reading off V_k from a sweep-cell name:
+#   V1 (h+SoA)   = cv0_ch0_f0_s0_n012_em0_lv0_*
+#   V2 (h+AoS)   = cv0_ch0_f0_s0_n<aos>_em0_lv0_*  (any non-identity n)
+#   V3 (v+SoA)   = cv1_ch1_f1_s1_n012_em1_lv1_*
+#   V6 (v+AoS)   = cv1_ch1_f1_s1_n<aos>_em1_lv1_*  -- the v_first/AoS winner
+#
+# Total sweep cells: 2^5 (E6 binary) * 6 (n) * 2 (em) * 2 (sm) - 1 = 767.
+# Blocking is omitted globally (paper §IV-A, "blocking candidates are
+# pruned analogously"; empirical sweep showed no gain).
 # ---------------------------------------------------------------------------
 
 # cv -- COMPUTE_VERT: vertical-accumulation arrays. jk is the natural
