@@ -1,21 +1,26 @@
-"""Stage 6: GPU layout-permutation sweep.
+"""Stage 5a: GPU layout-permutation sweep (alternative to stage 5b).
 
-Reads ``codegen/stage5/<name>.sdfgz`` and, for each requested
-``PermuteConfig``, deepcopies the SDFG, applies the permutation, and saves
-``codegen/stage6/<config>/<name>.sdfgz``. Compile mode (``--compile``)
-runs a per-config codegen + build, producing
-``velocity_stage6_<config>`` binaries.
+Reads ``codegen/stage4/<name>.sdfgz`` and, for each requested
+``PermuteConfig``, deepcopies the SDFG, applies the permutation, and
+saves ``codegen/stage5a/<config>/<name>.sdfgz``. Compile mode
+(``--compile``) runs a per-config codegen + build, producing
+``velocity_stage5a_<config>`` binaries.
 
-GPU-only: the permutation transform is built around core-dialect semantics, and
-in this pipeline only the post-stage5 GPU SDFGs satisfy it. CPU SDFGs
+Stage 5a and stage 5b are mutually exclusive paths off stage 4: 5a
+adds permutations, 5b adds neighborhood-list / block-array
+compression (plus an always-on ``levmask`` transpose). Pick whichever
+matches the experiment.
+
+GPU-only: the permutation transform is built around core-dialect
+semantics and only the post-stage-4 GPU SDFGs satisfy it. CPU SDFGs
 (top-level map schedule != GPU_Device) are skipped with a notice.
 
 Usage::
 
-    python -m utils.stages.stage6                        # default configs, optimize+compile
-    python -m utils.stages.stage6 --optimize
-    python -m utils.stages.stage6 --compile
-    python -m utils.stages.stage6 --config nlev_first    # single named config
+    python -m utils.stages.stage5a                       # default configs, optimize+compile
+    python -m utils.stages.stage5a --optimize
+    python -m utils.stages.stage5a --compile
+    python -m utils.stages.stage5a --config nlev_first   # single named config
 """
 
 import argparse
@@ -28,13 +33,14 @@ ensure_branch(YAKUP_DEV_BRANCH)
 
 import dace
 
-from utils.passes.fuse_full_and_endpoint import fuse_full_and_endpoint
 from utils.passes.permute_configs import extended_configs_from_candidates
 from utils.passes.permute_layout import PermuteConfig, permute_layout
 from utils.stages import common
 
 
-STAGE_ID = 6
+STAGE_ID = "5a"
+# stage 5a reads from stage 4's output, regardless of the string id.
+_INPUT_STAGE = 5  # ``stage_input(name, 5)`` -> ``codegen/stage4/<name>.sdfgz``
 
 
 def _sdfg_uses_gpu(sdfg: dace.SDFG) -> bool:
@@ -50,7 +56,7 @@ def _array_dim_map(sdfg: dace.SDFG) -> Dict[str, int]:
 
 
 def _select_configs(name_filter: str | None, json_path: Path,
-                    sdfg_arrays: Dict[str, int]) -> List[PermuteConfig]:
+                    sdfg_arrays: Dict[str, int] | None) -> List[PermuteConfig]:
     configs = extended_configs_from_candidates(json_path, sdfg_arrays=sdfg_arrays)
     if name_filter is None:
         return configs
@@ -90,7 +96,7 @@ def main():
 
     if args.optimize:
         for name in names:
-            infile = common.stage_input(name, STAGE_ID)
+            infile = common.stage_input(name, _INPUT_STAGE)
             print(f"Stage #{STAGE_ID}: loading {name} from {infile}")
             sdfg = dace.SDFG.from_file(infile)
             sdfg.name = name
@@ -105,14 +111,6 @@ def main():
                 permuted.name = name
                 count = permute_layout(permuted, cfg, shuffle_map=True)
                 print(f"  [{cfg.name}] permuted {count} array(s)")
-                # Adjacent (full-range copy, endpoint-constant-write) state
-                # pairs (e.g. z_w_con_c written for lev 0..89 then zeroed
-                # at lev 90) collapse into a single map with an internal
-                # ConditionalBlock dispatch. Pure structural rewrite; runs
-                # in-place even when no permutation was applied.
-                # n_fused = fuse_full_and_endpoint(permuted)  # disabled while debugging
-                # if n_fused:
-                #     print(f"  [{cfg.name}] fused {n_fused} (full, endpoint-zero) state pair(s)")
 
                 outfile = (repo_root / common.CODEGEN_DIR / f"stage{STAGE_ID}"
                            / cfg.name / f"{name}.sdfgz")
@@ -121,28 +119,18 @@ def main():
                 print(f"  [{cfg.name}] saved {outfile.relative_to(repo_root)}")
 
     if args.compile:
-        # One compile_action per (config, variant) — the runner produces
-        # ``velocity_stage6_<config>`` binaries side by side. Pass
-        # ``sdfg_arrays=None`` so the per-array dim filter is skipped:
-        # at this point we only need the config NAMES to look up the
-        # already-saved stage6 SDFGs on disk; the actual permutations
-        # were applied in the --optimize phase.
         configs = _select_configs(args.config, args.candidates, sdfg_arrays=None)
         for cfg in configs:
             sdfgs: Dict[str, dace.SDFG] = {}
             for name in names:
-                stage6_path = (repo_root / common.CODEGEN_DIR / f"stage{STAGE_ID}"
-                               / cfg.name / f"{name}.sdfgz")
-                if not stage6_path.exists():
+                stage_path = (repo_root / common.CODEGEN_DIR / f"stage{STAGE_ID}"
+                              / cfg.name / f"{name}.sdfgz")
+                if not stage_path.exists():
                     print(f"  [skip-compile] {cfg.name}/{name}: no SDFG (run --optimize first)")
                     continue
-                sdfgs[name] = dace.SDFG.from_file(str(stage6_path))
+                sdfgs[name] = dace.SDFG.from_file(str(stage_path))
             if not sdfgs:
                 continue
-            # Async reductions land in stage 4 and are still referenced by
-            # stage 6 binaries -- pass the library sources or the link
-            # fails on ``reduce_max_async_host_gpu`` / ``reduce_gpu_init``
-            # / ``reduce_gpu_finalize`` / ``reduce_max_store_gpu``.
             common.compile_action(
                 STAGE_ID,
                 sdfgs,

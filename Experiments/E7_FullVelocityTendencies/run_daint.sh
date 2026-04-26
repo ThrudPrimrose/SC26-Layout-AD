@@ -13,9 +13,9 @@
 #SBATCH --error=results/daint/E7_velocity_daint_%j.err
 #
 # E7 / Full velocity tendencies -- GPU layout-permutation sweep on
-# Daint.Alps. Runs stage 6 (the permutation driver) against the stage 5
+# Daint.Alps. Runs stage 5a (the permutation driver) against the stage 4
 # SDFGs that ship with the AD. Always uses DaCe yakup/dev (no branch
-# switching). For an F90 -> stage 5 regeneration, run
+# switching). For an F90 -> stage 4 regeneration, run
 # tools/regenerate_baselines.sh first.
 
 set -euo pipefail
@@ -44,22 +44,23 @@ CONFIGS="${CONFIGS:-unpermuted nlev_first index_only}"
 echo "[E7 daint] host=$(hostname) threads=$OMP_NUM_THREADS data=$ICON_DATA_PATH"
 echo "[E7 daint] configs=$CONFIGS"
 
-# Stage 6 reads codegen/stage5/<variant>.sdfgz. The shipped stage 5 SDFGs
-# live next to this script under SDFGs/stage5/; symlink them in place if
+# Stage 5a reads codegen/stage4/<variant>.sdfgz. The shipped stage 4 SDFGs
+# live next to this script under SDFGs/stage4/; symlink them in place if
 # tools/regenerate_baselines.sh has not been run.
-if [[ ! -d "${EXP_DIR}/codegen/stage5" ]] && [[ -d "${EXP_DIR}/SDFGs/stage5" ]]; then
+if [[ ! -d "${EXP_DIR}/codegen/stage4" ]] && [[ -d "${EXP_DIR}/SDFGs/stage4" ]]; then
   mkdir -p "${EXP_DIR}/codegen"
-  ln -sfn "${EXP_DIR}/SDFGs/stage5" "${EXP_DIR}/codegen/stage5"
+  ln -sfn "${EXP_DIR}/SDFGs/stage4" "${EXP_DIR}/codegen/stage4"
 fi
 
 for CFG in ${CONFIGS}; do
   echo "[E7 daint] running config=${CFG}"
-  python -m utils.stages.stage6 --release --optimize --compile --config "${CFG}"
+  python -m utils.stages.stage5a --release --optimize --compile --config "${CFG}"
 done
 
-# stage6.py writes CSVs into codegen/stage6/<config>/; mirror them into
-# the AD's per-platform results tree so plot_results.sh picks them up.
-for d in "${EXP_DIR}/codegen/stage6"/*/; do
+# stage5a.py writes CSVs into codegen/stage5a/<config>/; mirror them
+# into the AD's per-platform results tree so plot_results.sh picks
+# them up.
+for d in "${EXP_DIR}/codegen/stage5a"/*/; do
   cfg="$(basename "${d}")"
   mkdir -p "${EXP_DIR}/results/daint/${cfg}"
   find "${d}" -maxdepth 2 -name '*.csv' -exec cp -v {} "${EXP_DIR}/results/daint/${cfg}/" \;

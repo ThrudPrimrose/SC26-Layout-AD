@@ -171,7 +171,7 @@ def main():
         from utils.passes.permute_configs import _apply_force_permuted  # noqa: F401
         from utils.passes.permute_layout import PermuteConfig, permute_layout  # noqa: F401
         from utils.stages import common  # noqa: F401
-        from utils.stages.stage6 import _array_dim_map, _sdfg_uses_gpu  # noqa: F401
+        from utils.stages.stage5a import _array_dim_map, _sdfg_uses_gpu  # noqa: F401
 
     cross = json.loads(args.v123_json.read_text())
     groups = json.loads(args.groups_json.read_text())

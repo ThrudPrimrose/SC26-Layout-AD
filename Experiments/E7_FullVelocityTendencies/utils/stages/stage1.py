@@ -204,8 +204,9 @@ def optimization_action(sdfg: dace.SDFG) -> dace.SDFG:
 def _fold_nlev(sdfg: dace.SDFG):
     """Specialise ``__CG_p_patch__m_nlev`` -> 90 and
     ``__CG_p_patch__m_nlevp1`` -> 91 across the SDFG tree, then drop
-    the now-dead symbol/array entries. Idempotent (a second call sees
-    no occurrences and does nothing)."""
+    the now-dead symbol/array entries plus any stale NestedSDFG
+    ``symbol_mapping`` entries. Idempotent (a second call sees no
+    occurrences and does nothing)."""
     folds = {
         "__CG_p_patch__m_nlev": "90",
         "__CG_p_patch__m_nlevp1": "91",
@@ -224,9 +225,35 @@ def _fold_nlev(sdfg: dace.SDFG):
                 nested.remove_data(k, validate=False)
             if k in nested.symbols:
                 del nested.symbols[k]
+
+    # ``replace_dict`` rewrites references in memlets / tasklet code /
+    # interstate edges / array shapes, but leaves each
+    # ``NestedSDFG.symbol_mapping`` dict alone. Walk every NSDFG node
+    # in the tree and prune folded keys whose inner SDFG no longer
+    # declares them -- otherwise DaCe's validator emits ``maps to
+    # unused symbol(s)`` warnings at codegen time.
+    from dace.sdfg import nodes as _nodes
+    n_pruned = 0
+    for owner in sdfg.all_sdfgs_recursive():
+        for state in owner.states():
+            for n in state.nodes():
+                if not isinstance(n, _nodes.NestedSDFG):
+                    continue
+                inner = n.sdfg
+                stale = [k for k in folds
+                         if k in n.symbol_mapping
+                         and k not in inner.symbols
+                         and k not in inner.arrays]
+                for k in stale:
+                    del n.symbol_mapping[k]
+                    n_pruned += 1
+
     if n_replaced:
-        print(f"Stage #{STAGE_ID}: folded nlev/nlevp1 to literal "
-              f"({n_replaced} occurrence(s) across the SDFG tree)")
+        msg = f"Stage #{STAGE_ID}: folded nlev/nlevp1 to literal " \
+              f"({n_replaced} occurrence(s) across the SDFG tree)"
+        if n_pruned:
+            msg += f", pruned {n_pruned} stale NestedSDFG symbol mapping(s)"
+        print(msg)
 
 
 def main():

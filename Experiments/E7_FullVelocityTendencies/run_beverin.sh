@@ -34,17 +34,17 @@ CONFIGS="${CONFIGS:-unpermuted nlev_first index_only}"
 echo "[E7 beverin] host=$(hostname) threads=$OMP_NUM_THREADS data=$ICON_DATA_PATH"
 echo "[E7 beverin] configs=$CONFIGS"
 
-if [[ ! -d "${EXP_DIR}/codegen/stage5" ]] && [[ -d "${EXP_DIR}/SDFGs/stage5" ]]; then
+if [[ ! -d "${EXP_DIR}/codegen/stage4" ]] && [[ -d "${EXP_DIR}/SDFGs/stage4" ]]; then
   mkdir -p "${EXP_DIR}/codegen"
-  ln -sfn "${EXP_DIR}/SDFGs/stage5" "${EXP_DIR}/codegen/stage5"
+  ln -sfn "${EXP_DIR}/SDFGs/stage4" "${EXP_DIR}/codegen/stage4"
 fi
 
 for CFG in ${CONFIGS}; do
   echo "[E7 beverin] running config=${CFG}"
-  python -m utils.stages.stage6 --release --optimize --compile --config "${CFG}"
+  python -m utils.stages.stage5a --release --optimize --compile --config "${CFG}"
 done
 
-for d in "${EXP_DIR}/codegen/stage6"/*/; do
+for d in "${EXP_DIR}/codegen/stage5a"/*/; do
   cfg="$(basename "${d}")"
   mkdir -p "${EXP_DIR}/results/beverin/${cfg}"
   find "${d}" -maxdepth 2 -name '*.csv' -exec cp -v {} "${EXP_DIR}/results/beverin/${cfg}/" \;

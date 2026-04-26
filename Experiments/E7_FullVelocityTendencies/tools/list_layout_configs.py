@@ -1,5 +1,5 @@
-"""Inspector: list every stage-6 ``--config`` name available against the
-shipped stage-5 SDFGs.
+"""Inspector: list every stage-5a ``--config`` name available against
+the stage-4 SDFGs.
 
 Reads ``layout_candidates.json`` (E6 access-analysis output) and prints
 to stdout (or writes to ``--output``) a JSON document with two arrays:
@@ -10,9 +10,10 @@ to stdout (or writes to ``--output``) a JSON document with two arrays:
               ``h`` or ``v.h``. Names follow ``nest_<nid>_<shape>`` with
               ``v.h`` shortened to ``vh``.
 
-Both kinds are runnable via ``python -m utils.stages.stage6 --config <name>``
-because ``stage6.py`` imports ``extended_configs_from_candidates`` (the
-sibling helper added next to ``configs_from_candidates`` in this repo).
+Both kinds are runnable via
+``python -m utils.stages.stage5a --config <name>`` (and the same
+``--config`` is accepted by ``stage5b`` for the levmask + JSON
+combined permutation).
 
 This script is purely an inspector; it does not generate submission
 scripts. Use the static ``run_{daint,beverin}.sh`` and override the

@@ -1,4 +1,4 @@
-# E7 — Full velocity tendencies (stage 6 layout-permutation sweep)
+# E7 — Full velocity tendencies (stage 5a permutation / stage 5b compression)
 
 GPU layout-permutation sweep on the full ICON velocity-tendencies
 module. E7 is a frozen snapshot of the
@@ -14,7 +14,11 @@ on the snapshot already committed under E6.
 
 ## Default flow
 
-The AD ships frozen stage 5 SDFGs at `SDFGs/stage5/`. Reviewers run:
+**One command per platform** — `run_{daint,beverin}.sh` is the
+single entry point. It auto-fetches data, symlinks the shipped
+stage 4 SDFGs (`SDFGs/stage4/` → `codegen/stage4/`), then runs
+`stage5a` (the permutation sweep) for each layout config. No
+manual stage1–4 invocation is needed.
 
 ```bash
 cd Experiments/E7_FullVelocityTendencies
@@ -45,7 +49,7 @@ python tools/list_layout_configs.py            # see all available configs
 
 ## Optional: regenerate from F90
 
-`tools/regenerate_baselines.sh` walks F90 → SDFG → stage 5. **Phase 0
+`tools/regenerate_baselines.sh` walks F90 → SDFG → stage 4. **Phase 0
 (f2dace frontend) is marked dangerous**: the DaCe Fortran frontend on
 `f2dace/staging` is unstable and the AoS→SoA rewrite that follows
 (phase 1, `StructToContainerGroups`) regularly raises rename collisions
@@ -54,7 +58,7 @@ on the velocity AST. Reviewers should **use the shipped
 instead of regenerating from F90.
 
 The remaining phases (`yakup/dev`, the day-to-day branch) consume the
-shipped baseline and produce `codegen/stage{1..5}/<variant>.sdfgz`.
+shipped baseline and produce `codegen/stage{1..4}/<variant>.sdfgz`.
 Branch switching is the **caller's responsibility** — the script never
 mutates `$DACE_DIR`.
 
@@ -73,14 +77,21 @@ bash tools/regenerate_baselines.sh
 |-------|--------|--------|-----------|
 | 0 ⚠️  | `baseline/velocity_no_nproma.sdfgz` | `python tools/sdfg_from_velocity_f90.py` | **dangerous** — needs `f2dace/staging`; unstable on the velocity AST |
 | 1 | `baseline/..._{0,1}_istep_{1,2}.sdfgz` | `python generate_baselines.py` | brittle — `StructToContainerGroups` may raise rename collisions |
-| 2..6 | `codegen/stage{1..5}/<variant>.sdfgz` | `python -m utils.stages.stage{1..5} --optimize` | stable on `yakup/dev` |
+| 2..5 | `codegen/stage{1..4}/<variant>.sdfgz` | `python -m utils.stages.stage{1..4} --optimize` | stable on `yakup/dev` |
+| 6 | `codegen/stage5a/<config>/<variant>.sdfgz` (or `stage5b/...`) | `python -m utils.stages.stage5a --optimize --config <name>` | stable on `yakup/dev` (auto-invoked by `run_*.sh`) |
 
 Env: `PYTHON`, `SKIP_F2DACE` (recommended `=1`), `ONLY_PHASE`, `STAGE_FLAGS`.
 
-## Stage 6 — the permutation stage
+## Stage 5a / 5b — split off stage 4
 
-`utils/stages/stage6.py` deepcopies each stage-5 SDFG and applies one
-`PermuteConfig` at a time. Configs come from
+Stage 5 is split into two **mutually-exclusive** alternatives that
+both consume `codegen/stage4/<variant>.sdfgz`. Pick whichever the
+experiment needs:
+
+### Stage 5a — permutation sweep
+
+`utils/stages/stage5a.py` deepcopies each stage-4 SDFG and applies
+one `PermuteConfig` at a time. Configs come from
 `utils.passes.permute_configs.extended_configs_from_candidates`:
 
 - **named** (heuristic): `unpermuted`, `nlev_first`, `index_only`.
@@ -92,7 +103,24 @@ Env: `PYTHON`, `SKIP_F2DACE` (recommended `=1`), `ONLY_PHASE`, `STAGE_FLAGS`.
   `curated_index_only` with researcher-validated permutations (e.g.
   connectivity arrays use `[0, 2, 1]`, not the heuristic `[2, 0, 1]`).
 
-All three are runnable via `python -m utils.stages.stage6 --config <name>`.
+All runnable via `python -m utils.stages.stage5a --config <name>`.
+Output: `codegen/stage5a/<config>/<variant>.sdfgz`.
+
+### Stage 5b — compression (+ always-on `levmask` transpose)
+
+`utils/stages/stage5b.py` runs the three compression rewrites
+(`fold_array_access_to_expression` for single-valued `*_blk`,
+`generate_compressed_variant` with `uint16` for indices, `uint8` for
+multi-valued `*_blk`) and then applies a forced
+`levmask` / `gpu_levmask` transpose `[1, 0]` plus, optionally, any
+per-array permutations from a JSON config:
+
+```bash
+python -m utils.stages.stage5b                       # compression + levmask only
+python -m utils.stages.stage5b --config nlev_first   # also merge JSON permutations
+```
+
+Output: `codegen/stage5b/<config-or-default>/<variant>.sdfgz`.
 
 ### Force-permute overrides
 
@@ -113,14 +141,14 @@ E7_FullVelocityTendencies/
 ├── baseline_inputs/velocity_modified.f90    self-contained Fortran AST (only consumed by the dangerous phase 0)
 ├── baseline/velocity_no_nproma.sdfgz        SHIPPED post-phase-0 SDFG (committed; consumed by phase 1+)
 ├── baseline/                                + 4 specialised SDFG variants from phase 1   (gitignored)
-├── SDFGs/stage5/                            shipped stage 5 SDFGs (default-flow input)
-├── codegen/stageN/                          per-stage outputs                      (gitignored)
+├── SDFGs/stage4/                            shipped stage 4 SDFGs (default-flow input)
+├── codegen/stage{1..4,5a,5b}/               per-stage outputs                      (gitignored)
 ├── data_r02b05/                             populated by tools/download_data.sh    (gitignored)
 ├── utils/, src/, include/, main.cpp,        snapshot of VelocityTendenciesPipeline
 │   f90_to_sdfg.py, generate_baselines.py, tests/
 ├── tools/
 │   ├── download_data.sh                     PolyBox nproma=20480 fetcher
-│   ├── regenerate_baselines.sh              optional F90 → stage 5 driver
+│   ├── regenerate_baselines.sh              optional F90 → stage 4 driver
 │   ├── sdfg_from_velocity_f90.py            f2dace stage 2
 │   ├── analyze_lbounds.cpp                  used by generate_baselines.py
 │   └── list_layout_configs.py               inspector: prints available configs
@@ -199,7 +227,7 @@ PYTHONPATH=$DACE_DIR pytest tests/passes/
 ## Self-contained vs sibling-checkout
 
 E7 carries its own copy of `utils/`, `generate_baselines.py`, etc., so
-`python -m utils.stages.stage6` works without a sibling
+`python -m utils.stages.stage5a` / `stage5b` work without a sibling
 [VelocityTendenciesPipeline](../../../VelocityTendenciesPipeline)
 checkout. This is the AD freeze; the two trees will diverge over time
 — upstream fixes must be re-applied to E7 manually.
