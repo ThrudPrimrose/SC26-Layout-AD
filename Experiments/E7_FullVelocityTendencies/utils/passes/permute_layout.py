@@ -93,23 +93,33 @@ def permute_layout(sdfg: dace.SDFG, config: PermuteConfig, shuffle_map: bool = T
     """Apply ``config`` to ``sdfg`` in place. Returns the number of permuted arrays.
 
     Stage 4's ``_cpu_to_gpu_copy_in`` / ``_gpu_to_cpu_copy_out`` states
-    carry full-extent CPU<->GPU copies (originally implicit AN->AN, lifted
-    to ``cudaMemcpyAsync`` tasklets by
-    ``lift_full_copies_to_memcpy_tasklets``). For each ``gpu_X`` in the
-    permute map, ``PermuteDimensions``'s per-transient logic inserts
-    ``permute_after_<gpu_X>`` right after the copy-in and
-    ``permute_before_<gpu_X>`` right before the copy-out, each holding a
-    GPU<->GPU Map+Tasklet transpose. After the pass returns, this
+    carry full-extent CPU<->GPU copies as implicit ``AccessNode ->
+    AccessNode`` edges. ``PermuteDimensions``'s ``require_core_dialect``
+    gate refuses any SDFG with implicit AN->AN edges, so we run
+    ``lift_full_copies_to_memcpy_tasklets`` first to convert each
+    boundary copy into a ``memcpy_<src>_to_<dst>`` ``cudaMemcpyAsync``
+    tasklet. The pass's per-transient logic then locates those tasklets
+    via ``_find_init_copy_state`` / ``_find_final_copy_state`` and
+    inserts ``permute_after_<gpu_X>`` right after the copy-in and
+    ``permute_before_<gpu_X>`` right before the copy-out, each holding
+    a GPU<->GPU Map+Tasklet transpose. After the pass returns, this
     wrapper restores the boundary AccessNodes / memlets to the
     unpermuted ``gpu_X`` so the cudaMemcpy stays on the original
     layout.
     """
     if not config.permute_map:
         return 0
-    # Deferred import: the listing tools (``list_layout_configs.py``)
+    # Deferred imports: the listing tools (``list_layout_configs.py``)
     # only need ``PermuteConfig`` and shouldn't fail to load when DaCe
     # is on a branch that does not yet ship ``permute_dimensions``.
     from dace.transformation.layout.permute_dimensions import PermuteDimensions
+    from .lift_full_copies_to_memcpy_tasklets import lift_full_copies_to_memcpy_tasklets
+
+    # Lift implicit boundary CPU<->GPU copies to memcpy tasklets so the
+    # core-dialect gate accepts the SDFG. Idempotent: a second invocation
+    # on an already-lifted SDFG is a no-op (no implicit AN->AN edges
+    # remain to match).
+    lift_full_copies_to_memcpy_tasklets(sdfg)
 
     PermuteDimensions(
         permute_map=config.permute_map,
