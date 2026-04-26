@@ -54,7 +54,7 @@ fi
 
 for CFG in ${CONFIGS}; do
   echo "[E7 daint] running config=${CFG}"
-  python -m utils.stages.stage6 --optimize --compile --config "${CFG}"
+  python -m utils.stages.stage6 --release --optimize --compile --config "${CFG}"
 done
 
 # stage6.py writes CSVs into codegen/stage6/<config>/; mirror them into

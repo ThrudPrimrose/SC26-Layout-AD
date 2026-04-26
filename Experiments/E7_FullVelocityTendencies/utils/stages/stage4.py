@@ -48,7 +48,11 @@ ensure_branch(YAKUP_DEV_BRANCH)
 
 import dace
 
+from utils.passes.fuse_full_and_endpoint import fuse_full_and_endpoint
 from utils.passes.offload_velocity_to_gpu import OffloadVelocityToGPU
+from utils.passes.replace_reductions_with_tasklets import (
+    replace_reductions_with_tasklets,
+)
 from utils.stages import common
 
 
@@ -120,6 +124,18 @@ def optimization_action(sdfg: dace.SDFG) -> dace.SDFG:
             f"Stage #{STAGE_ID}: OffloadVelocityToGPU changed the outer "
             f"SDFG signature (ABI break). Diff:\n{diff}")
 
+    # Replace every ``dace.libraries.standard.Reduce`` with a Tasklet
+    # that calls our hand-written ``reduce_<op>_{cpu,gpu,device}``
+    # helpers (``include/reductions_*.{h,cuh}``). Runs AFTER
+    # OffloadVelocityToGPU so map schedules / array storages are
+    # final and the per-Reduce backend pick is stable. Removes DaCe's
+    # default segmented-reduction codegen path -- which emits
+    # ``__gbar.Sync()`` calls that don't link in this build.
+    replaced = replace_reductions_with_tasklets(sdfg)
+    if replaced:
+        print(f"Stage #{STAGE_ID}: replace_reductions_with_tasklets "
+              f"rewrote {replaced} Reduce node(s)")
+
     # Watchtower: if the segmented-reduction workaround was ever
     # secretly needed, an ``out_val_0`` reference would leak into the
     # post-GPU SDFG. Stage 1's ``remove_clip_count`` + no `reduce_scan`
@@ -142,6 +158,20 @@ def optimization_action(sdfg: dace.SDFG) -> dace.SDFG:
     if promoted:
         print(f"Stage #{STAGE_ID}: promoted {promoted} transient(s) to "
               f"AllocationLifetime.Persistent")
+
+    # Fuse a full-range map followed by an endpoint-zero map into a
+    # single map with a ConditionalBlock body (see
+    # ``fuse_full_and_endpoint`` docstring for the exact pattern --
+    # ``z_w_con_c`` and similar arrays). Runs after the GPU schedule
+    # is set so the fused map inherits the same ``GPU_Device``
+    # schedule its halves had; merging two states into one also
+    # removes a cross-state dependency that DaCe's CUDA codegen would
+    # otherwise treat as a grid-barrier trigger.
+    fused = fuse_full_and_endpoint(sdfg)
+    if fused:
+        print(f"Stage #{STAGE_ID}: fuse_full_and_endpoint merged "
+              f"{fused} (full, endpoint-zero) state pair(s)")
+        sdfg.validate()
 
     # Host-side body timer. Start immediately after the copy-in sync,
     # stop just before copy-out. Lives at stage 4 so the
@@ -274,12 +304,18 @@ def main():
     argp = argparse.ArgumentParser()
     argp.add_argument("--optimize", action=argparse.BooleanOptionalAction, default=False)
     argp.add_argument("--compile", action=argparse.BooleanOptionalAction, default=False)
-    # Release is the default (-O3 + ``--use_fast_math``). Opt into
-    # debug with ``--debug``; debug also flips fp to IEEE-compliant
-    # (``--fmad=false``, ``--prec-div=true``, ``--prec-sqrt=true``,
-    # ``--ftz=false``), which matches the CPU reference bit-for-bit.
-    argp.add_argument("--debug", dest="release", action="store_false", default=True,
-                      help="build with -O0 + IEEE fp (default: release + fast math)")
+    # Debug is the default. Debug means -O0 + DACE_VELOCITY_DEBUG +
+    # IEEE-compliant fp (``--fmad=false``, ``--prec-div=true``,
+    # ``--prec-sqrt=true``, ``--ftz=false``), which matches the CPU
+    # reference bit-for-bit. Opt into release with ``--release`` for
+    # -O3 + ``--use_fast_math`` (faster but FMA fusion can diverge
+    # from CPU output by a few ULPs).
+    mode = argp.add_mutually_exclusive_group()
+    mode.add_argument("--release", dest="release", action="store_true",
+                      help="build with -O3 + --use_fast_math (FMA may diverge from IEEE)")
+    mode.add_argument("--debug", dest="release", action="store_false",
+                      help="build with -O0 + IEEE fp (default)")
+    argp.set_defaults(release=False)
     args = argp.parse_args()
     if not args.optimize and not args.compile:
         args.optimize, args.compile = True, True

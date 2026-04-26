@@ -76,8 +76,12 @@ def main():
                       help="run only the named config (default: every config from JSON)")
     argp.add_argument("--candidates", type=Path, default=default_json,
                       help="path to layout_candidates.json")
-    argp.add_argument("--debug", dest="release", action="store_false", default=True,
-                      help="build with -O0 + DACE_VELOCITY_DEBUG (default: release)")
+    mode = argp.add_mutually_exclusive_group()
+    mode.add_argument("--release", dest="release", action="store_true",
+                      help="build with -O3 + --use_fast_math (FMA may diverge from IEEE)")
+    mode.add_argument("--debug", dest="release", action="store_false",
+                      help="build with -O0 + DACE_VELOCITY_DEBUG + IEEE FP (default)")
+    argp.set_defaults(release=False)
     args = argp.parse_args()
     if not args.optimize and not args.compile:
         args.optimize = args.compile = True

@@ -11,6 +11,13 @@ data_r02b05/*
 # Run outputs
 results/*
 
+# verify_*.sh got/want comparison dumps
+gotwant/
+
+# Stray run-time logs landed in the experiment root
+err.txt
+out.txt
+
 # Python build artifacts
 __pycache__/
 *.pyc

@@ -116,21 +116,23 @@ def optimization_action(sdfg: dace.SDFG) -> dace.SDFG:
     sdfg.apply_transformations_repeated(LoopToMap, permissive=True)
     sdfg.simplify(skip=["ArrayElimination"])
 
-    # 3b. Duplicate the parent map around each inner child for `_for_it_35`.
-    #     This is the imperfect-nest motif that the CFL-clipping kernel uses;
-    #     splitting it here lets collapse / codegen handle each sibling
-    #     independently. Apply only to outer maps parameterised by
-    #     `_for_it_35` so we don't fission unrelated maps.
+    # 3b. Duplicate the parent map around each inner child for
+    #     `_for_it_36`. This is the imperfect-nest motif that the
+    #     CFL-clipping kernel uses; splitting it here lets collapse /
+    #     codegen handle each sibling independently. Apply only to
+    #     outer maps parameterised by `_for_it_36` so we don't
+    #     fission unrelated maps.
     pln_count = 0
     while True:
         applied_one = False
-        # _for_it_35 lives in a nested SDFG (the loop body f2dace emits),
-        # so we must scan every SDFG and call can_be_applied_to/apply_to
-        # with the *owning* SDFG -- not the top-level one.
+        # _for_it_36 lives in a nested SDFG (the loop body f2dace
+        # emits), so we must scan every SDFG and call
+        # can_be_applied_to / apply_to with the *owning* SDFG -- not
+        # the top-level one.
         for owner in list(sdfg.all_sdfgs_recursive()):
             for state in owner.all_states():
                 for n in list(state.nodes()):
-                    if isinstance(n, nodes.MapEntry) and "_for_it_35" in n.map.params:
+                    if isinstance(n, nodes.MapEntry) and "_for_it_36" in n.map.params:
                         if PerfLoopNesting().can_be_applied_to(owner, parent_entry=n):
                             PerfLoopNesting().apply_to(owner, parent_entry=n)
                             pln_count += 1
@@ -143,14 +145,15 @@ def optimization_action(sdfg: dace.SDFG) -> dace.SDFG:
         if not applied_one:
             break
     if pln_count > 0:
-        print(f"Stage #{STAGE_ID}: PerfLoopNesting fissioned {pln_count} `_for_it_35` map(s)")
+        print(f"Stage #{STAGE_ID}: PerfLoopNesting fissioned {pln_count} `_for_it_36` map(s)")
     else:
-        # Optimization, not a correctness step: when upstream fixes (e.g. the
-        # struct_to_container_group / dealias_symbols cleanup) shift the
-        # CFL-clipping kernel's nest shape, ``can_be_applied_to`` may
-        # return False for every ``_for_it_35`` MapEntry. Continue without
-        # fissioning -- the rest of stage 1 still produces a valid SDFG.
-        print(f"Stage #{STAGE_ID}: PerfLoopNesting matched 0 `_for_it_35` maps "
+        # Optimization, not a correctness step: when upstream fixes
+        # (e.g. struct_to_container_group / dealias_symbols cleanup)
+        # shift the CFL-clipping kernel's nest shape,
+        # ``can_be_applied_to`` may return False for every
+        # ``_for_it_36`` MapEntry. Continue without fissioning -- the
+        # rest of stage 1 still produces a valid SDFG.
+        print(f"Stage #{STAGE_ID}: PerfLoopNesting matched 0 `_for_it_36` maps "
               "(no imperfect-nest motif to fission; continuing)")
     sdfg.validate()
 
@@ -184,15 +187,58 @@ def optimization_action(sdfg: dace.SDFG) -> dace.SDFG:
     sdfg.apply_transformations_repeated(MapCollapse)
     sdfg.simplify(skip=["ArrayElimination"])
     sdfg.validate()
+
+    # 5. Fold ``__CG_p_patch__m_nlev`` to the literal 90 (and nlevp1
+    #    to 91). For the data we run against (r02b05 / num_lev=90)
+    #    these are compile-time constants. Folding has two effects:
+    #      - kernel signatures shrink (nlev/nlevp1 leave the ABI),
+    #      - inner ``__device__`` helpers no longer need to thread
+    #        nlev through their parameter lists, which avoids a
+    #        codegen scope-leak in stage 4 (nlev referenced inside a
+    #        device function whose parameter list omitted it).
+    _fold_nlev(sdfg)
+    sdfg.validate()
     return sdfg
+
+
+def _fold_nlev(sdfg: dace.SDFG):
+    """Specialise ``__CG_p_patch__m_nlev`` -> 90 and
+    ``__CG_p_patch__m_nlevp1`` -> 91 across the SDFG tree, then drop
+    the now-dead symbol/array entries. Idempotent (a second call sees
+    no occurrences and does nothing)."""
+    folds = {
+        "__CG_p_patch__m_nlev": "90",
+        "__CG_p_patch__m_nlevp1": "91",
+    }
+    n_replaced = 0
+    for nested in sdfg.all_sdfgs_recursive():
+        present = {k: v for k, v in folds.items()
+                   if k in nested.symbols or k in nested.arrays
+                   or k in {str(s) for s in nested.free_symbols}}
+        if not present:
+            continue
+        nested.replace_dict(present)
+        n_replaced += len(present)
+        for k in present:
+            if k in nested.arrays:
+                nested.remove_data(k, validate=False)
+            if k in nested.symbols:
+                del nested.symbols[k]
+    if n_replaced:
+        print(f"Stage #{STAGE_ID}: folded nlev/nlevp1 to literal "
+              f"({n_replaced} occurrence(s) across the SDFG tree)")
 
 
 def main():
     argp = argparse.ArgumentParser()
     argp.add_argument("--optimize", action=argparse.BooleanOptionalAction, default=False)
     argp.add_argument("--compile", action=argparse.BooleanOptionalAction, default=False)
-    argp.add_argument("--debug", dest="release", action="store_false", default=True,
-                      help="build with -O0 + DACE_VELOCITY_DEBUG (default: release)")
+    mode = argp.add_mutually_exclusive_group()
+    mode.add_argument("--release", dest="release", action="store_true",
+                      help="build with -O3 + --use_fast_math (FMA may diverge from IEEE)")
+    mode.add_argument("--debug", dest="release", action="store_false",
+                      help="build with -O0 + DACE_VELOCITY_DEBUG + IEEE FP (default)")
+    argp.set_defaults(release=False)
     args = argp.parse_args()
     if not args.optimize and not args.compile:
         args.optimize, args.compile = True, True

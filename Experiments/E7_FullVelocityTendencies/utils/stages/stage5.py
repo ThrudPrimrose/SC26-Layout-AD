@@ -137,8 +137,12 @@ def main():
     argp = argparse.ArgumentParser()
     argp.add_argument("--optimize", action=argparse.BooleanOptionalAction, default=False)
     argp.add_argument("--compile", action=argparse.BooleanOptionalAction, default=False)
-    argp.add_argument("--debug", dest="release", action="store_false", default=True,
-                      help="build with -O0 + IEEE fp (default: release + fast math)")
+    mode = argp.add_mutually_exclusive_group()
+    mode.add_argument("--release", dest="release", action="store_true",
+                      help="build with -O3 + --use_fast_math (FMA may diverge from IEEE)")
+    mode.add_argument("--debug", dest="release", action="store_false",
+                      help="build with -O0 + IEEE fp (default)")
+    argp.set_defaults(release=False)
     args = argp.parse_args()
     if not args.optimize and not args.compile:
         args.optimize, args.compile = True, True

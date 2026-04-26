@@ -41,7 +41,7 @@ fi
 
 for CFG in ${CONFIGS}; do
   echo "[E7 beverin] running config=${CFG}"
-  python -m utils.stages.stage6 --optimize --compile --config "${CFG}"
+  python -m utils.stages.stage6 --release --optimize --compile --config "${CFG}"
 done
 
 for d in "${EXP_DIR}/codegen/stage6"/*/; do

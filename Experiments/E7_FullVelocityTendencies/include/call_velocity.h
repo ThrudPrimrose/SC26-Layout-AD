@@ -326,8 +326,6 @@
     p_patch.nblks_c,\
     p_patch.nblks_e,\
     p_patch.nblks_v,\
-    p_patch.nlev,\
-    p_patch.nlevp1,\
     p_patch.nshift,\
     p_prog.SA_vn_d_0,\
     p_prog.SA_vn_d_1,\
@@ -572,8 +570,6 @@
     p_patch.nblks_c,\
     p_patch.nblks_e,\
     p_patch.nblks_v,\
-    p_patch.nlev,\
-    p_patch.nlevp1,\
     p_prog.SA_vn_d_0,\
     p_prog.SA_vn_d_1,\
     p_prog.SA_vn_d_2,\
