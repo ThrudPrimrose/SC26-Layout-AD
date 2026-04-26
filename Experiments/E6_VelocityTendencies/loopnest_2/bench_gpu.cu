@@ -146,7 +146,7 @@ static void launch_blocked(int bi, int bxi, double *d_out, const double *d_vn,
   int BX = GCFG[bxi].BX, BY = GCFG[bxi].BY;
   dim3 T(BX, BY, 1);
   dim3 G((N_e + BX - 1)/BX, (nlev + BY - 1)/BY, 1);
-  /* 5 block sizes x 5 (BX,BY) configs = 25 hand-written cases below.   */
+  /* 3 block sizes x 5 (BX,BY) configs = 15 hand-written cases below.   */
   switch (bi*100 + bxi) {
     case 0*100+0: gpu_blocked<8, 32,4><<<G,T>>>(d_out,d_vn,d_vt,d_ddxn,d_ddxt,N_e,nlev,jk0,jk1); break;
     case 0*100+1: gpu_blocked<8, 32,8><<<G,T>>>(d_out,d_vn,d_vt,d_ddxn,d_ddxt,N_e,nlev,jk0,jk1); break;
@@ -163,16 +163,6 @@ static void launch_blocked(int bi, int bxi, double *d_out, const double *d_vn,
     case 2*100+2: gpu_blocked<32,64,4><<<G,T>>>(d_out,d_vn,d_vt,d_ddxn,d_ddxt,N_e,nlev,jk0,jk1); break;
     case 2*100+3: gpu_blocked<32,16,16><<<G,T>>>(d_out,d_vn,d_vt,d_ddxn,d_ddxt,N_e,nlev,jk0,jk1); break;
     case 2*100+4: gpu_blocked<32,128,1><<<G,T>>>(d_out,d_vn,d_vt,d_ddxn,d_ddxt,N_e,nlev,jk0,jk1); break;
-    case 3*100+0: gpu_blocked<64,32,4><<<G,T>>>(d_out,d_vn,d_vt,d_ddxn,d_ddxt,N_e,nlev,jk0,jk1); break;
-    case 3*100+1: gpu_blocked<64,32,8><<<G,T>>>(d_out,d_vn,d_vt,d_ddxn,d_ddxt,N_e,nlev,jk0,jk1); break;
-    case 3*100+2: gpu_blocked<64,64,4><<<G,T>>>(d_out,d_vn,d_vt,d_ddxn,d_ddxt,N_e,nlev,jk0,jk1); break;
-    case 3*100+3: gpu_blocked<64,16,16><<<G,T>>>(d_out,d_vn,d_vt,d_ddxn,d_ddxt,N_e,nlev,jk0,jk1); break;
-    case 3*100+4: gpu_blocked<64,128,1><<<G,T>>>(d_out,d_vn,d_vt,d_ddxn,d_ddxt,N_e,nlev,jk0,jk1); break;
-    case 4*100+0: gpu_blocked<128,32,4><<<G,T>>>(d_out,d_vn,d_vt,d_ddxn,d_ddxt,N_e,nlev,jk0,jk1); break;
-    case 4*100+1: gpu_blocked<128,32,8><<<G,T>>>(d_out,d_vn,d_vt,d_ddxn,d_ddxt,N_e,nlev,jk0,jk1); break;
-    case 4*100+2: gpu_blocked<128,64,4><<<G,T>>>(d_out,d_vn,d_vt,d_ddxn,d_ddxt,N_e,nlev,jk0,jk1); break;
-    case 4*100+3: gpu_blocked<128,16,16><<<G,T>>>(d_out,d_vn,d_vt,d_ddxn,d_ddxt,N_e,nlev,jk0,jk1); break;
-    case 4*100+4: gpu_blocked<128,128,1><<<G,T>>>(d_out,d_vn,d_vt,d_ddxn,d_ddxt,N_e,nlev,jk0,jk1); break;
   }
 }
 
@@ -199,13 +189,11 @@ static void launch_tiled(int txi, int tyi, int bxi, double *d_out,
 #define T4(TX_, TY_) launch_tiled_inner<TX_, TY_>(bxi, G, T, d_out, d_vn, d_vt, d_ddxn, d_ddxt, N_e, nlev, jk0, jk1)
   switch (txi*4 + tyi) {
     case 0*4+0: T4(8,8);   break;  case 0*4+1: T4(8,16);  break;
-    case 0*4+2: T4(8,32);  break;  case 0*4+3: T4(8,64);  break;
+    case 0*4+2: T4(8,32);  break;
     case 1*4+0: T4(16,8);  break;  case 1*4+1: T4(16,16); break;
-    case 1*4+2: T4(16,32); break;  case 1*4+3: T4(16,64); break;
+    case 1*4+2: T4(16,32); break;
     case 2*4+0: T4(32,8);  break;  case 2*4+1: T4(32,16); break;
-    case 2*4+2: T4(32,32); break;  case 2*4+3: T4(32,64); break;
-    case 3*4+0: T4(64,8);  break;  case 3*4+1: T4(64,16); break;
-    case 3*4+2: T4(64,32); break;  case 3*4+3: T4(64,64); break;
+    case 2*4+2: T4(32,32); break;
   }
 #undef T4
 }

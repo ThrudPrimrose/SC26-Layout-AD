@@ -324,13 +324,11 @@ static constexpr int N_GCFG_V6 = sizeof(GCFG_V6)/sizeof(GCFG_V6[0]);
 struct GpuCfgTiled { int stx, sty, bx, by; const char* label; };
 static constexpr GpuCfgTiled GCFG_TILED[] = {
     { 8, 8,  8, 32, "t08x08_bx08by32"}, { 8,16,  8, 32, "t08x16_bx08by32"},
-    { 8,32,  8, 32, "t08x32_bx08by32"}, { 8,64,  8, 32, "t08x64_bx08by32"},
+    { 8,32,  8, 32, "t08x32_bx08by32"},
     {16, 8, 16, 16, "t16x08_bx16by16"}, {16,16, 16, 16, "t16x16_bx16by16"},
-    {16,32, 16, 16, "t16x32_bx16by16"}, {16,64, 16, 16, "t16x64_bx16by16"},
+    {16,32, 16, 16, "t16x32_bx16by16"},
     {32, 8, 32,  8, "t32x08_bx32by08"}, {32,16, 32,  8, "t32x16_bx32by08"},
-    {32,32, 32,  8, "t32x32_bx32by08"}, {32,64, 32,  8, "t32x64_bx32by08"},
-    {64, 8, 64,  4, "t64x08_bx64by04"}, {64,16, 64,  4, "t64x16_bx64by04"},
-    {64,32, 64,  4, "t64x32_bx64by04"}, {64,64, 64,  4, "t64x64_bx64by04"},
+    {32,32, 32,  8, "t32x32_bx32by08"},
 };
 static constexpr int N_GCFG_TILED = sizeof(GCFG_TILED)/sizeof(GCFG_TILED[0]);
 
