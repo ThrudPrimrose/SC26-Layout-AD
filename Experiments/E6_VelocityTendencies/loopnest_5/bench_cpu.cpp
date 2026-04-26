@@ -38,8 +38,8 @@ using KFn = void (*)(double*, double*, double*, const double*, const double*,
 static KFn kfun_unblocked[4] = {
   cpu_unblocked<1>, cpu_unblocked<2>, cpu_unblocked<3>, cpu_unblocked<4>
 };
-static KFn kfun_blocked[5] = {
-  cpu_blocked<8>, cpu_blocked<16>, cpu_blocked<32>, cpu_blocked<64>, cpu_blocked<128>
+static KFn kfun_blocked[3] = {
+  cpu_blocked<8>, cpu_blocked<16>, cpu_blocked<32>
 };
 
 static inline double elapsed_ms(clk::time_point a, clk::time_point b) {
