@@ -1,0 +1,32 @@
+# Generated SDFGs and per-stage outputs
+baseline/*.sdfgz
+baseline/*.cpp
+baseline/*.h
+baseline/lbounds.csv
+codegen/stage*/
+
+# Downloaded datasets
+data_r02b05/*
+
+# Run outputs
+results/*
+
+# Python build artifacts
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.ruff_cache/
+
+# Compiled C++ artifacts
+*.o
+*.so
+src/*.o
+main.o
+velocity_baseline
+velocity_stage[1-6]
+velocity_stage[1-6]_*
+
+# DaCe build folders
+.dacecache/
+_dacegraphs/

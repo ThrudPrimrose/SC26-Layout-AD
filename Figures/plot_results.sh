@@ -47,6 +47,7 @@ RUNTIME_EXPS=(
   E6_VelocityTendencies/loopnest_4
   E6_VelocityTendencies/loopnest_5
   E6_VelocityTendencies/loopnest_6
+  E7_FullVelocityTendencies
 )
 
 marker="$(mktemp /tmp/plot_results_marker.XXXXXX)"

@@ -1,225 +1,128 @@
 # SC26 Layout Artifact — Experiments
 
-Reproducibility root for the six experiments described in the Appendix
-(Artifact Description). Each `EX_*/` folder is a self-contained
-benchmark; `common/` holds the shared setup used by every experiment.
+Reproducibility root. Each `EX_*/` is a self-contained benchmark;
+`common/` holds the shared environment.
 
-## Layout
+## Experiments
 
-E0 is a one-shot NUMA-aware STREAM peak baseline (≈ 2 min). E1–E5 are
-mutually independent — a reviewer can dispatch up to five `sbatch` jobs
-in parallel. E6 is the longest single experiment; run it last (or on a
-separate allocation). Jobs marked *download* require a one-time data
-fetch before the first submission.
+E0 is a one-shot NUMA STREAM-peak baseline (≈ 2 min). E1–E5 are
+independent — dispatch up to five `sbatch` jobs in parallel. E6 is
+the longest single experiment.
 
-| Folder | Paper element | Contributions | Runtime (est.) | Data prep | CSV path |
+| Folder | Paper | Contributions | Runtime | Data prep | CSV path |
 |---|---|---|---|---|---|
-| [E0_NUMA/](E0_NUMA/)               | Hardware § table    | baseline | ≈ 2 min   | none                                         | `results/{daint,beverin}/stream_peak_{cpu,gpu}.csv`       |
-| [E1_MatrixAdd/](E1_MatrixAdd/)     | Fig. 4              | C₃, C₄   | ≈ 90 min  | none                                         | `results/{daint,beverin}/madd_{daint,beverin}_{cpu,gpu}.csv` |
-| [E2_Conjugation/](E2_Conjugation/) | Fig. 8              | C₂–C₄    | ≈ 210 min | none                                         | `results/{daint,beverin}/results_{cpu,gpu}_{inplace,oop}.csv` |
-| [E3_Transpose/](E3_Transpose/)     | Fig. 9, Tab. III    | C₂–C₄    | ≈ 180 min | none                                         | `results/{daint,beverin}/transpose_*.csv` + `transpose_metrics_{cpu,gpu}.csv` |
-| [E4_GAS/](E4_GAS/)                 | Fig. 10             | C₂–C₄    | ≈ 60 min  | ≈ 200 MB BaTiO₃ — `bash E4_GAS/download_data.sh` | `results/{daint,beverin}/zaxpy_sweep_{small,1gb}{,_cpu}.csv` |
-| [E5_USXX/](E5_USXX/)               | Fig. 11, Lst. 1     | C₂–C₄    | ≈ 60 min  | ≈ 1 GB BaTiO₃ — `bash E5_USXX/download_data.sh`  | `results/{daint,beverin}/addusxx_{cpu,gpu}_sweep.csv` |
-| [E6_VelocityTendencies/](E6_VelocityTendencies/) | Fig. 12–13, Tab. IV | C₃, C₄ | ≈ 690 min (≈ 150 min loopnest 1 + 5 × 60 min loopnests 2–6 + 240 min full module) | ICON R02B05 — per-subtask `download_data.sh` / `scripts/download_nproma20480_data.sh` | see per-subtask READMEs |
+| [E0_NUMA/](E0_NUMA/) | Hardware § | baseline | ≈ 2 min | none | `results/{daint,beverin}/stream_peak_{cpu,gpu}.csv` |
+| [E1_MatrixAdd/](E1_MatrixAdd/) | Fig. 4 | C₃, C₄ | ≈ 90 min | none | `results/{daint,beverin}/madd_{daint,beverin}_{cpu,gpu}.csv` |
+| [E2_Conjugation/](E2_Conjugation/) | Fig. 8 | C₂–C₄ | ≈ 210 min | none | `results/{daint,beverin}/results_{cpu,gpu}_{inplace,oop}.csv` |
+| [E3_Transpose/](E3_Transpose/) | Fig. 9, Tab. III | C₂–C₄ | ≈ 180 min | none | `results/{daint,beverin}/transpose_*.csv` + `transpose_metrics_{cpu,gpu}.csv` |
+| [E4_GAS/](E4_GAS/) | Fig. 10 | C₂–C₄ | ≈ 60 min | ≈ 200 MB BaTiO₃ — `bash E4_GAS/download_data.sh` | `results/{daint,beverin}/zaxpy_sweep_{small,1gb}{,_cpu}.csv` |
+| [E5_USXX/](E5_USXX/) | Fig. 11, Lst. 1 | C₂–C₄ | ≈ 60 min | ≈ 1 GB BaTiO₃ — `bash E5_USXX/download_data.sh` | `results/{daint,beverin}/addusxx_{cpu,gpu}_sweep.csv` |
+| [E6_VelocityTendencies/](E6_VelocityTendencies/) | Fig. 12–13, Tab. IV | C₃, C₄ | ≈ 450 min | ICON R02B05 — per-subtask `download_data.sh` | per-subtask READMEs |
+| [E7_FullVelocityTendencies/](E7_FullVelocityTendencies/) | Fig. 14, Tab. V | C₃, C₄ | ≈ 240 min | ICON nproma=20480 — auto-fetched on first run via `tools/download_data.sh`; reads `E6/access_analysis/layout_candidates.json` (run E6 T6.2 first) | `results/{daint,beverin}/<config>/*.csv` |
 
-The proof-illustration figures (Figures 2–3 in the main text) live in
-[`../Figures/`](../Figures/) — pure matplotlib scripts, no benchmark,
-and no submission to SLURM. Regenerate with `bash ../Figures/plot_all.sh`.
+Total: ~22 hr per cluster end-to-end (E1–E5 parallel: ~10 hr; E6: ~7.5
+hr; E7: ~4 hr; setup + analysis: ~25 min).
 
-The paper's **runtime figures** (Figures 4, 8–13) have two dedicated
-drivers in the top-level [`../Figures/`](../Figures/) folder. Both
-iterate over E1–E5 and `E6_VelocityTendencies/loopnest_{1..6}`:
+The proof-illustration figures (Figures 2–3) are pure matplotlib in
+[`../Figures/`](../Figures/) — no SLURM. `bash ../Figures/plot_all.sh`
+regenerates them.
 
-| Driver | Reads from | Writes to |
+The runtime figures (Figures 4, 8–14) have two sibling drivers under
+[`../Figures/`](../Figures/):
+
+| Driver | Reads | Writes |
 |---|---|---|
-| [`../Figures/plot_paper_snapshot.sh`](../Figures/plot_paper_snapshot.sh) | [`../PaperSnapshot/<exp>/results/`](../PaperSnapshot/) (frozen paper-canonical CSVs) | `../Figures/GeneratedFigures/Runtime/<stem>.{pdf,png}` |
-| [`../Figures/plot_results.sh`](../Figures/plot_results.sh) | `<exp>/results/` (your local CSVs after `sbatch`) | **`<exp>/results/<stem>.{pdf,png}` — next to the CSVs** |
+| [`plot_paper_snapshot.sh`](../Figures/plot_paper_snapshot.sh) | `../PaperSnapshot/<exp>/results/` | `../Figures/GeneratedFigures/Runtime/<stem>.{pdf,png}` |
+| [`plot_results.sh`](../Figures/plot_results.sh) | `<exp>/results/` (your local CSVs) | next to the CSVs |
 
-Neither script overwrites the other: the paper snapshot lands in
-`Figures/GeneratedFigures/Runtime/` while reviewer-generated figures
-live inside each experiment's `results/` folder alongside the CSVs
-they were plotted from. An experiment you haven't re-run is simply
-skipped by `plot_results.sh`; an empty `PaperSnapshot/<exp>/results/`
-is skipped by `plot_paper_snapshot.sh`. Either way the sweep never
-aborts on a single missing dataset.
-
-Both drivers export `MATPLOTLIBRC=../Figures/matplotlibrc`, pinning
-every figure to **DejaVu Sans** — no STIX / Computer-Modern fallback
-warnings on stock environments.
-
-`plot_all.sh` is the umbrella that runs illustrative groups + `Peaks`
-(stream-peak JSON refresh) + both runtime drivers in sequence:
-
-```bash
-bash ../Figures/plot_paper_snapshot.sh    # paper-canonical runtime figures
-bash ../Figures/plot_results.sh           # your runtime figures (need sbatch first)
-bash ../Figures/plot_all.sh               # everything above + illustrative
-bash ../Figures/plot_all.sh Peaks         # just refresh common/stream_peak.json
-bash ../Figures/plot_all.sh Runtime       # paper + results, no illustrative
-```
+The two destinations never overlap. Missing CSVs produce `[skip]` and
+the sweep continues. Both pin DejaVu Sans via
+`MATPLOTLIBRC=../Figures/matplotlibrc`.
 
 ## How to run any experiment
 
-Every experiment uses the same three-step flow.
-
-### 1. One-time global setup (run once per machine)
-
 ```bash
+# 1. One-time per machine.
 bash common/setup.sh
-```
 
-`spack load`s a pinned CPython + `sqlite` (arch auto-detect:
-`python/asgm25z` on x86_64 / zen3, `python/6kewgi6` on aarch64 /
-neoverse_v2). Readline, bz2, lzma, ctypes, ssl, zlib all come baked
-into the spack python via RPATH, so only `sqlite` is `spack load`ed
-externally. The script then creates a venv at `common/venv` using that
-python (with a pip bootstrap workaround — see note below), clones
-DaCe into `common/dace` on branch `yakup/dev`, `pip install -e`'s it,
-and pip-installs numpy / scipy / matplotlib / pandas.
+# 2. Submit.
+cd EX_Name && sbatch run_{daint,beverin}.sh
 
-Override the DaCe branch when needed (E6 full module uses
-`f2dace/staging`):
-
-```bash
-DACE_BRANCH=f2dace/staging bash common/setup.sh
-```
-
-Override the python spec to pin a specific hash:
-
-```bash
-SC26_PYTHON_SPEC=python/6kewgi6 bash common/setup.sh   # force aarch64 hash
-```
-
-> **Venv caveats on spack CPython** — spack's CPython build ships with
-> empty `venv/scripts/{common,posix}` template dirs and a missing pip
-> wheel in `ensurepip/_bundled/`. `setup.sh` works around both:
-> creates the venv with `--without-pip`, bootstraps pip via
-> `get-pip.py`, and activates the venv by exporting `VIRTUAL_ENV` +
-> `PATH` directly (no `bin/activate` exists). `activate.sh` does the
-> same manual activation. Do not try to `source venv/bin/activate` —
-> it doesn't exist.
-
-### 2. Submit or run on a cluster
-
-```bash
-cd EX_Name
-sbatch run_daint.sh       # Daint.Alps  (Grace CPU + Hopper GPU)
-sbatch run_beverin.sh     # Beverin     (Zen4 CPU + MI300A APU)
-```
-
-Each `run_*.sh` internally sources:
-
-1. `../common/activate.sh` — re-loads the spack python, activates the
-   `common/venv`, and ensures DaCe is on the correct branch.
-2. `../common/setup_daint.sh` *or* `../common/setup_beverin.sh` —
-   loads platform modules (spack), sets OMP/SLURM pinning, and
-   exports `CPU_CXX`, `CPU_CXXFLAGS`, `CPU_LDFLAGS`, `GPU_CXX`,
-   `GPU_CXXFLAGS`, `GPU_LDFLAGS`.
-
-The run script then builds CPU + GPU binaries using those flag
-variables and writes CSV results to `results/{daint,beverin}/`.
-
-For interactive debugging without SLURM:
-
-```bash
-source common/activate.sh
-source common/setup_daint.sh       # or setup_beverin.sh
-cd EX_Name && bash run_daint.sh
-```
-
-### 3. Plot
-
-```bash
-cd EX_Name
+# 3. Plot.
 python plot_paper.py
 ```
 
-Reads `results/{daint,beverin}/*.csv` and writes the paper figure(s).
+`setup.sh` spack-loads CPython 3.13 + sqlite (arch auto-detect:
+`python/asgm25z` on zen3, `python/6kewgi6` on neoverse_v2; override
+with `SC26_PYTHON_SPEC`), creates `common/venv` (`--without-pip`,
+bootstrapped via `get-pip.py` because spack's CPython lacks the
+bundled wheel), clones DaCe `yakup/dev`, installs deps. Override the
+DaCe branch with `DACE_BRANCH=...` when needed (E7's optional
+`tools/regenerate_baselines.sh` requires `f2dace/staging` for its
+phase 0 — switch manually before invoking, switch back after).
 
-## Data-loading scripts and what they assume
+Each `run_*.sh` sources `../common/activate.sh` (manual venv
+activation; `bin/activate` doesn't exist on spack venvs) and
+`../common/setup_{daint,beverin}.sh` (loads modules, sets pinning,
+exports `CPU_CXX{,FLAGS,LDFLAGS}` / `GPU_CXX{,FLAGS,LDFLAGS}`). For
+interactive runs, source the two manually before `bash run_*.sh`.
 
-Every data download is a one-time step gated behind an explicit
-`bash download_data.sh`. No experiment fetches data at `sbatch` time.
+## Datasets
 
-| Script | Fetches | Size | Assumes |
-|---|---|---|---|
-| [`E4_GAS/download_data.sh`](E4_GAS/download_data.sh) | BaTiO₃ indirect-access index set for `zaxpy` | ≈ 200 MB | Outbound HTTPS (ETH PolyBox); run from inside `E4_GAS/`; idempotent (skips if already present). |
-| [`E5_USXX/download_data.sh`](E5_USXX/download_data.sh) | Serialized BaTiO₃ state for QE `addusxx_g` | ≈ 1 GB | Outbound HTTPS (ETH PolyBox); run from inside `E5_USXX/`; writes to `bin/`. |
-| [`E6_VelocityTendencies/loopnest_1/download_data.sh`](E6_VelocityTendencies/loopnest_1/download_data.sh) | ICON R02B05 velocity-tendencies serialized input | ≈ 3 GB | Outbound HTTPS; required for every `loopnest_{1..6}` subtask. |
-| [`E6_VelocityTendencies/full_velocity_tendencies/scripts/download_nproma20480_data.sh`](E6_VelocityTendencies/full_velocity_tendencies/scripts/download_nproma20480_data.sh) | ICON full-module `nproma=20480` dataset | ≈ 8 GB | Outbound HTTPS; required for stage4/stage8 full-module sweeps. |
+E0–E3 and the proof figures synthesize inputs in-process.
+E4/E5/E6 (loopnest_1)/E7 auto-fetch their datasets on first `sbatch`
+via the per-experiment `download_data.sh` (E7 uses
+`tools/download_data.sh`); the guard is idempotent (`[[ -d <dir> ]] ||
+bash download_data.sh`), so re-runs are free.
 
-E0, E1, E2, E3, and the `Figures/` proof illustrations all synthesize
-their inputs in-process (no network access required).
-
-Setup / environment-loading scripts and their assumptions:
-
-| Script | Loads | Assumes |
+| Script | Dataset | Size |
 |---|---|---|
-| [`common/setup.sh`](common/setup.sh) | spack python + sqlite; venv at `common/venv` (pip bootstrapped via get-pip.py); DaCe clone + editable install; plotting deps | `spack` on PATH; short-hash specs resolve for the current arch (`uname -m` auto-select); outbound HTTPS to pypi + github. |
-| [`common/activate.sh`](common/activate.sh) | spack python + sqlite; manual venv activation (exports `VIRTUAL_ENV` + `PATH`); DaCe branch check | `setup.sh` has been run; `DACE_BRANCH` defaults to `yakup/dev`; `SC26_PYTHON_SPEC` arch-auto-detects (override to force). |
-| [`common/setup_daint.sh`](common/setup_daint.sh) | GCC 14, CUDA 12.9, OpenBLAS 0.3.29, OpenMP / SLURM pinning for Grace | Daint.Alps (linux-sles15-neoverse_v2); spack env with those specs. |
-| [`common/setup_beverin.sh`](common/setup_beverin.sh) | GCC 14, ROCm 6.x, OpenBLAS 0.3.30, OpenMP / SLURM pinning for Zen4 | Beverin (linux-sles15-zen3); spack env with those specs; ROCm at `/opt/rocm`. |
+| [`E4_GAS/download_data.sh`](E4_GAS/download_data.sh) | BaTiO₃ indirect-access index set | ≈ 200 MB |
+| [`E5_USXX/download_data.sh`](E5_USXX/download_data.sh) | Serialized BaTiO₃ for QE addusxx_g | ≈ 1 GB |
+| [`E6_VelocityTendencies/loopnest_1/download_data.sh`](E6_VelocityTendencies/loopnest_1/download_data.sh) | ICON R02B05 (shared by every loopnest_*) | ≈ 3 GB |
+| [`E7_FullVelocityTendencies/tools/download_data.sh`](E7_FullVelocityTendencies/tools/download_data.sh) | ICON nproma=20480 | ≈ 9 GB |
 
-## Reviewer hint — `# TODO: VERSION`
-
-Version-sensitive knobs in this artifact are marked with `# TODO: VERSION`
-in the scripts. A reviewer may need to adjust:
-
-- [`../../setup.sh`](../../setup.sh) — pinned `SPACK_*` short hashes
-  (`python/asgm25z`, `readline/sg63hivx`, …). Regenerate with
-  `spack find -L <pkg> target=zen3` if the spack env is re-concretized.
-- [`common/setup.sh`](common/setup.sh) / [`activate.sh`](common/activate.sh)
-  — `SC26_PYTHON_SPEC` (auto: `python/asgm25z` zen3 / `python/6kewgi6`
-  neoverse_v2), `sqlite` short hash per arch, `DACE_BRANCH=yakup/dev`.
-  All overridable via env vars.
-- [`common/setup_{daint,beverin}.sh`](common/) — GCC / ROCm / CUDA /
-  OpenBLAS spack specs.
-- `EX_*/download_data.sh` — dataset URL; if the upstream mirror moves,
-  edit the URL at the top of the script.
+Outbound HTTPS from ETH PolyBox; URL/checksum overridable via env
+(`DATA_URL`, `EXPECTED_SHA256`).
 
 ## Hardware
 
-- **Daint.Alps** — quad-GH200 node, 72-core Grace Neoverse V2 CPU
-  (512 GB/s LPDDR5X) + H200 GPU (4 TB/s HBM3). STREAM Triad peak:
-  CPU 1.807 TB/s, GPU 3.780 TB/s.
-- **Beverin** — quad-MI300A APU node, 24 Zen4 cores sharing 128 GB
-  unified HBM3. STREAM Triad peak: CPU 1.161 TB/s, GPU 4.294 TB/s.
+- **Daint.Alps** — quad-GH200, 72-core Grace Neoverse V2 (512 GB/s
+  LPDDR5X) + H200 (4 TB/s HBM3). STREAM Triad: CPU 1.807, GPU 3.780
+  TB/s.
+- **Beverin** — quad-MI300A, 24 Zen4 cores sharing 128 GB unified
+  HBM3. STREAM Triad: CPU 1.161, GPU 4.294 TB/s.
 
-Both clusters access required: SLURM, exclusive single-node
-allocations.
+Both need SLURM + exclusive single-node allocation.
 
 ## Software
 
-- Spack-provided CPython 3.13.8 on zen3 (`python/asgm25z`) /
-  neoverse_v2 (`python/6kewgi6`); venv at `common/venv` (pip
-  bootstrapped via get-pip.py; manual activation).
-- DaCe branch `yakup/dev` for E0–E5 and E6/loopnest_1;
-  branch `f2dace/staging` for E6/full_velocity_tendencies
-- Spack-provided GCC 14, CUDA 12.9 (Daint) / ROCm 6.4.1 (Beverin),
-  OpenBLAS 0.3.29 (Daint) / 0.3.30 (Beverin), cuTENSOR / hipTensor
-  (E3 only), HPTT (E3 only)
-- Spack-provided `sqlite` (other stdlib C-ext prereqs — readline,
-  bz2, lzma, ctypes, ssl, zlib — are baked into the spack python
-  via RPATH, not loaded separately).
-- Python deps: numpy, scipy, matplotlib, pandas (installed by setup.sh)
+- Spack CPython 3.13.8 (`python/asgm25z` zen3 / `python/6kewgi6`
+  neoverse_v2); spack `sqlite` (the rest of stdlib's C-ext prereqs
+  are RPATH-baked into the spack python).
+- DaCe `yakup/dev` for everything; `f2dace/staging` only for E7's
+  opt-in `tools/regenerate_baselines.sh`.
+- Spack GCC 14, CUDA 12.9 (Daint) / ROCm 6.4.1 (Beverin), OpenBLAS
+  0.3.29 / 0.3.30, cuTENSOR / hipTensor and HPTT (E3 only).
+- pip deps: numpy scipy matplotlib pandas.
 
 ## Single-source CUDA/HIP pattern
 
-Every GPU benchmark has a canonical `.cu` file plus a matching
-`*_hip.cpp` file. The `.cu` is the single source of truth — it calls
-`gpu*` (e.g. `gpuMalloc`, `gpuMemcpy`, `gpuDeviceSynchronize`) which
-`common/gpu_compat.cuh` dispatches to `cuda*` under nvcc and `hip*`
-under `hipcc -x hip`. The `*_hip.cpp` file is a 7-line shim that just
-`#include`s its `.cu` companion so hipcc has a recognisable
-translation-unit extension. **Do not edit the `_hip.cpp` shims; edit
-the `.cu`.**
+Every GPU benchmark has a canonical `.cu` plus a 7-line `*_hip.cpp`
+shim that `#include`s its `.cu` companion. `common/gpu_compat.cuh`
+dispatches `gpu*` calls to `cuda*` under nvcc, `hip*` under hipcc.
+**Edit the `.cu`, not the shim.**
 
-## Expected time budget
+## Reviewer hint — `# TODO: VERSION`
 
-~22 hr per cluster end-to-end: ≈ 2 min for E0 (NUMA baseline) + 90 +
-210 + 180 + 60 + 60 min for E1–E5
-(≈ 10 hr, parallelizable across five independent `sbatch` jobs) plus
-≈ 11.5 hr for E6 (loopnest 1 ≈ 150 min, loopnests 2–6 ≈ 300 min,
-full-module sweep ≈ 240 min), plus ≈ 25 min for one-time setup and
-post-run analysis. Per-experiment and per-cluster breakdown is in the
-AD appendix (Table "\arttime").
+Version-sensitive pins are tagged `# TODO: VERSION` at the call site.
+Likely overrides:
+
+- [`../../setup.sh`](../../setup.sh) — `SPACK_*` short hashes;
+  `spack find -L <pkg> target=zen3` to refresh.
+- [`common/setup.sh`](common/setup.sh) /
+  [`activate.sh`](common/activate.sh) — `SC26_PYTHON_SPEC`,
+  `sqlite/<hash>`, `DACE_BRANCH`. All env-overridable.
+- [`common/setup_{daint,beverin}.sh`](common/) — GCC / ROCm / CUDA /
+  OpenBLAS specs.
+- `EX_*/download_data.sh` — `DATA_URL` if upstream moves.

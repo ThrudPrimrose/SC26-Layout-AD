@@ -43,6 +43,7 @@ RUNTIME_EXPS=(
   E6_VelocityTendencies/loopnest_4
   E6_VelocityTendencies/loopnest_5
   E6_VelocityTendencies/loopnest_6
+  E7_FullVelocityTendencies
 )
 
 mkdir -p "${OUT_DIR}"

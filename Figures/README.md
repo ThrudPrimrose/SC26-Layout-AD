@@ -1,72 +1,40 @@
 # Figures — illustrative / supplemental figure generators
 
-Standalone matplotlib scripts that produce the illustrative figures
-used in the paper's proof section (Figures 2–3 in the main text) and
-the supplemental material. These are **not** benchmarks; they run in
-seconds on any machine with matplotlib + numpy available.
+Standalone matplotlib scripts for the paper's proof figures (Figures
+2–3) and supplemental illustrations. **Not benchmarks** — these run in
+seconds anywhere matplotlib + numpy is installed.
 
-For the actual benchmark figures (Figures 4, 8–13) see
-[`../Experiments/EX_*/plot_paper.py`](../Experiments/).
+For the runtime figures (Figures 4, 8–14) see
+[`../Experiments/EX_*/plot_paper.py`](../Experiments/) and the two
+sibling drivers `plot_paper_snapshot.sh` / `plot_results.sh`.
 
 ## Layout
 
 ```
 Figures/
-├── plot_all.sh                (regenerates every group)
-├── README.md
-├── AccessCost/                (block-access-cost + NUMA-cost figures)
-│   ├── block_layouts.py
-│   ├── plot_blocks_touched.py
-│   ├── plot_access_cost_row_major.py
-│   ├── plot_access_cost_tiled.py
-│   └── plot_access_cost_numa.py
-├── Pebble_Game/               (pebble-game illustrations)
-│   ├── pebble.py
-│   ├── pebble_game_1.py
-│   └── pebble_game_2.py
-├── LayoutTransformations/     (layout-transformation stage illustrations)
-│   ├── layout_stages.py
-│   ├── tiled_addition.py
-│   └── pack_unpack.py
-├── Replay/                    (stride replay figure)
-│   └── replay.py
-└── GeneratedFigures/          (ALL .pdf and .png outputs)
-    ├── AccessCost/
-    ├── Pebble_Game/
-    ├── LayoutTransformations/
-    └── Replay/
+├── plot_all.sh                regenerates every group (or one: bash plot_all.sh AccessCost)
+├── plot_paper_snapshot.sh     runtime figures from PaperSnapshot/
+├── plot_results.sh            runtime figures from Experiments/<exp>/results/
+├── matplotlibrc               pins DejaVu Sans repo-wide
+├── AccessCost/                block-access-cost + NUMA-cost figures
+├── Pebble_Game/               pebble-game illustrations
+├── LayoutTransformations/     layout-transformation stage illustrations
+├── Replay/                    stride replay figure
+└── GeneratedFigures/<group>/  PDF / PNG outputs
 ```
 
-Generator scripts live under `Figures/<group>/`; every output is written
-to `Figures/GeneratedFigures/<group>/`. The split keeps generator code
-and byte-identical regenerated artefacts on separate paths so diffs and
-git history stay clean.
-
-## Regenerate
-
-```bash
-# All figures:
-bash plot_all.sh
-
-# Only one group:
-bash plot_all.sh AccessCost
-```
-
-`plot_all.sh` `cd`s into the right `GeneratedFigures/<group>/` directory
-before running each script, so the scripts' relative `plt.savefig(...)`
-calls land in the right folder without any in-script edits.
+Generator scripts live under `Figures/<group>/`; outputs go to
+`Figures/GeneratedFigures/<group>/`. `plot_all.sh` `cd`s into the
+right output folder before running each script so in-script
+`plt.savefig(...)` paths land correctly.
 
 ## Requirements
 
-- Python 3.10+
-- numpy, matplotlib
-- The `common/venv` from `../Experiments/common/setup.sh` is sufficient,
-  but any environment with numpy + matplotlib works.
+Python 3.10+, numpy, matplotlib. The `common/venv` from
+`../Experiments/common/setup.sh` is sufficient.
 
-## Reviewer hint — `# TODO: VERSION`
+## Reviewer hint
 
-No version-sensitive pins live here: the scripts use only numpy +
-matplotlib and produce deterministic, style-only figures. If a
-matplotlib / numpy upgrade moves a default (font size, tick rendering),
-regenerate the whole folder in one pass so the figures stay
-stylistically consistent.
+No version-sensitive pins. If a matplotlib upgrade shifts a default,
+regenerate the whole folder in one pass to keep figures stylistically
+consistent.
