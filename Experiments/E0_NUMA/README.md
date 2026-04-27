@@ -44,12 +44,19 @@ pressure on L2 (no explicit flush). Correctness: analytic checksum
 - `results/{daint,beverin}/stream_peak_gpu.csv` — per-rep:
   `kernel,BX,BY,TX,TY,N,rep,time_ms,bw_gbs,checksum,status`.
 
-Expected best-case numbers (calibration):
+Expected best-case numbers (calibration; see
+[`../common/stream_peak.json`](../common/stream_peak.json) for the
+authoritative values used by every other plotter):
 
-| Platform | CPU       | GPU       |
+| Platform | CPU         | GPU         |
 |---|---|---|
-| Daint.Alps | ≈ 1.81 TB/s | ≈ 3.78 TB/s |
-| Beverin    | ≈ 1.16 TB/s | ≈ 4.29 TB/s |
+| Daint.Alps | ≈ 1.614 TB/s | ≈ 3.783 TB/s |
+| Beverin    | ≈ 0.968 TB/s | ≈ 3.551 TB/s |
+
+The Beverin GPU value is the post-calibration peak; the submitted
+paper used ≈ 4.29 TB/s, inflated because the cache-flush kernel was
+being dead-code-eliminated by the GPU compiler. See the top-level
+README's *Calibration update* section.
 
 ## Reviewer hint — `# TODO: VERSION`
 

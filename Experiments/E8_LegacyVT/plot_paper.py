@@ -38,9 +38,23 @@ CAP_PERCENTILE = 99      # compute cap from this percentile
 CAP_MARGIN     = 1.85    # multiply percentile by this
 
 PATTERN = re.compile(r"\[Timer\] Elapsed time: ([\d.]+) ms")
+
+# Filename keys for the two plotted columns. Multiple aliases per role
+# because the runner produces different names depending on how the
+# sweep was launched:
+#   * ``--unpermuted`` -> ``unpermuted_step{7,9}.txt`` (paper-snapshot
+#                         convention; one binary, no shuffle suffix)
+#   * curated default  -> ``winner_v1_{shuffled,unshuffled}_step*``
+#                         (winner_v1 is the identity SDFG; semantically
+#                         identical to ``unpermuted``)
+#   * legacy 95-sweep  -> the cv*_ch*_f*_s*_n012 cell is identity too
+# For the optimized column ``nlev_first`` and ``winner_v6`` are the
+# same SDFG (winner_v6 = nlev_first alias in permute_stage8.py).
 BASELINE_KEY = "unpermuted"
 TARGET_KEY   = "nlev_first_shuffled"
-KEEP_KEYS    = {BASELINE_KEY, TARGET_KEY}
+BASELINE_ALIASES = (BASELINE_KEY, "winner_v1_shuffled", "winner_v1_unshuffled")
+TARGET_ALIASES   = (TARGET_KEY,   "winner_v6_shuffled")
+KEEP_KEYS    = set(BASELINE_ALIASES) | set(TARGET_ALIASES)
 
 STEPS = [7, 9]
 STEP_LABEL = {
@@ -72,6 +86,16 @@ def bootstrap_ci_median(vals, alpha=0.05):
             return med, med, med
 
 
+def _canonical_role(name: str) -> str | None:
+    """Map a per-config filename stem to BASELINE_KEY / TARGET_KEY,
+    or None if it isn't one of the plotted roles."""
+    if name in BASELINE_ALIASES:
+        return BASELINE_KEY
+    if name in TARGET_ALIASES:
+        return TARGET_KEY
+    return None
+
+
 def load_folder(folder: str, step: int) -> dict[str, list[float]]:
     raw: dict[str, list[float]] = {}
     for f in glob.glob(os.path.join(folder, "*.txt")):
@@ -80,12 +104,13 @@ def load_folder(folder: str, step: int) -> dict[str, list[float]]:
         if has_step and not basename.endswith(f"_step{step}"):
             continue
         name = re.sub(r"_step\d+$", "", basename)
-        if name not in KEEP_KEYS:
+        role = _canonical_role(name)
+        if role is None:
             continue
         with open(f) as fh:
             times = [float(m.group(1)) for line in fh if (m := PATTERN.search(line))]
         if times:
-            raw.setdefault(name, []).extend(times)
+            raw.setdefault(role, []).extend(times)
     return raw
 
 

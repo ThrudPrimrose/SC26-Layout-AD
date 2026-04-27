@@ -1,28 +1,8 @@
 # E6 / access_analysis
 
-LOKI-driven analysis of ICON's `velocity_tendencies` subroutine. Produces
-the inputs the rest of the E6 pipeline (and E8 downstream) needs:
-
-1. **25 loop nests + their role-tagged access patterns** →
-   `velocity_advection_preprocessed.analysis.md`
-2. **The 6 representative loop nests** (one per pattern class — manually
-   pinned + auto-tiebroken) → `layout_candidates.json` + `chosen_loopnests.md`
-3. **The 6 canonical array groups** (cv / ch / f / s / n / lm) →
-   `canonical_array_groups.json`
-4. **Empirical V_k winners per (loopnest, platform, backend)** —
-   derived from the loopnest CSVs under `../loopnest_{1..6}/results/`
-   → `winners.json`. Consumed by E8 (`run_stage8_permutations.py`) as
-   the audit-trail mapping from "E6 measured X" to "E7/E8 ran X".
-5. **The 7-group V_k spec** — paper §IV-A's "7 layout-equivalent
-   groups, top-k=2 per group, Cartesian sweep" expressed as a
-   self-describing JSON → `layout_groups.json`. Consumed by E8 to
-   build `winner_v1` / `winner_v2` / `winner_v6` named configs and
-   the cross-product sweep.
-
-A small companion reporter, [`find_groups_and_loopnests.py`](find_groups_and_loopnests.py),
-prints (1)+(2) side-by-side and writes a single-file summary at
-`groups_and_loopnests.json` for downstream tools that want the full
-list without re-parsing the upstream JSONs.
+LOKI-driven analysis of ICON's `velocity_tendencies` subroutine.
+Produces the JSON inputs the rest of the E6 pipeline + E8 downstream
+consume; see the **Files** table below for what each script writes.
 
 ## Files
 
@@ -75,47 +55,32 @@ or you want to inspect the audit trail without running E8.
 ## How the 6 canonical groups are derived
 
 `generate_canonical_groups.py` walks every (array, touching-nest-set)
-pair in `layout_candidates.json` and assigns it one of six tags by
-rule:
+pair in `layout_candidates.json` and assigns it one of six tags. Each
+group also carries a `group_axis` consumed by the cross-product
+builder (`IC` = h_first vs v_first choice; `IN` = SoA vs AoS choice).
 
-| Group | Rule |
-|---|---|
-| `n` — CONN | Name matches `p_patch%{cells\|edges\|verts}%(edge\|cell\|vertex\|neighbor\|quad)_(idx\|blk)`, OR is one of the local aliases `icidx / icblk / ieidx / ieblk / ividx / ivblk / iqidx / iqblk / incidx / incblk`. |
-| `f` — FIELDS | Name begins with `p_prog%` or `p_diag%`. |
-| `s` — STENCIL | Name begins with `p_metrics%`, `p_int%`, or `p_patch%{edges,cells}%*` (non-connectivity). |
-| `cv` — COMPUTE_VERT | Work array (`z_*`, `cfl_*`, `lev*mask`) that appears in at least one nest with shape `v.h` AND `full_vert` range. |
-| `ch` — COMPUTE_HORIZ | Work array that doesn't meet the `cv` criterion (boundary sweeps + partial-vertical stencils). |
-| `lm` — LEVMASK | Level-mask 2D arrays (`levmask`, `levelmask`) — split out from `cv` so the `(nblks, nlev) → (nlev, nblks)` transpose can be expressed independently of the rest of `cv`. |
-
-Everything except the connectivity aliases is derived from LOKI output.
-The alias list is hardcoded because `analyze_access.py` filters out
-indirection-array accesses (`INDIRECT_ARRAYS` in its name set) so those
-arrays never appear in any nest's `arrays` field — but they're still
-swept as their own axis in the real layout search, so the `n` group
-must be emitted.
-
-## Each group is tagged with its storage axis
-
-Every group carries a `group_axis` entry in the JSON so the downstream
-cross-product builder knows which storage axis the group consumes:
-
-| Group | Axis | Why |
+| Group | Axis | Rule |
 |---|---|---|
-| `cv`, `ch`, `f`, `s`, `lm` | `IC` | (h,v,b) arrays — choice is whether `je` or `jk` is innermost: `h_first` vs `v_first` |
-| `n` | `IN` | (N,2) connectivity — choice is SoA vs AoS |
+| `n` — CONN | IN | Name matches `p_patch%{cells\|edges\|verts}%(edge\|cell\|vertex\|neighbor\|quad)_(idx\|blk)`, OR a local alias (`icidx`, `icblk`, `ieidx`, `ieblk`, `ividx`, `ivblk`, `iqidx`, `iqblk`, `incidx`, `incblk`). |
+| `f` — FIELDS | IC | Name begins with `p_prog%` or `p_diag%`. |
+| `s` — STENCIL | IC | Name begins with `p_metrics%`, `p_int%`, or `p_patch%{edges,cells}%*` (non-connectivity). |
+| `cv` — COMPUTE_VERT | IC | Work array (`z_*`, `cfl_*`) that appears in at least one nest with shape `v.h` AND `full_vert` range. |
+| `ch` — COMPUTE_HORIZ | IC | Work array that doesn't meet the `cv` criterion. |
+| `lm` — LEVMASK | IC | Level-mask 2-D arrays (`levmask`, `levelmask`) — split out from `cv` so the `(nblks, nlev) → (nlev, nblks)` transpose can be expressed independently. |
 
-The builder (`../build_layout_crossproduct.py`) uses this tag to project
-each V-winner onto the right axis before voting. V-ids that differ only
-in the opposite axis (e.g. V3 vs V4 on the IC axis, or V1 vs V3 on the
-IN axis) collapse to the same candidate, which keeps the final sweep
-small and free of aliased configs.
+Everything except the connectivity aliases is derived from LOKI
+output. The alias list is hardcoded because `analyze_access.py`
+filters indirection arrays out of every nest's `arrays` field, so
+they need re-injection here.
+
+The cross-product builder uses `group_axis` to project each per-group
+V-winner onto the right axis before voting. V-ids that differ only in
+the opposite axis (e.g. V3 vs V4 on IC, or V1 vs V3 on IN) collapse
+to the same candidate, keeping the final sweep small.
 
 **Caveat.** The `cv` / `ch` boundary in the real sweep
-(`icon-artifacts/velocity/sc26_layout/permute_stage8.py`) is drawn by
-the *write direction* of each producer loop (jk-outer write → cv;
-je-inner write → ch). LOKI's current output doesn't split reads from
-writes, so this script falls back to "touching nest shape". Expect
-small differences (e.g. `z_v_grad_w` lands in `cv` here but in `ch` in
-the reference repo). If exact parity is needed, extend
-`analyze_access.py` to emit per-array write-site metadata and update
-the heuristic accordingly.
+(`sc26_layout/permute_stage8.py`) is drawn by the *write direction*
+of each producer loop (jk-outer write → cv; je-inner write → ch).
+LOKI's output doesn't split reads from writes, so this script falls
+back to "touching nest shape" — expect small differences (e.g.
+`z_v_grad_w` lands in `cv` here but in `ch` in the reference repo).
