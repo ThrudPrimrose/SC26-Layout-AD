@@ -70,9 +70,9 @@ E8 & $C_3$, $C_4$         & Fig.~14, Tab.~V     & R1, R2 \\
 \end{center}
 
 \paragraph{E8 is the AD's default full velocity-tendencies path.}
-\texttt{Experiments/E8\_LegacyVT/} drives the full velocity-tendencies stage-8 codegen pipeline on DaCe \texttt{f2dace/staging} and reproduces Fig.~14 / Tab.~V via a single \texttt{sbatch run\_\{daint,beverin\}.sh}; default \texttt{CONFIGS="winner\_v1,winner\_v2,winner\_v6"} maps to the three V$_k$ winners (V1 = identity / Fig.~13 \emph{Original Layout}; V2 = connectivity-only intermediate; V6 = $v_\textrm{first}$ / Fig.~13 \emph{Optimized Layout}). \texttt{E7\_FullVelocityTendencies/} is an in-progress SDFG-driven refactor of the same pipeline (DaCe \texttt{yakup/dev}) and is not required for the AD's reproduction path.
+\texttt{Experiments/E8\_LegacyVT/} drives the stage-8 codegen pipeline on DaCe \texttt{f2dace/staging} and reproduces Fig.~14 / Tab.~V from a single \texttt{sbatch run\_\{daint,beverin\}.sh}. The default \texttt{CONFIGS="winner\_v1,winner\_v2,winner\_v6"} selects the three V$_k$ winners: V1 (identity, Fig.~13 \emph{Original Layout}), V2 (connectivity-only intermediate), and V6 ($v_\textrm{first}$, Fig.~13 \emph{Optimized Layout}). \texttt{E7\_FullVelocityTendencies/} is an in-progress SDFG-driven refactor of the same pipeline (DaCe \texttt{yakup/dev}) and is not required for the AD's reproduction path.
 
-Contribution~$C_1$ is a pen-and-paper proof; its quotient-graph figures (Figures~2--3) come from \texttt{Figures/}. Runtime figures (Figures~4, 8--14) regenerate via \texttt{Figures/plot\_all.sh} (umbrella; subset names \texttt{PaperSnapshot}, \texttt{Results}, \texttt{Runtime}, \texttt{Peaks}, or any illustrative group); the two sibling drivers \texttt{plot\_paper\_snapshot.sh} and \texttt{plot\_results.sh} read frozen-CSV vs.\ reviewer-CSV roots respectively into distinct destinations. Both pin DejaVu Sans via \texttt{MATPLOTLIBRC=Figures/matplotlibrc}; missing CSVs / TXTs are skipped with a one-line notice.
+Contribution~$C_1$ is a pen-and-paper proof; its quotient-graph figures (Figures~2--3) come from \texttt{Figures/}. Runtime figures (Figures~4, 8--14) regenerate via \texttt{Figures/plot\_all.sh} (umbrella; subset names \texttt{PaperSnapshot}, \texttt{Results}, \texttt{Runtime}, \texttt{Peaks}, or any illustrative group). Two sibling drivers --- \texttt{plot\_paper\_snapshot.sh} (frozen CSVs $\to$ paper-canonical figures) and \texttt{plot\_results.sh} (reviewer's CSVs $\to$ fresh figures) --- write to separate output directories. Both pin DejaVu Sans via \texttt{MATPLOTLIBRC=Figures/matplotlibrc}; missing CSVs or TXTs are skipped with a one-line notice.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Artifact Identification}
@@ -82,25 +82,25 @@ Contribution~$C_1$ is a pen-and-paper proof; its quotient-graph figures (Figures
 
 \artrel
 
-Artifact~$A_1$ validates the layout algebra ($C_2$), cost metrics ($C_3$), and the cookbook-driven workflow ($C_4$). E1--E4 are microbenchmarks isolating individual primitives. E5 evaluates composed transformations on a Quantum ESPRESSO production kernel. E6 applies the full optimization workflow per loop-nest pattern class. E8 drives the resulting layouts through the velocity-tendencies module end-to-end on the GPU.
+Artifact~$A_1$ validates the layout algebra ($C_2$), the cost metrics ($C_3$), and the cookbook-driven workflow ($C_4$). E1--E4 are microbenchmarks that isolate individual primitives. E5 evaluates composed transformations on a Quantum ESPRESSO production kernel. E6 applies the full optimization workflow per loop-nest pattern class. E8 drives the resulting layouts through the velocity-tendencies module end-to-end on the GPU.
 
 \artexp
 
-\textbf{E1 (Matrix Addition, Fig.~4):} elementwise $C \mathrel{+}= A + B$ with $B$ in column-major. Schedule-only recovers 36\%--72\% of STREAM peak on CPUs and 78\%--95\% on GPUs; layout transformations close the gap to 68\%--88\% and 99\%, respectively.
+\textbf{E1 (Matrix Addition, Fig.~4):} elementwise $C \mathrel{+}= A + B$ with $B$ in column-major. Schedule-only tuning recovers 36--72\% of STREAM peak on CPUs and 78--95\% on GPUs; layout transformation closes the gap to 68--88\% and 99\% respectively.
 
-\textbf{E2 (Complex Conjugation, Fig.~8):} in-place conjugation of $P$ complex arrays under AoS, SoA, AoSoA-16. SoA collapses on Zen4 at high $P$ from L1D set conflicts; AoSoA-16 stays robust across all four backends.
+\textbf{E2 (Complex Conjugation, Fig.~8):} in-place conjugation of $P$ complex arrays under AoS, SoA, and AoSoA-16. SoA collapses on Zen4 at high $P$ from L1D set conflicts; AoSoA-16 stays robust across all four backends.
 
-\textbf{E3 (Matrix Transpose, Fig.~9, Tab.~III):} $N \times N$ fp32 transpose, row-major vs.\ blocked. Blocking gains $1.7\times$ on Zen4 and $3.2\times$ on Grace, reaching 61\%--81\% of STREAM peak vs.\ HPTT's 44\%. On GPUs, shared-memory tiling absorbs the stride.
+\textbf{E3 (Matrix Transpose, Fig.~9, Tab.~III):} $N \times N$ fp32 transpose comparing row-major and blocked layouts. Blocking gains $1.7\times$ on Zen4 and $3.2\times$ on Grace, reaching 61--81\% of STREAM peak versus HPTT's 44\%. On GPUs, shared-memory tiling absorbs the stride.
 
-\textbf{E4 (Gather-Accumulate-Scatter, Fig.~10):} indirect $y[\sigma(i)] \mathrel{+}= x[i]$ with vs.\ without index-sort shuffle. GPU bandwidth improves 21\%$\to$30\% (uniform) and 23\%$\to$42\% (BaTiO$_3$) on MI300A; 35\%$\to$62\% and 48\%$\to$82\% on Hopper. CPU gains 9\%--15\%.
+\textbf{E4 (Gather-Accumulate-Scatter, Fig.~10):} indirect $y[\sigma(i)] \mathrel{+}= x[i]$ with and without an index-sort shuffle. GPU bandwidth improves from 21\% to 30\% (uniform) and from 23\% to 42\% (BaTiO$_3$) on MI300A, and from 35\% to 62\% and 48\% to 82\% on Hopper; CPU gains 9--15\%.
 
 \textbf{E5 (QE \texttt{addusxx\_g}, Fig.~11):} composed unzip + permute + shuffle. Speedups: $1.12\times$ Zen4, $1.11\times$ Grace, $1.18\times$ Hopper, $1.00\times$ MI300A.
 
-\textbf{E6 (ICON velocity tendencies, Figs.~12--13, Tab.~IV):} the module's 25 loop nests / 50 arrays collapse into 6 pattern classes and 7 layout-equivalent groups. Per-class representative loop nests are evaluated as separate microbenchmarks (\texttt{loopnest\_\{1..6\}/}) under different layout combinations (dimension orderings $\times$ blocked factors) at the default $nlev=128$; the sweep covers $nlev \in \{90, 96, 128, 256\}$. Loopnest~1 (indirect stencil, complete vertical) gains $1.85\times$ on Zen4 and large factors on GPUs under uniform random indirection; under exact R02B05 connectivity GPUs are comparable across layouts (Tab.~IV reports $\mu$ for both regimes).
+\textbf{E6 (ICON velocity tendencies, Figs.~12--13, Tab.~IV):} the module's 25 loop nests and 50 arrays collapse into 6 pattern classes and 7 layout-equivalent groups. One representative loop nest per class is benchmarked under \texttt{loopnest\_\{1..6\}/}, sweeping layout combinations (dimension orderings $\times$ blocked factors) at the default $nlev=128$; the sweep covers $nlev \in \{90, 96, 128, 256\}$. Loopnest~1 (indirect stencil, complete vertical) gains $1.85\times$ on Zen4 and large factors on GPUs under uniform random indirection; under exact R02B05 connectivity, GPU performance is comparable across layouts. Tab.~IV reports $\mu$ for both regimes.
 
-\textbf{E8 (Full velocity tendencies, Fig.~14, Tab.~V):} GPU layout-permutation sweep over the full module via \texttt{run\_stage8\_permutations.py} on the stage-8 SDFGs. Default \texttt{CONFIGS="winner\_v1,winner\_v2,winner\_v6"}; the 95-cell cross-product (\texttt{cv*\_ch*\_f*\_s*\_n*}) is opt-in. Vertical-first yields $1.17\times$ on MI300A and $1.07\times$ on Hopper for Config~B (5 of every 6 calls), $1.06\times$ / $0.97\times$ for Config~A. Net per-timestep: $\sim$15\% MI300A, $\sim$5\% Hopper (5:1 weighted).
+\textbf{E8 (Full velocity tendencies, Fig.~14, Tab.~V):} GPU layout-permutation sweep over the full module via \texttt{run\_stage8\_permutations.py} on the stage-8 SDFGs. The default \texttt{CONFIGS="winner\_v1,winner\_v2,winner\_v6"} runs the three V$_k$ winners; the 95-cell cross-product (\texttt{cv*\_ch*\_f*\_s*\_n*}) is opt-in. Vertical-first yields $1.17\times$ on MI300A and $1.07\times$ on Hopper for Config~B (which accounts for 5 of every 6 calls), and $1.06\times$ / $0.97\times$ for Config~A; the net per-timestep gain is $\sim$15\% on MI300A and $\sim$5\% on Hopper under the 5:1 weighting.
 
-\paragraph{Expected behaviour.} The qualitative orderings above (permuted $>$ schedule-only, AoSoA-16 robust where SoA degrades, blocked $>$ HPTT $>$ naive row-major on CPUs, index-sort $>$ unsorted, V$_k$ winner $>$ ICON-default, V6 $\geq$ V1/V2/unpermuted on Config~B) should hold on any hardware with comparable cache-line sizes; absolute speedups depend on the platform.
+\paragraph{Expected behaviour.} The qualitative orderings above --- permuted $>$ schedule-only; AoSoA-16 robust where SoA degrades; blocked $>$ HPTT $>$ naive row-major on CPUs; index-sort $>$ unsorted; V$_k$ winner $>$ ICON-default; V6 $\geq$ V1, V2, and unpermuted on Config~B --- should hold on any hardware with comparable cache-line sizes. Absolute speedups depend on the platform.
 
 \arttime
 \begin{center}
@@ -174,7 +174,7 @@ Vendor xpose (E3) & HPTT          & HPTT              \\
 \item \texttt{GPU\_CXXFLAGS} (Beverin, hipcc): the CPU set minus \texttt{-fno-vect-cost-model} (Clang has no equivalent), plus \texttt{--offload-arch=gfx942 -munsafe-fp-atomics -mllvm -amdgpu-early-inline-all=true -mllvm -amdgpu-function-calls=false -fgpu-flush-denormals-to-zero}.
 \end{itemize}
 
-\texttt{-fno-trapping-math} and \texttt{-fno-math-errno} are already implied by \texttt{-ffast-math}; they are listed explicitly so intent survives any future \texttt{-ffast-math} definition drift.
+\texttt{-fno-trapping-math} and \texttt{-fno-math-errno} are already implied by \texttt{-ffast-math}; we list them explicitly to guard against future redefinitions of \texttt{-ffast-math}.
 
 \paragraph{OpenMP and pinning.} \texttt{OMP\_SCHEDULE=static} is exported by both setup scripts; every \texttt{\#pragma omp parallel for} in our sources uses \texttt{schedule(static)}. CPU-to-core pinning via \texttt{SLURM\_CPU\_BIND=cores} (no \texttt{\#SBATCH --cpu-bind}).
 
@@ -190,12 +190,11 @@ E1--E4 generate input data synthetically. Production-code experiments (E5, E6, E
 
 \artinpart{Installation and Deployment}
 
-Each experiment ships \texttt{run\_\{daint,beverin\}.sh}, which sources \texttt{../common/activate.sh} (venv + DaCe pin) and \texttt{../common/setup\_\{daint,beverin\}.sh} (Spack loads, OMP/NUMA pinning, \texttt{CPU\_CXX}/\texttt{GPU\_CXX} flags), then compiles, runs benchmarks (100~reps after 5~warm-ups with cache flushes), and writes results next to each experiment.
-One-time per cluster: \texttt{bash Experiments/common/setup.sh}; per experiment: \texttt{cd Experiments/EX\_\textit{name} \&\& sbatch run\_daint.sh}; plot: \texttt{python plot\_paper.py} (or \texttt{bash Figures/plot\_all.sh Runtime} for everything at once).
+One-time per cluster: \texttt{bash Experiments/common/setup.sh} bootstraps a Python 3.13 venv, the DaCe checkout, and the per-platform compile flags. Per experiment: \texttt{cd Experiments/EX\_\textit{name} \&\& sbatch run\_<plat>.sh}, then plot with \texttt{python plot\_paper.py} (or \texttt{bash Figures/plot\_all.sh Runtime} to regenerate the full runtime sweep). Each \texttt{run\_<plat>.sh} sources \texttt{../common/activate.sh} (venv + DaCe pin) and \texttt{../common/setup\_<plat>.sh} (Spack loads, compile flags, OMP and NUMA pinning) before invoking the benchmark; \texttt{<plat>} is \texttt{daint} or \texttt{beverin}.
 
 \artcomp
 
-Every experiment is driven by a single SLURM script, \texttt{run\_<plat>.sh} (\texttt{<plat>} = \texttt{daint} or \texttt{beverin}), which sources \texttt{../common/activate.sh} (venv + DaCe pin) and \texttt{../common/setup\_<plat>.sh} (Spack loads, compile flags, OMP / NUMA pinning), then compiles, executes 100 reps after 5 warm-ups, and writes results next to the experiment. Plotting is invoked manually with \texttt{python plot\_paper.py} after the job completes. E1--E5 are mutually independent; E6 and E8 are fully automated by their run scripts (no per-stage manual invocation).
+Every experiment runs through its \texttt{run\_<plat>.sh}, which compiles the benchmark, executes 100 timed repetitions after 5 warm-ups (with cache flushes between repetitions), and writes results next to the experiment. Plotting is invoked manually with \texttt{python plot\_paper.py} once the job completes. E1--E5 are mutually independent and may be submitted in parallel; E6 and E8 are fully automated by their run scripts and require no per-stage manual invocation.
 
 \paragraph{Per-experiment workflow.}
 \begin{itemize}
@@ -226,7 +225,7 @@ Every experiment is driven by a single SLURM script, \texttt{run\_<plat>.sh} (\t
 
 \textbf{Statistical methodology.} Following Hoefler and Belli, every configuration runs 100~reps after 5~warm-ups. An $8192^2$ Jacobi stencil (3~sweeps with buffer swap; \texttt{common/jacobi\_flush.h}) flushes all cache levels between reps. We report medians with 95\% bootstrap CIs of the median (BCa, $n=10{,}000$ resamples). Violin plots show all 100~samples (no outlier trimming); KDE uses Scott's rule and 200 eval points, identical across every figure. RNG seed: \texttt{SC26\_SEED=42}. Bandwidths are normalized to the measured STREAM Triad peak per platform.
 
-\paragraph{Figure $\to$ command map.} \texttt{cd} into the directory below (under \texttt{Experiments/}) then \texttt{sbatch run\_<plat>.sh \&\& python plot\_paper.py}; \texttt{<plat>} = \texttt{daint} or \texttt{beverin}.
+\paragraph{Figure $\to$ command map.} Each row resolves to \texttt{cd Experiments/<dir> \&\& sbatch run\_<plat>.sh \&\& python plot\_paper.py}.
 
 \begin{center}
 \small
@@ -248,6 +247,6 @@ Fig.~14, Tab.~V     & \texttt{E8\_LegacyVT}                       \\
 
 \artout
 
-Each experiment writes results into its own folder (\texttt{results/\{daint,beverin\}/} for E0--E6 CSV-emitting binaries; \texttt{<plat>\_full\_permutations\_8/} for E8's per-config stage-8 TXTs). \texttt{plot\_paper.py} produces the PDF violin plots matching Figures~4, 8--14; metric tables (Tabs.~III, IV, V) are emitted alongside. Expected trends (relative layout ordering, gap magnitudes) reproduce; absolute bandwidths depend on hardware and system load.
+Each experiment writes results into its own folder: \texttt{results/\{daint,beverin\}/} for the CSV-emitting binaries (E1--E6), and \texttt{<plat>\_full\_permutations\_8/} for E8's per-config stage-8 TXTs. \texttt{plot\_paper.py} then produces the PDF violin plots matching Figures~4 and 8--14; the metric tables (Tabs.~III, IV, V) are emitted alongside. Expected trends --- relative layout ordering and gap magnitudes --- reproduce; absolute bandwidths depend on hardware and system load.
 
 \end{document}
