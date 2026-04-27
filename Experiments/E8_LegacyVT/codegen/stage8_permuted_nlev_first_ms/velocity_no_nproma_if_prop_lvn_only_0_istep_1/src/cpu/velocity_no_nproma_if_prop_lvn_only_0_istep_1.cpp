@@ -1,5 +1,7 @@
 /* DaCe AUTO-GENERATED FILE. DO NOT MODIFY */
 #include <dace/dace.h>
+#include "reductions_kernel.cuh"
+#include "reductions_cpu.h"
 #include "../../include/hash.h"
 
 struct t_grid_domain_decomp_info {
@@ -1227,7 +1229,7 @@ inline void loop_body_7_0_50(velocity_no_nproma_if_prop_lvn_only_0_istep_1_state
             #ifdef __REDUCE_DEVICE__
             reduce_maxZ_to_address_device(in_arr, out, in_size);
             #elif defined(__REDUCE_GPU__)
-            reduce_maxZ_to_address_gpu(in_arr, out, in_size, __dace_current_stream);
+            reduce_maxZ_to_address_gpu(in_arr, out, in_size, nullptr);
             #else
             reduce_maxZ_to_address_cpu(in_arr, out, in_size);
             #endif
@@ -1624,7 +1626,7 @@ inline void loop_body_78_0_50(velocity_no_nproma_if_prop_lvn_only_0_istep_1_stat
             #ifdef __REDUCE_DEVICE__
             reduce_maxZ_to_address_device(in_arr, out, in_size);
             #elif defined(__REDUCE_GPU__)
-            reduce_maxZ_to_address_gpu(in_arr, out, in_size, __dace_current_stream);
+            reduce_maxZ_to_address_gpu(in_arr, out, in_size, nullptr);
             #else
             reduce_maxZ_to_address_cpu(in_arr, out, in_size);
             #endif
@@ -3258,7 +3260,7 @@ void __program_velocity_no_nproma_if_prop_lvn_only_0_istep_1_internal(velocity_n
             #ifdef __REDUCE_DEVICE__
             out = reduce_maxZ_to_scalar_device(in_arr, in_size);
             #elif defined(__REDUCE_GPU__)
-            out = reduce_maxZ_to_scalar_gpu(in_arr, in_size, __dace_current_stream);
+            out = reduce_maxZ_to_scalar_gpu(in_arr, in_size, nullptr);
             #else
             out = reduce_maxZ_to_scalar_cpu(in_arr, in_size);
             #endif
