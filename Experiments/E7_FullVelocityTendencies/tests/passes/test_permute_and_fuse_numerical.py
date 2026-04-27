@@ -169,7 +169,7 @@ def test_fuse_only_preserves_numerics():
     be identical to the unfused baseline -- the transform only changes
     state structure / dispatch."""
     N, ROWS = 5, 4
-    np.random.seed(2)
+    np.random.seed(_SC26_SEED + 2)
     src_np = np.random.rand(ROWS, N).astype(np.float64)
 
     base_sdfg = _build_baseline_sdfg(N=N, ROWS=ROWS, name="numerical_fuse_base")
@@ -187,7 +187,7 @@ def test_permute_then_fuse_preserves_numerics():
     """Apply both transforms in pipeline order (permute first, then
     fuse). Output must be identical to the baseline."""
     N, ROWS = 5, 4
-    np.random.seed(3)
+    np.random.seed(_SC26_SEED + 3)
     src_np = np.random.rand(ROWS, N).astype(np.float64)
 
     base_sdfg = _build_baseline_sdfg(N=N, ROWS=ROWS, name="numerical_combo_base")
