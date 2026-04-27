@@ -1,4 +1,75 @@
 import dace
+from dace.sdfg.scope import is_devicelevel_gpu
+
+
+def widen_kernel_written_gpu_scalars(root: dace.SDFG):
+    """Find every Scalar whose storage is neither Register nor Default and
+    that is written to from inside a GPU_Device kernel scope, and replace it
+    with a length-1 Array (preserving storage). Recurses into nested SDFGs.
+
+    Returns the list of names that were widened.
+    """
+    skip_storage = {dace.dtypes.StorageType.Register, dace.dtypes.StorageType.Default}
+    widened = []
+    # Walk the whole tree top-down so that when we widen a name in `root` the
+    # nested-SDFG fixup inside `_widen_one` lines up the matching descriptors.
+    for sdfg in list(root.all_sdfgs_recursive()):
+        for name, desc in list(sdfg.arrays.items()):
+            if not isinstance(desc, dace.data.Scalar):
+                continue
+            if desc.storage in skip_storage:
+                continue
+            if not _is_kernel_written(sdfg, name):
+                continue
+            _widen_one(sdfg, name)
+            widened.append((sdfg.name, name))
+    return widened
+
+
+def _is_kernel_written(sdfg: dace.SDFG, name: str) -> bool:
+    """Return True iff `name` has at least one AccessNode in `sdfg` that lives
+    inside a GPU_Device kernel scope and has an incoming edge."""
+    for state in sdfg.states():
+        for node in state.nodes():
+            if not (isinstance(node, dace.nodes.AccessNode) and node.data == name):
+                continue
+            if state.in_degree(node) == 0:
+                continue
+            if is_devicelevel_gpu(sdfg, state, node):
+                return True
+    return False
+
+
+def _widen_one(sdfg: dace.SDFG, name: str):
+    """Replace `name` in `sdfg` with a length-1 Array of the same dtype,
+    storage, transient flag, and lifetime; rewrite memlets that reference it
+    in this SDFG; recurse into nested SDFGs that re-declare `name`."""
+    scalar_desc = sdfg.arrays[name]
+    array_desc = dace.data.Array(
+        dtype=scalar_desc.dtype,
+        shape=(1, ),
+        transient=scalar_desc.transient,
+        storage=scalar_desc.storage,
+        location=scalar_desc.location,
+        strides=(1, ),
+        lifetime=scalar_desc.lifetime,
+    )
+    sdfg.remove_data(name, validate=False)
+    sdfg.add_datadesc(name, array_desc)
+
+    for state in sdfg.states():
+        for edge in state.edges():
+            if edge.data is not None and edge.data.data == name:
+                edge.data = dace.memlet.Memlet.from_array(dataname=name, datadesc=array_desc)
+
+    # Mirror the change into nested SDFGs that declare the same name as a
+    # connector (their inner descriptor must agree with the outer one).
+    for state in sdfg.states():
+        for node in state.nodes():
+            if (isinstance(node, dace.nodes.NestedSDFG) and name in node.sdfg.arrays
+                    and isinstance(node.sdfg.arrays[name], dace.data.Scalar)):
+                _widen_one(node.sdfg, name)
+
 
 def move_scalar_to_array(root:dace.SDFG, name:str, double_size:bool=False):
     assert name in root.arrays, f"Array {name} not found in SDFG"

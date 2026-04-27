@@ -342,6 +342,23 @@ PERMUTE_CONFIGS["index_only"] = _make_config({
     "gpu___CG_p_patch__CG_cells__m_neighbor_blk":   [0, 2, 1],
 })
 
+
+# ---------------------------------------------------------------------------
+# E6 V_k aliases -- the AD-facing names that the run scripts pass via
+# --configs. Each aliases an already-defined config:
+#   winner_v1  -- V1 = h_first + SoA-conn = identity baseline
+#                 (empty permute_map; same as Fig. 13 ``Original Layout``)
+#   winner_v2  -- V2 = h_first + AoS-conn = connectivity-only intermediate
+#                 (= ``index_only``; data unchanged from V1)
+#   winner_v6  -- V6 = v_first + AoS-conn = §IV-D adopted layout
+#                 (= ``nlev_first``; same as Fig. 13 ``Optimized Layout``)
+# E8 names map cleanly onto E7's named configs so the AD reviewer can
+# submit either pipeline with the same CONFIGS list.
+PERMUTE_CONFIGS["winner_v1"] = _make_config({})
+PERMUTE_CONFIGS["winner_v2"] = _make_config(dict(PERMUTE_CONFIGS["index_only"]["permute_map"]))
+PERMUTE_CONFIGS["winner_v6"] = _make_config(dict(PERMUTE_CONFIGS["nlev_first"]["permute_map"]))
+
+
 # ---------------------------------------------------------------------------
 # Query helpers
 # ---------------------------------------------------------------------------
@@ -350,10 +367,12 @@ def _parse_name(config_name: str):
     """Return (cv, ch, f, s, conn_perm) from a config name string."""
     base = config_name.removesuffix("_ms").removesuffix("_mu")
 
-    if base == "nlev_first":
+    if base in ("nlev_first", "winner_v6"):
         return 1, 1, 1, 1, [2, 0, 1]
-    if base == "index_only":
+    if base in ("index_only", "winner_v2"):
         return 0, 0, 0, 0, [2, 0, 1]
+    if base == "winner_v1":
+        return 0, 0, 0, 0, [0, 1, 2]
 
     # Split each token at the boundary between letters and digits.
     # "cv1" → ("cv", "1"),  "f1" → ("f", "1"),  "n201" → ("n", "201")

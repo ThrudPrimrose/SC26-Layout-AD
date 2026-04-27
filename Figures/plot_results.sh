@@ -35,6 +35,11 @@ export MATPLOTLIBRC="${FIG_DIR}/matplotlibrc"
 
 # Paths are relative to Experiments/ so deeper experiments (e.g. E6
 # loopnest_N) slot in without special-casing.
+# E8 is the default full-velocity-tendencies path (paper §IV-D / Fig 14
+# / Tab V); E7 is opportunistic. Everything else lists in source-paper
+# order. ``has_runtime_evidence`` picks the right per-experiment
+# evidence shape -- E8 emits ``<plat>_full_permutations_8/*.txt`` at
+# the experiment root, not under ``results/``.
 RUNTIME_EXPS=(
   E1_MatrixAdd
   E2_Conjugation
@@ -47,17 +52,34 @@ RUNTIME_EXPS=(
   E6_VelocityTendencies/loopnest_4
   E6_VelocityTendencies/loopnest_5
   E6_VelocityTendencies/loopnest_6
+  E8_LegacyVT
   E7_FullVelocityTendencies
 )
 
+# Returns 0 iff ``$1`` (an experiment dir) has anything plot-worthy.
+# E8 keeps results in ``{daint,beverin}_full_permutations_8/*.txt`` next
+# to the run scripts, NOT under ``results/``; everything else (E1-E7)
+# uses the canonical ``results/<platform>/.../{*.csv,run.txt}`` shape.
+has_runtime_evidence() {
+    local d="$1"
+    [[ -d "$d/results" ]] && {
+        find "$d/results" -type f \( -name '*.csv' -o -name 'run.txt' \) -print -quit \
+            | grep -q . && return 0
+    }
+    find "$d" -maxdepth 2 -type d -name '*_full_permutations_8' -print -quit 2>/dev/null \
+        | grep -q . && {
+        find "$d" -maxdepth 3 -path '*_full_permutations_8/*.txt' -print -quit 2>/dev/null \
+            | grep -q . && return 0
+    }
+    return 1
+}
+
 marker="$(mktemp /tmp/plot_results_marker.XXXXXX)"
-echo "[plot_results] figures will land in each Experiments/<exp>/results/"
+echo "[plot_results] figures will land in each Experiments/<exp>/results/ (or, for E8, next to <plat>_full_permutations_8/)"
 for exp in "${RUNTIME_EXPS[@]}"; do
     exp_dir="${EXP_ROOT}/${exp}"
-    # E7 (and any future experiment that ships a v2 plotter) prefers
-    # plot_paper_v2.py because the on-disk results layout differs from
-    # the paper-snapshot layout (per-timestep run.txt subdirs instead of
-    # flat CSVs). Fall back to plot_paper.py for everyone else.
+    # E7 ships plot_paper_v2.py for the per-timestep run.txt layout;
+    # everyone else (E1-E6, E8) ships plot_paper.py.
     if [[ -f "${exp_dir}/plot_paper_v2.py" ]]; then
         script_name="plot_paper_v2.py"
     elif [[ -f "${exp_dir}/plot_paper.py" ]]; then
@@ -66,12 +88,17 @@ for exp in "${RUNTIME_EXPS[@]}"; do
         echo "  [skip] ${exp}: no plot_paper{,_v2}.py"
         continue
     fi
-    if [[ ! -d "${exp_dir}/results" ]] \
-       || [[ -z "$(find "${exp_dir}/results" -type f \( -name '*.csv' -o -name 'run.txt' \) -print -quit)" ]]; then
-        echo "  [skip] ${exp}: Experiments/${exp}/results/ has no CSVs or run.txt (run sbatch first)"
+    if ! has_runtime_evidence "${exp_dir}"; then
+        echo "  [skip] ${exp}: no CSVs / run.txt / *_full_permutations_8/*.txt (run sbatch first)"
         continue
     fi
-    out="${exp_dir}/results"
+    # E8 lands its own figures next to the .txt logs at the experiment
+    # root; everyone else routes them into results/.
+    if [[ -d "${exp_dir}/results" ]]; then
+        out="${exp_dir}/results"
+    else
+        out="${exp_dir}"
+    fi
     echo "  [plot] ${exp} -> ${out#${REPO_ROOT}/}/  (${script_name})"
     touch "${marker}"
     if ! ( cd "${exp_dir}" && python "${script_name}" ); then

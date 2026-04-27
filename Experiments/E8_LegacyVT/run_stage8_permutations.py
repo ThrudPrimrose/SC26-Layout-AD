@@ -20,7 +20,25 @@ import subprocess
 import sys
 from pathlib import Path
 
-from sc26_layout.permute_stage8 import PERMUTE_CONFIGS
+# Ensure DaCe is on f2dace/staging BEFORE importing sc26_layout (which
+# itself imports dace). E8 is the legacy stage-8 pipeline that still
+# depends on the f2dace Fortran frontend; yakup/dev does not ship that
+# transform set. ``ensure_branch`` is a no-op if the checkout is
+# already on the right branch; it refuses to switch when the working
+# tree is dirty so the caller's in-progress work is never clobbered.
+#
+# Load utils/dace_branch.py via importlib so that ``utils/__init__.py``
+# (which eagerly imports legacy-DaCe-dependent modules like
+# ``utils.map_fissions``) doesn't fire and crash the import on a
+# yakup/dev checkout that lacks ``dace.frontend.fortran.ast_utils.singular``.
+import importlib.util as _ilu  # noqa: E402
+_branch_path = Path(__file__).resolve().parent / "utils" / "dace_branch.py"
+_spec = _ilu.spec_from_file_location("_e8_dace_branch", _branch_path)
+_dace_branch = _ilu.module_from_spec(_spec)
+_spec.loader.exec_module(_dace_branch)
+_dace_branch.ensure_branch(_dace_branch.F2DACE_BRANCH)
+
+from sc26_layout.permute_stage8 import PERMUTE_CONFIGS  # noqa: E402
 
 # ---------------------------------------------------------------------------
 # Constants

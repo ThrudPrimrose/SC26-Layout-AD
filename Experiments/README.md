@@ -18,10 +18,16 @@ the longest single experiment.
 | [E4_GAS/](E4_GAS/) | Fig. 10 | C₂–C₄ | ≈ 60 min | ≈ 200 MB BaTiO₃ — `bash E4_GAS/download_data.sh` | `results/{daint,beverin}/zaxpy_sweep_{small,1gb}{,_cpu}.csv` |
 | [E5_USXX/](E5_USXX/) | Fig. 11, Lst. 1 | C₂–C₄ | ≈ 60 min | ≈ 1 GB BaTiO₃ — `bash E5_USXX/download_data.sh` | `results/{daint,beverin}/addusxx_{cpu,gpu}_sweep.csv` |
 | [E6_VelocityTendencies/](E6_VelocityTendencies/) | Fig. 12–13, Tab. IV | C₃, C₄ | ≈ 450 min | ICON R02B05 — per-subtask `download_data.sh` | per-subtask READMEs |
-| [E7_FullVelocityTendencies/](E7_FullVelocityTendencies/) | Fig. 14, Tab. V | C₃, C₄ | ≈ 240 min | ICON nproma=20480 — auto-fetched on first run via `tools/download_data.sh`; reads `E6/access_analysis/layout_candidates.json` (run E6 T6.2 first) | `results/{daint,beverin}/<config>/*.csv` |
+| [E8_LegacyVT/](E8_LegacyVT/) **(default)** | Fig. 14, Tab. V | C₃, C₄ | ≈ 240 min | ICON nproma=20480 — symlinked from E7 if present, else auto-fetched; reads `E6/access_analysis/{layout_candidates,winners}.json` (auto-regenerated on first run) | `{daint,beverin}_full_permutations_8/<config>_<shuffled\|unshuffled>.txt` |
+| [E7_FullVelocityTendencies/](E7_FullVelocityTendencies/) **(WIP)** | (succeeds E8) | — | — | same as E8 | (WIP) |
+
+E8 is the AD's full-velocity-tendencies path. E7 is a parallel
+work-in-progress reimplementation on the new SDFG-driven pipeline; it
+remains in the tree for the next iteration but is not the default
+reproduction path -- skip it for the AD and use E8 for §IV-D / Fig 14.
 
 Total: ~22 hr per cluster end-to-end (E1–E5 parallel: ~10 hr; E6: ~7.5
-hr; E7: ~4 hr; setup + analysis: ~25 min).
+hr; E8: ~4 hr; setup + analysis: ~25 min).
 
 The proof-illustration figures (Figures 2–3) are pure matplotlib in
 [`../Figures/`](../Figures/) — no SLURM. `bash ../Figures/plot_all.sh`
@@ -57,9 +63,11 @@ python plot_paper.py
 with `SC26_PYTHON_SPEC`), creates `common/venv` (`--without-pip`,
 bootstrapped via `get-pip.py` because spack's CPython lacks the
 bundled wheel), clones DaCe `yakup/dev`, installs deps. Override the
-DaCe branch with `DACE_BRANCH=...` when needed (E7's optional
-`tools/regenerate_baselines.sh` requires `f2dace/staging` for its
-phase 0 — switch manually before invoking, switch back after).
+DaCe branch with `DACE_BRANCH=...` when needed. **E8 (the default
+full-velocity-tendencies path) requires `f2dace/staging`** for its
+icon-artifacts/sc26_layout codegen pipeline; the run scripts switch
+to it via `DACE_BRANCH=f2dace/staging` automatically. E7 (WIP) uses
+`yakup/dev`; only relevant if you opt into the new pipeline.
 
 Each `run_*.sh` sources `../common/activate.sh` (manual venv
 activation; `bin/activate` doesn't exist on spack venvs) and

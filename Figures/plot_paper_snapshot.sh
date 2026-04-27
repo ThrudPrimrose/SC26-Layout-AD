@@ -31,6 +31,11 @@ export MATPLOTLIBRC="${FIG_DIR}/matplotlibrc"
 
 # Paths are relative to Experiments/ and PaperSnapshot/ so deeper
 # experiments (e.g. E6 loopnest_N) slot in without special-casing.
+# E8 (legacy stage-8 pipeline) is the default §IV-D / Fig 14 / Tab V
+# path; E7 is opportunistic. ``has_snapshot_evidence`` accepts both
+# the canonical ``results/{*.csv,*.txt}`` shape and E8's native
+# ``{daint,beverin}_full_permutations_8/*.txt`` shape (placed at the
+# snapshot dir's root, not under ``results/``).
 RUNTIME_EXPS=(
   E1_MatrixAdd
   E2_Conjugation
@@ -43,8 +48,20 @@ RUNTIME_EXPS=(
   E6_VelocityTendencies/loopnest_4
   E6_VelocityTendencies/loopnest_5
   E6_VelocityTendencies/loopnest_6
+  E8_LegacyVT
   E7_FullVelocityTendencies
 )
+
+has_snapshot_evidence() {
+    local d="$1"
+    [[ -d "$d/results" ]] && {
+        find "$d/results" -type f \( -name '*.csv' -o -name '*.txt' \) -print -quit \
+            | grep -q . && return 0
+    }
+    find "$d" -maxdepth 3 -path '*_full_permutations_8/*.txt' -print -quit 2>/dev/null \
+        | grep -q . && return 0
+    return 1
+}
 
 mkdir -p "${OUT_DIR}"
 echo "[plot_paper_snapshot] writing to ${OUT_DIR}"
@@ -56,13 +73,8 @@ for exp in "${RUNTIME_EXPS[@]}"; do
         echo "  [skip] ${exp}: no plot_paper.py at Experiments/${exp}/"
         continue
     fi
-    if [[ ! -d "${snap_dir}/results" ]] \
-       || [[ -z "$(find "${snap_dir}/results" -type f \( -name '*.csv' -o -name '*.txt' \) -print -quit)" ]]; then
-        # E7 emits stdout-derived timing TXTs (icon-artifacts/velocity
-        # convention -- ``run.txt`` per (config, timestep)) alongside
-        # any DaCe-profiling CSVs; either one is sufficient evidence
-        # the experiment was actually run.
-        echo "  [skip] ${exp}: PaperSnapshot/${exp}/results/ has no CSVs or TXTs"
+    if ! has_snapshot_evidence "${snap_dir}"; then
+        echo "  [skip] ${exp}: PaperSnapshot/${exp}/ has no CSVs / TXTs / *_full_permutations_8/*.txt"
         continue
     fi
     echo "  [plot] ${exp}"
