@@ -3,6 +3,10 @@
 In-place conjugate of `P` complex arrays under **AoS**, **SoA**, and
 **AoSoA-16** layouts. Sweeps `P` to expose L1D set-conflict behaviour.
 
+**Expected behaviour.** AoSoA-16 should be the most robust layout
+across all four backends; SoA should degrade on CPUs at high `P` from
+L1D set-conflict misses (paper: pronounced collapse on Zen4).
+
 ## Run
 
 ```bash

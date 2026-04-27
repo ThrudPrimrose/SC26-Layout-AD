@@ -3,6 +3,10 @@
 Composed unzip + permute + shuffle applied to Quantum ESPRESSO's
 `addusxx_g` kernel on a 10-atom BaTiO₃ HSE06 SCF calculation.
 
+**Expected behaviour.** Composed transformation should match or beat
+the QE baseline on every backend; the gain should be largest on Hopper
+(paper: ~1.18× Hopper, ~1.12× Zen4, ~1.11× Grace, ~1.00× MI300A).
+
 ## Run
 
 ```bash

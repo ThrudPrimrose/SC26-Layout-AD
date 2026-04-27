@@ -4,6 +4,11 @@
 variants vs. vendor libraries: HPTT (CPU), cuTENSOR (Daint GPU),
 hipTensor (Beverin GPU).
 
+**Expected behaviour.** On CPUs the ordering naive row-major < HPTT <
+blocked should hold (paper: ~1.7× Zen4, ~3.2× Grace; blocked 61–81%
+of STREAM peak vs HPTT ~44%). On GPUs shared-memory tiling absorbs
+the stride and layouts converge.
+
 ## Run
 
 ```bash

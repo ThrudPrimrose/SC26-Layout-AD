@@ -3,6 +3,10 @@
 Elementwise `C += A + B` with `B` column-major. Measures the gap
 between schedule-only tuning and full layout transformation.
 
+**Expected behaviour.** Layout permute should beat schedule-only on
+every backend; GPUs should approach STREAM peak (paper: ~99%). On any
+hardware the ordering schedule-only < permuted holds.
+
 ## Run
 
 ```bash

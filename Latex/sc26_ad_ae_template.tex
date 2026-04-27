@@ -7,14 +7,11 @@
 \usepackage{textcomp}
 \usepackage{xcolor}
 \usepackage{booktabs}
+\usepackage{tabularx}
 \usepackage{tagging}
 \usepackage{hyperref}
 
 \usepackage{sc26repro}
-
-% Comment both lines for the final submission.
-%\usetag{explanation}
-%\usetag{example}
 
 \begin{document}
 
@@ -36,10 +33,10 @@ Appendix: Artifact Description/Artifact Evaluation
 \subsection{Paper's Main Contributions}
 
 \begin{description}
-\item[$C_1$] A theoretical proof, via blocked CDAGs and the Red-Blue-White Pebble Game, that a poor data layout can inflate the I/O lower bound by up to a factor of the cache-line length~$B$ relative to a layout-aware optimum, and that no schedule can close this gap.
-\item[$C_2$] A composable layout algebra of five primitives (pad, permute, block, shuffle, zip) whose compositions suffice to express any bijective array rearrangement.
-\item[$C_3$] Two heuristic cost metrics---the average new-block count~$\mu$ (guiding permutation) and the average block distance~$\Delta$ (guiding blocking)---together with a cookbook (Table~II) that maps observable performance symptoms to corrective primitives.
-\item[$C_4$] Empirical validation on microbenchmarks and two production HPC codes---Quantum ESPRESSO and the ICON dynamical core (2025 ACM Gordon Bell Prize for Weather and Climate Modelling winner)---demonstrating up to $1.18\times$ speedup on GPUs and $1.12\times$ on CPUs.
+\item[$C_1$] A theoretical proof, via blocked CDAGs and the Red-Blue-White Pebble Game, that a poor data layout can inflate the I/O lower bound by up to a factor of the cache-line length $B$ relative to a layout-aware optimum, and that no schedule can close this gap.
+\item[$C_2$] A composable layout algebra of five primitives (pad, permute, block, shuffle, zip) whose compositions express any bijective array rearrangement.
+\item[$C_3$] Two heuristic cost metrics --- the average new-block count $\mu$ (guiding permutation) and the average block distance $\Delta$ (guiding blocking) --- with a cookbook (Table~II) mapping observable performance symptoms to corrective primitives.
+\item[$C_4$] Empirical validation on microbenchmarks and two production HPC codes (Quantum ESPRESSO, ICON dynamical core) showing up to $1.18\times$ speedup on GPUs and $1.12\times$ on CPUs.
 \end{description}
 
 \subsection{Computational Artifacts}
@@ -51,9 +48,9 @@ Appendix: Artifact Description/Artifact Evaluation
 
 The artifact comprises two Git repositories and the DaCe framework:
 \begin{itemize}
-\item \textbf{R1:} \url{https://github.com/ThrudPrimrose/SC26-Layout-Artifacts} --- microbenchmarks, Quantum ESPRESSO case study, and the ICON single-loopnest benchmarks.
-\item \textbf{R2:} \url{https://github.com/spcl/icon-artifacts} (branch \texttt{sc26}) --- ICON velocity-tendencies source SDFGs and the full-module lowering pipeline. A curated snapshot (SDFGs, transformation utilities, driver scripts) is mirrored into R1 under \texttt{E8\_LegacyVT/} for self-contained reproduction. \texttt{E7\_FullVelocityTendencies/} is a parallel work-in-progress reimplementation on the new SDFG-driven pipeline and is not required for the AD.
-\item \textbf{R3:} \url{https://github.com/spcl/dace} (branches \texttt{yakup/dev} and \texttt{f2dace/staging}) --- the DaCe parallel programming framework with the layout-transformation infrastructure.
+\item \textbf{R1:} \url{https://github.com/ThrudPrimrose/SC26-Layout-Artifacts} --- microbenchmarks, Quantum ESPRESSO case study, ICON single-loopnest benchmarks, full-module sweep.
+\item \textbf{R2:} \url{https://github.com/spcl/icon-artifacts} (branch \texttt{sc26}) --- ICON velocity-tendencies SDFGs and lowering pipeline. A snapshot is mirrored into R1 under \texttt{E8\_LegacyVT/}.
+\item \textbf{R3:} \url{https://github.com/spcl/dace} (branches \texttt{yakup/dev}, \texttt{f2dace/staging}).
 \end{itemize}
 
 \begin{center}
@@ -62,23 +59,21 @@ The artifact comprises two Git repositories and the DaCe framework:
 \toprule
 Exp. & Contributions & Paper Elements & Repo \\
 \midrule
-E1 & $C_3$, $C_4$         & Fig.~4             & R1 \\
-E2 & $C_{2\text{--}4}$    & Fig.~8             & R1 \\
-E3 & $C_{2\text{--}4}$    & Fig.~9, Tab.~III   & R1 \\
-E4 & $C_{2\text{--}4}$    & Fig.~10            & R1 \\
-E5 & $C_{2\text{--}4}$    & Fig.~11, Lst.~1    & R1 \\
+E1 & $C_3$, $C_4$         & Fig.~4              & R1 \\
+E2 & $C_{2\text{--}4}$    & Fig.~8              & R1 \\
+E3 & $C_{2\text{--}4}$    & Fig.~9, Tab.~III    & R1 \\
+E4 & $C_{2\text{--}4}$    & Fig.~10             & R1 \\
+E5 & $C_{2\text{--}4}$    & Fig.~11, Lst.~1     & R1 \\
 E6 & $C_3$, $C_4$         & Figs.~12--13, Tab.~IV & R1, R2 \\
-E8 & $C_3$, $C_4$         & Fig.~14, Tab.~V       & R1, R2 \\
+E8 & $C_3$, $C_4$         & Fig.~14, Tab.~V     & R1, R2 \\
 \bottomrule
 \end{tabular}
 \end{center}
 
-\paragraph{E8 is the default full velocity-tendencies path; E7 is work-in-progress.} The reproduction route for §IV-D / Figure~14 / Table~V is \texttt{Experiments/E8\_LegacyVT/}, which drives the legacy \texttt{icon-artifacts/sc26\_layout} pipeline on DaCe \texttt{f2dace/staging}. \texttt{Experiments/E7\_FullVelocityTendencies/} contains a parallel reimplementation on the new SDFG-driven pipeline (DaCe \texttt{yakup/dev} + \texttt{OffloadVelocityToGPU} + \texttt{PermuteDimensions}); it is retained in the tree for the next iteration but is \emph{not} the default reproduction path and is not required for the AD claims. Reviewers should skip E7 and use E8 for §IV-D.
+\paragraph{E8 is the AD's default full velocity-tendencies path.}
+\texttt{Experiments/E8\_LegacyVT/} drives the legacy \texttt{icon-artifacts/sc26\_layout} pipeline on DaCe \texttt{f2dace/staging} and reproduces Fig.~14 / Tab.~V via a single \texttt{sbatch run\_\{daint,beverin\}.sh}; default \texttt{CONFIGS="winner\_v1,winner\_v2,winner\_v6"} maps to the three V$_k$ winners (V1 = identity / Fig.~13 \emph{Original Layout}; V2 = connectivity-only intermediate; V6 = $v_\textrm{first}$ / Fig.~13 \emph{Optimized Layout}). \texttt{E7\_FullVelocityTendencies/} is an in-progress SDFG-driven refactor of the same pipeline (DaCe \texttt{yakup/dev}) and is not required for the AD's reproduction path.
 
-All experiments depend on R3 (DaCe). E1--E5 and E6 loopnests run on \texttt{yakup/dev} by default; E8 (full velocity tendencies) requires \texttt{f2dace/staging}, switched automatically by its \texttt{run\_\{daint,beverin\}.sh}. E8 reads two artefacts from E6: \texttt{access\_analysis/layout\_candidates.json} (task~$T_{6.2}$) and \texttt{access\_analysis/winners.json} (task~$T_{6.5}$). The E8 sbatch driver regenerates either of those from the loopnest CSVs on demand if missing, so reviewers can skip the manual $T_{6.5}$ step. \textbf{To run E8, reviewers issue a single \texttt{sbatch run\_\{daint,beverin\}.sh}}; the script auto-symlinks the dataset (sharing E7's local copy or fetching afresh), regenerates the JSON inputs if absent, then dispatches \texttt{run\_stage8\_permutations.py} with \texttt{--configs winner\_v1,winner\_v2,winner\_v6} (override via the \texttt{CONFIGS} env var). The runner compiles and executes both shuffled (\texttt{\_ms}) and unshuffled (\texttt{\_mu}) variants per config, capturing each to \texttt{<plat>\_full\_permutations\_8/<config>\_<shuffled\textbar unshuffled>.txt} in the icon-artifacts/velocity convention.
-
-Contribution~$C_1$ is a pen-and-paper proof; its illustrative quotient-graph figures (Figures~2--3) are produced by pure-matplotlib scripts in \texttt{Figures/}.
-The runtime figures (Figures~4, 8--14) have two sibling drivers that iterate over E1--E5, every \texttt{E6\_VelocityTendencies/loopnest\_\{1..6\}}, and E8 (with E7 plotted opportunistically when its CSVs exist). \texttt{bash Figures/plot\_paper\_snapshot.sh} regenerates them from the frozen CSVs in \texttt{PaperSnapshot/<exp>/results/} into \texttt{Figures/GeneratedFigures/Runtime/}; \texttt{bash Figures/plot\_results.sh} regenerates them from the reviewer's CSVs in \texttt{Experiments/<exp>/results/} \emph{next to the CSVs}. Destinations are distinct, so the two sets never overlap; missing CSVs are skipped with a one-line notice. Both pin DejaVu~Sans via \texttt{MATPLOTLIBRC=Figures/matplotlibrc}. The umbrella \texttt{Figures/plot\_all.sh} invokes both plus the illustrative groups; subset names are accepted (\texttt{PaperSnapshot}, \texttt{Results}, \texttt{Runtime}, \texttt{Peaks}, or an illustrative group).
+Contribution~$C_1$ is a pen-and-paper proof; its quotient-graph figures (Figures~2--3) come from \texttt{Figures/}. Runtime figures (Figures~4, 8--14) regenerate via \texttt{Figures/plot\_all.sh} (umbrella; subset names \texttt{PaperSnapshot}, \texttt{Results}, \texttt{Runtime}, \texttt{Peaks}, or any illustrative group); the two sibling drivers \texttt{plot\_paper\_snapshot.sh} and \texttt{plot\_results.sh} read frozen-CSV vs.\ reviewer-CSV roots respectively into distinct destinations. Both pin DejaVu Sans via \texttt{MATPLOTLIBRC=Figures/matplotlibrc}; missing CSVs / TXTs are skipped with a one-line notice.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Artifact Identification}
@@ -88,34 +83,42 @@ The runtime figures (Figures~4, 8--14) have two sibling drivers that iterate ove
 
 \artrel
 
-Artifact~$A_1$ validates the layout algebra~($C_2$), cost metrics~($C_3$), and the cookbook-driven optimization workflow~($C_4$). E1--E4 are microbenchmarks that isolate individual layout primitives. E5 evaluates composed transformations on a Quantum ESPRESSO production kernel. E6 applies the full optimization workflow to the ICON dynamical core (loop-nest canonicalization, per-pattern layout selection, cross-nest conflict resolution); E8 then drives the resulting layouts through the velocity-tendencies module end-to-end on the GPU. (E7 is a parallel work-in-progress reimplementation of E8 on the new SDFG-driven pipeline; reviewers should skip it.)
+Artifact~$A_1$ validates the layout algebra ($C_2$), cost metrics ($C_3$), and the cookbook-driven workflow ($C_4$). E1--E4 are microbenchmarks isolating individual primitives. E5 evaluates composed transformations on a Quantum ESPRESSO production kernel. E6 applies the full optimization workflow per loop-nest pattern class. E8 drives the resulting layouts through the velocity-tendencies module end-to-end on the GPU.
 
 \artexp
 
-\textbf{E1 (Matrix Addition, Figure~4):}
-Elementwise $C \mathrel{+}= A + B$ with $B$ in column-major. Schedule-only optimization recovers 36\% (Zen4) to 72\% (Grace) of STREAM peak on CPUs and 78\% (MI300A) to 95\% (Hopper) on GPUs; layout transformations close the gap to 68\% / 88\% on CPUs and 99\% on both GPUs. On platforms with explicit scratchpad memory, schedule-only tiling into shared memory should recover most of peak; on CPUs without direct cache control, a persistent gap remains that only layout transformations can close.
+\textbf{E1 (Matrix Addition, Fig.~4):} elementwise $C \mathrel{+}= A + B$ with $B$ in column-major. Schedule-only recovers 36\%--72\% of STREAM peak on CPUs and 78\%--95\% on GPUs; layout transformations close the gap to 68\%--88\% and 99\%, respectively.
 
-\textbf{E2 (Complex Conjugation, Figure~8):}
-In-place conjugation of $P$ complex arrays under AoS, SoA, and AoSoA-16. SoA should beat AoS at low~$P$ (fewer wasted cache-line bytes), but on CPUs with limited L1D associativity it collapses at high~$P$ from set conflicts on page-aligned allocations --- observed on Zen4 at $P \geq 15$, not on Grace. Both GPUs sustain near-peak under SoA and AoSoA-16; AoS strides through non-contiguous fields. AoSoA-16 stays robust across all four backends and every~$P$, showing the value of partial zipping when the optimal granularity is not statically selectable.
+\textbf{E2 (Complex Conjugation, Fig.~8):} in-place conjugation of $P$ complex arrays under AoS, SoA, AoSoA-16. SoA collapses on Zen4 at high $P$ from L1D set conflicts; AoSoA-16 stays robust across all four backends.
 
-\textbf{E3 (Matrix Transpose, Figure~9, Table~III):}
-$N \times N$ fp32 transpose, row-major vs.\ blocked. On CPUs, row-major writes scatter at stride~$N$ past prefetcher/TLB capacity; blocking gains $1.7\times$ on Zen4 and $3.2\times$ on Grace, reaching 61\% / 81\% of STREAM peak vs.\ HPTT's 44\%. On GPUs, shared-memory tiling absorbs the stride: 60\% (MI300A) and 85\% (Hopper) under row-major, matching vendor libraries (padding or shuffling still needed to avoid bank conflicts). Table~III reports the $\Delta$ reduction from blocking at each cache-line size. Blocking is the primary CPU recourse for stride-heavy access; on GPUs the penalty is absorbed by shared-memory staging.
+\textbf{E3 (Matrix Transpose, Fig.~9, Tab.~III):} $N \times N$ fp32 transpose, row-major vs.\ blocked. Blocking gains $1.7\times$ on Zen4 and $3.2\times$ on Grace, reaching 61\%--81\% of STREAM peak vs.\ HPTT's 44\%. On GPUs, shared-memory tiling absorbs the stride.
 
-\textbf{E4 (Gather-Accumulate-Scatter, Figure~10):}
-Indirect $y[\sigma(i)] \mathrel{+}= x[i]$, before and after a shuffle (index sorting), under uniform-random and exact BaTiO$_3$ index distributions. The shuffle improves GPU bandwidth from 21\% to 30\% (uniform) / 23\% to 42\% (BaTiO$_3$) on MI300A, and 35\% to 62\% / 48\% to 82\% on Hopper. CPU gains are modest --- 9--15\% Zen4, 7--13\% Grace --- because the shuffle introduces a new indirect gather that limits prefetcher effectiveness. GPU gains generalize to any coalescing-sensitive architecture; CPU gains depend on the trade-off between improved scatter locality and degraded gather locality.
+\textbf{E4 (Gather-Accumulate-Scatter, Fig.~10):} indirect $y[\sigma(i)] \mathrel{+}= x[i]$ with vs.\ without index-sort shuffle. GPU bandwidth improves 21\%$\to$30\% (uniform) and 23\%$\to$42\% (BaTiO$_3$) on MI300A; 35\%$\to$62\% and 48\%$\to$82\% on Hopper. CPU gains 9\%--15\%.
 
-\textbf{E5 (Quantum ESPRESSO \texttt{addusxx\_g}, Figure~11):}
-Composed unzip, permute, and shuffle on \texttt{addusxx\_g}. Speedups: $1.12\times$ Zen4, $1.11\times$ Grace, $1.18\times$ Hopper, $1.00\times$ MI300A. The improvement generalizes wherever the baseline Fortran AoS wastes cache-line bandwidth on the untouched real part (unzip), misaligns the innermost stride (permute), and scatters indirect writes (shuffle); MI300A shows no gain because its unified memory absorbs the access pattern.
+\textbf{E5 (QE \texttt{addusxx\_g}, Fig.~11):} composed unzip + permute + shuffle. Speedups: $1.12\times$ Zen4, $1.11\times$ Grace, $1.18\times$ Hopper, $1.00\times$ MI300A.
 
-\textbf{E6 (ICON Velocity Tendencies, Figures~12--13, Table~IV):}
-The velocity-tendencies module's 25~loop nests / 50~arrays collapse into 6~pattern classes with 7~layout-equivalent array groups after canonicalization. E6 evaluates a representative loop nest from each class:
-\begin{itemize}
-\item \emph{Loopnest~1 (indirect stencil, complete vertical):} Vertical-first layout improves CPU bandwidth by $1.85\times$ on Zen4 (30\% $\to$ 55\% of STREAM peak), $1.07\times$ on Grace (44\% $\to$ 47\%). GPUs are comparable under exact R02B05 connectivity (48--49\% MI300A, 90--91\% Hopper); under uniform random indirection vertical-first wins large ($3.3\times$ MI300A, $2.3\times$ Hopper). $\mu$ is invariant to the indirection distribution under vertical-first (Table~IV).
-\item \emph{Loopnests~2--6:} Representative nests from the remaining five classes (direct stencil / partial vertical; direct stencil / complete vertical; indirect stencil + CFL clip / partial vertical; horizontal-only boundary; vertical-only level reduction) --- each a C++/OpenMP + CUDA + HIP suite plus an analytic cost-metric sweep over V1--V4 dimension orderings, $B \in \{8,16,32,64,128\}$ blocking, $(T_X, T_Y) \in \{8,16,32,64\}^2$ tiling (where vertical locality is meaningful), and GPU thread-block sizes. The analytic metrics mirror the sweep axes and let us cross-check empirical ordering against~$\mu$/$\Delta$.
-\end{itemize}
+\textbf{E6 (ICON velocity tendencies, Figs.~12--13, Tab.~IV):} the module's 25 loop nests / 50 arrays collapse into 6 pattern classes and 7 layout-equivalent groups. Per-class representative loop nests are evaluated as separate microbenchmarks (\texttt{loopnest\_\{1..6\}/}) sweeping V1--V7 dimension orderings over $nlev \in \{90, 96, 128, 256\}$ (nlev=128 is the default for Tab.~IV; Fig.~12 violins use nlev=96). Loopnest~1 (indirect stencil, complete vertical) gains $1.85\times$ on Zen4 and large factors on GPUs under uniform random indirection; under exact R02B05 connectivity GPUs are comparable across layouts (Tab.~IV reports $\mu$ for both regimes).
 
-\textbf{E8 (Full velocity-tendencies module, Figure~14, Table~V):}
-End-to-end GPU layout-permutation sweep over the full velocity-tendencies module on the icon-artifacts stage~8 SDFGs that ship with the AD. The default flow runs the three V$_k$ winner configs (\texttt{winner\_v1} = identity / Fig.~13 \emph{Original Layout}, \texttt{winner\_v2} = connectivity-only intermediate, \texttt{winner\_v6} = $v_\textrm{first}$ / Fig.~13 \emph{Optimized Layout}); reviewers can opt into the 95-cell \emph{full sweep} (\texttt{cv*\_ch*\_f*\_s*\_n*}) by passing \texttt{CONFIGS=...}. Vertical-first yields $1.17\times$ on MI300A and $1.07\times$ on Hopper for Config~B (5 of every 6 calls); Config~A shows $1.06\times$ on MI300A and $0.97\times$ on Hopper. Net per-timestep improvement: $\sim$15\% on MI300A, $\sim$5\% on Hopper (5:1 weighted). E7 (the SDFG-driven reimplementation) is work-in-progress and not on the AD reproduction path.
+\textbf{E8 (Full velocity tendencies, Fig.~14, Tab.~V):} GPU layout-permutation sweep over the full module via \texttt{run\_stage8\_permutations.py} on the icon-artifacts stage~8 SDFGs. Default \texttt{CONFIGS="winner\_v1,winner\_v2,winner\_v6"}; the 95-cell cross-product (\texttt{cv*\_ch*\_f*\_s*\_n*}) is opt-in. Vertical-first yields $1.17\times$ on MI300A and $1.07\times$ on Hopper for Config~B (5 of every 6 calls), $1.06\times$ / $0.97\times$ for Config~A. Net per-timestep: $\sim$15\% MI300A, $\sim$5\% Hopper (5:1 weighted).
+
+\paragraph{Expected results.} Reviewers should observe the following qualitative outcomes per experiment; absolute medians may shift by a few percent on different system load.
+
+\begin{center}
+\small
+\begin{tabular}{ll}
+\toprule
+Exp. & Reviewer should observe \\
+\midrule
+E1 & GPU 99\% of STREAM peak after layout permute; CPU 68--88\% \\
+E2 & SoA collapses on Zen4 at high $P$; AoSoA-16 stable across backends \\
+E3 & Blocked transpose: $1.7\times$ Zen4, $3.2\times$ Grace; HPTT 44\% vs blocked 61--81\% \\
+E4 & Index-sort lifts GPU bandwidth: 21--35\%~$\to$~30--62\% MI300A; 35--62\%~$\to$~62--82\% Hopper \\
+E5 & $1.12\times$ Zen4, $1.11\times$ Grace, $1.18\times$ Hopper, $1.00\times$ MI300A \\
+E6 & Loopnest~1 indirect-uniform: $1.85\times$ Zen4; GPU layouts comparable under R02B05 \\
+E8 & V6 Config~B: $1.17\times$ MI300A, $1.07\times$ Hopper; Config~A: $1.06\times$ / $0.97\times$ \\
+\bottomrule
+\end{tabular}
+\end{center}
 
 \arttime
 \begin{center}
@@ -129,179 +132,127 @@ E1 Matrix Add.                 &  90 &  90 \\
 E2 Conjugation                 & 210 & 210 \\
 E3 Transpose                   & 180 & 180 \\
 E4 GAS                         &  60 &  60 \\
-E5 QE addusxx\_g               &  60 &  60 \\
-E6 Loopnest 1 (indirect)       & 150 & 150 \\
+E5 QE \texttt{addusxx\_g}      &  60 &  60 \\
+E6 Loopnest 1                  & 150 & 150 \\
 E6 Loopnests 2--6              & 300 & 300 \\
-E8 Full-module sweep (stage~8) & 240 & 240 \\
+E8 Full-module sweep           & 240 & 240 \\
 Analysis                       &  10 &  10 \\
 \midrule
 \textbf{Total}                 & \multicolumn{2}{c}{\textbf{$\sim$22~hr / cluster}} \\
 \bottomrule
 \end{tabular}
 \end{center}
-\noindent All times in minutes.
-The E6 loopnests 2--6 line is an aggregate across five nests; each is a short-running sweep ($\sim$60~min) that can be scheduled independently.
-The E8 full-module sweep dispatches \texttt{run\_stage8\_permutations.py} against the icon-artifacts stage~8 SDFGs that ship with the AD. The default \texttt{CONFIGS="winner\_v1,winner\_v2,winner\_v6"} compiles three named V$_k$ winners (each producing both shuffled and unshuffled binaries via \texttt{compile\_gpu\_stage8 --compile --permutations <cfg>}); reviewers can opt into the full 95-cell cross-product sweep by setting \texttt{CONFIGS} to the comma-separated list emitted by \texttt{python run\_stage8\_permutations.py --list}. Each binary is run once per timestep; per-config TXTs land under \texttt{<plat>\_full\_permutations\_8/<cfg>\_<shuffled\textbar unshuffled>.txt}. \texttt{Experiments/E7\_FullVelocityTendencies/} is a parallel work-in-progress reimplementation on \texttt{yakup/dev} (\texttt{OffloadVelocityToGPU} + \texttt{PermuteDimensions}) and is \emph{not} part of the AD's reproduction path.
+\noindent All times in minutes. E1--E5 are independent and can run in parallel.
 
-\textbf{Reproducibility caveat.} Reviewer numbers may differ from the paper's reported timings even on the same hardware: between submission and AD freeze, several timing infrastructure components were tightened, most notably the \texttt{common/jacobi\_flush.h} cache-flush kernel (now a 3-sweep $8192^{2}$ Jacobi with buffer swap, replacing the earlier single-sweep variant) and the per-config sandboxing of timestep runs. The qualitative trends reported in the paper --- the relative ordering of the per-loopnest winners, the gap between \texttt{unpermuted} and the \texttt{nlev\_first}/winner cross-product on each platform, and the \% of STREAM-peak gaps annotated on the violin plots --- continue to hold under the AD pipeline. Absolute medians and STREAM-peak-percentage values may shift by a few percent.
+\paragraph{Reproducibility caveat.} Reviewer \%-of-STREAM annotations may differ slightly from the paper's. Between submission and AD freeze the cache-flush kernel (\texttt{common/jacobi\_flush.h}) was rewritten as a 3-sweep $8192^{2}$ Jacobi with buffer swap to defeat dead-code-elimination by the GPU compiler, and the MI300A STREAM Triad peak was independently cross-checked with AMD performance engineering. All E1--E6 and E8 figures are normalized to the corrected peak. Qualitative trends --- relative ordering of layouts, gap between \texttt{unpermuted} and the V$_k$ winners --- continue to hold.
 
 \artin
 
 \artinpart{Hardware}
 
-Two HPC clusters at the Swiss National Supercomputing Centre (CSCS):
+Two HPC clusters at the Swiss National Supercomputing Centre (CSCS), accessed via SLURM with exclusive single-node allocations:
 
 \begin{itemize}
-\item \textbf{Daint.Alps (Cluster~A):} Quad-GH200 nodes with 72-core Arm Neoverse~V2 Grace CPUs (512\,GB/s LPDDR5X) and NVIDIA H200 GPUs (4\,TB/s HBM3).
-Measured STREAM Triad peaks: CPU 1.807\,TB/s, GPU 3.780\,TB/s.
-\item \textbf{Beverin (Cluster~B):} Quad-MI300A APU nodes with 24 AMD Zen\,4 cores sharing 128\,GB unified HBM3.
-Measured STREAM Triad peaks: CPU 1.161\,TB/s, GPU 4.294\,TB/s.
+\item \textbf{Daint.Alps:} Quad-GH200 nodes, 72-core Arm Neoverse~V2 Grace (512\,GB/s LPDDR5X) + NVIDIA H200 (4\,TB/s HBM3). Measured STREAM Triad peaks: CPU 1.81\,TB/s, GPU 3.78\,TB/s.
+\item \textbf{Beverin:} Quad-MI300A APU nodes, 24 AMD Zen\,4 cores sharing 128\,GB unified HBM3. Measured STREAM Triad peaks: CPU 1.16\,TB/s, GPU 3.55\,TB/s (cross-checked with AMD performance engineering).
 \end{itemize}
 
-Both clusters are accessed via SLURM and require exclusive single-node allocations.
-The results should generalize to any system with comparable cache-line sizes (64\,B on CPUs, 128\,B on GPUs), though absolute bandwidths will differ.
+Results should generalize to any system with comparable cache-line sizes (64\,B CPU, 128\,B GPU); absolute bandwidths will differ.
 
-\artinpart{Software}
+\artinpart{Software stack}
+
+Both platforms share Python (CPython 3.13 via Spack), DaCe, and the same canonical compile flags. Per-platform toolchain pins (Spack-managed):
 
 \begin{center}
 \small
 \begin{tabular}{lll}
 \toprule
-Package & Version & Notes \\
+Component & Daint.Alps & Beverin \\
 \midrule
-GCC & 14.2 / 14.3 & via Spack \\
-CUDA & 12.9 & Daint only \\
-ROCm & 6.4.1 & Beverin only \\
-HPTT & latest & E3 only \\
-cuTENSOR & latest & E3, Daint only \\
-hipTensor & latest & E3, Beverin only \\
-DaCe & \texttt{yakup/dev} & E1--E5, E6 loopnests, E7 (WIP) \\
-     & \texttt{f2dace/staging} & E8 default flow; E7 \texttt{tools/regenerate\_baselines.sh} (opt-in) \\
-Python & 3.10+ & numpy, scipy, matplotlib \\
-libnuma & system & NUMA-aware allocation \\
+GCC          & 14.3              & 14.x              \\
+GPU stack    & CUDA 12.9 / nvcc  & ROCm 6.4.1 / hipcc \\
+GPU arch     & \texttt{sm\_90}   & \texttt{gfx942}   \\
+OpenBLAS     & 0.3.29            & 0.3.30            \\
+Tensor lib (E3) & cuTENSOR       & hipTensor         \\
+Vendor xpose (E3) & HPTT          & HPTT              \\
 \bottomrule
 \end{tabular}
 \end{center}
+\noindent DaCe pins are shared: \texttt{yakup/dev} for E1--E6, \texttt{f2dace/staging} for E8.
 
-DaCe is at \url{https://github.com/spcl/dace}; the default flow uses \texttt{yakup/dev}. Platform setup and activation are centralized under \texttt{Experiments/common/}: \texttt{setup.sh} (first-time install), \texttt{activate.sh} (per-session), and \texttt{setup\_\{daint,beverin\}.sh}. Every experiment's \texttt{run\_\{daint,beverin\}.sh} sources these, so a single \texttt{common/setup.sh} covers all experiments.
+\paragraph{CUDA pin (Daint).} \textbf{CUDA must be \textless{}~13.} CUDA~13 removes \texttt{cudaDeviceProp::clockRate}, which DaCe's runtime probes during initialization, breaking codegen for E8's stage-8 binaries. CUDA~12.9 is the verified version.
 
-\paragraph{Compile flags.}
-Both setup scripts export a single canonical flag set via \texttt{CPU\_CXXFLAGS} and \texttt{GPU\_CXXFLAGS}.
-Every ad-hoc \texttt{g++} / \texttt{nvcc} / \texttt{hipcc} invocation in the Python drivers (E3, E6) carries the same set.
-The CPU flag set is \texttt{-O3 -ffast-math -fno-trapping-math -fno-math-errno -march=native -mtune=native -fno-vect-cost-model -fopenmp -std=c++17}.
-\texttt{nvcc} uses \texttt{-O3 --use\_fast\_math} on the device side and the full CPU set is forwarded to the host GCC pass via \texttt{-Xcompiler=}.
-\texttt{hipcc} uses the same set minus \texttt{-fno-vect-cost-model} (Clang has no equivalent; \texttt{-O3}'s vectorizer is the accepted fallback), plus HIP-specific \texttt{-munsafe-fp-atomics} and early-inlining flags.
+\paragraph{OpenBLAS version split.} Daint and Beverin pin different OpenBLAS minor versions (0.3.29 vs.\ 0.3.30) because the Beverin Spack instance's \texttt{openblas@0.3.29} was uninstalled mid-cycle while Daint's persisted; both setup scripts probe their respective Spack and skip the OpenBLAS \texttt{LD\_LIBRARY\_PATH} export gracefully if neither version is present (used only by E3's CPU baseline). The version difference does not affect E1--E2, E4--E8 measurements.
+
+\paragraph{Compile flags.} The setup scripts export \texttt{CPU\_CXXFLAGS} and \texttt{GPU\_CXXFLAGS}; every ad-hoc \texttt{g++}/\texttt{nvcc}/\texttt{hipcc} invocation in the Python drivers carries the same set:
+
+\begin{itemize}
+\item \texttt{CPU\_CXXFLAGS} (both platforms): \texttt{-O3 -march=native -mtune=native -fopenmp -ffast-math -fno-trapping-math -fno-math-errno -fno-vect-cost-model -std=c++17}
+\item \texttt{GPU\_CXXFLAGS} (Daint, nvcc): \texttt{-O3 --use\_fast\_math -arch=sm\_90 -std=c++17} plus the CPU set forwarded to the host GCC pass via \texttt{-Xcompiler=}.
+\item \texttt{GPU\_CXXFLAGS} (Beverin, hipcc): the CPU set minus \texttt{-fno-vect-cost-model} (Clang has no equivalent), plus \texttt{--offload-arch=gfx942 -munsafe-fp-atomics -mllvm -amdgpu-early-inline-all=true -mllvm -amdgpu-function-calls=false -fgpu-flush-denormals-to-zero}.
+\end{itemize}
+
 \texttt{-fno-trapping-math} and \texttt{-fno-math-errno} are already implied by \texttt{-ffast-math}; they are listed explicitly so intent survives any future \texttt{-ffast-math} definition drift.
 
-\paragraph{OpenMP scheduling.}
-\texttt{OMP\_SCHEDULE=static} is exported by both setup scripts, and every \texttt{\#pragma omp parallel for} in our sources uses \texttt{schedule(static)} explicitly (no dynamic / guided / runtime / auto scheduling anywhere).
-This choice minimizes timing jitter across repetitions.
-CPU-to-core pinning is handled via \texttt{SLURM\_CPU\_BIND=cores}; no \texttt{\#SBATCH --cpu-bind} flags are used.
+\paragraph{OpenMP and pinning.} \texttt{OMP\_SCHEDULE=static} is exported by both setup scripts; every \texttt{\#pragma omp parallel for} in our sources uses \texttt{schedule(static)}. CPU-to-core pinning via \texttt{SLURM\_CPU\_BIND=cores} (no \texttt{\#SBATCH --cpu-bind}).
 
 \artinpart{Datasets / Inputs}
 
-Microbenchmarks (E1--E4) generate all input data synthetically at runtime.
-The production-code experiments (E5, E6, E8) require serialized datasets. Each \texttt{run\_\{daint,beverin\}.sh} auto-fetches its dataset on first submission (\texttt{[[ -d <dir> ]] || bash download\_data.sh}), so reviewers do not need a separate manual download step:
+E1--E4 generate input data synthetically. Production-code experiments (E5, E6, E8) auto-fetch their datasets on first \texttt{sbatch} via per-experiment \texttt{download\_data.sh} (idempotent guard):
 
 \begin{itemize}
-\item \textbf{E5 (Quantum ESPRESSO):} Serialized BaTiO$_3$ data from a QE \texttt{pw.x} HSE06 self-consistent calculation (10-atom unit cell). Fetched from ETH PolyBox by \texttt{E5\_USXX/download\_data.sh}.
-%% TODO: insert final PolyBox share link once archived.
-\item \textbf{E6 (ICON):} Serialized R02B05 grid connectivity tables (\texttt{p\_patch}), prognostic/diagnostic fields, and metric arrays from a single ICON timestep (timestep~9).
-\texttt{E6\_VelocityTendencies/loopnest\_1/download\_data.sh} fetches the per-loopnest dataset; E8 reuses the R02B05 ICON dataset blocked at \texttt{nproma=20480} ($\sim$9~GB; 81{,}920 cells $\div$ 20{,}480 = 4 blocks per array, 90 vertical levels) shipped under \texttt{E7\_FullVelocityTendencies/data\_r02b05/}. Both E7 and E8 share the on-disk data via \texttt{E7\_FullVelocityTendencies/tools/download\_data.sh}'s \texttt{LOCAL\_DATA\_DIR} mode -- the directory name is historical. Both are auto-invoked by their \texttt{run\_\{daint,beverin\}.sh}.
-%% TODO: insert final PolyBox share link once archived.
+\item \textbf{E5:} BaTiO$_3$ from a QE \texttt{pw.x} HSE06 self-consistent calculation (10-atom cell), fetched from ETH PolyBox.
+\item \textbf{E6:} R02B05 ICON dataset for per-loopnest sweeps.
+\item \textbf{E8:} R02B05 ICON dataset blocked at \texttt{nproma=20480} ($\sim$9~GB; 81\,920 cells / 20\,480 = 4 blocks per array, 90 vertical levels). Shared with E7 via \texttt{LOCAL\_DATA\_DIR} mode (directory name is historical).
 \end{itemize}
 
 \artinpart{Installation and Deployment}
 
-Each experiment ships \texttt{run\_\{daint,beverin\}.sh}, which sources \texttt{../common/activate.sh} (venv + DaCe branch pin) and \texttt{../common/setup\_\{daint,beverin\}.sh} (Spack loads, OMP/NUMA pinning, \texttt{CPU\_CXX}/\texttt{GPU\_CXX} flags), then compiles, runs benchmarks (100~reps after 5~warm-ups with inter-run cache flushes), and writes CSVs to \texttt{results/\{daint,beverin\}/}. To reproduce one experiment:
-\begin{verbatim}
-bash Experiments/common/setup.sh    # once per cluster
-cd Experiments/E3_Transpose
-sbatch run_daint.sh
-python plot_paper.py                # produces Figure 9
-\end{verbatim}
+Each experiment ships \texttt{run\_\{daint,beverin\}.sh}, which sources \texttt{../common/activate.sh} (venv + DaCe pin) and \texttt{../common/setup\_\{daint,beverin\}.sh} (Spack loads, OMP/NUMA pinning, \texttt{CPU\_CXX}/\texttt{GPU\_CXX} flags), then compiles, runs benchmarks (100~reps after 5~warm-ups with cache flushes), and writes results next to each experiment.
+One-time per cluster: \texttt{bash Experiments/common/setup.sh}; per experiment: \texttt{cd Experiments/EX\_\textit{name} \&\& sbatch run\_daint.sh}; plot: \texttt{python plot\_paper.py} (or \texttt{bash Figures/plot\_all.sh Runtime} for everything at once).
 
 \artcomp
 
-The artifact is organized as one folder per experiment.
-Experiments E1--E5 each follow the same four-task workflow, encapsulated in their respective \texttt{run\_\{daint,beverin\}.sh} scripts:
+E1--E5 each follow a four-task workflow encapsulated in \texttt{run\_\{daint,beverin\}.sh}: $T_1$~setup (sources shared env; auto-fetch dataset for E4/E5/E6/E8), $T_2$~build and execute (100~reps after 5~warm-ups with cache flushes), $T_3$~compute cost metrics (E3 only; $\mu$ and $\Delta$), $T_4$~plot (\texttt{plot\_paper.py}). Dependencies: $T_1\to T_2$, $T_1\to T_3$, $\{T_2,T_3\}\to T_4$. The run script handles $T_1$--$T_3$; $T_4$ is invoked manually. E1--E5 are mutually independent.
 
-\begin{description}
-\item[$T_1$] \textbf{Setup:} source shared env and install DaCe. Datasets are auto-fetched by the \texttt{run\_\{daint,beverin\}.sh} guard on first submission (E4, E5, E6, E8).
-\item[$T_2$] \textbf{Build and execute:} compile sources and run benchmarks (100~repetitions after 5~warm-up iterations with cache flushes between repetitions).
-\item[$T_3$] \textbf{Compute cost metrics} (E3 only): run \texttt{cost\_metrics} to compute $\mu$ and~$\Delta$ for each layout candidate.
-\item[$T_4$] \textbf{Generate plots:} run \texttt{plot\_paper.py} to produce violin plots from the CSV results.
-\end{description}
-
-\noindent Dependencies: $T_1 \to T_2$; $T_1 \to T_3$; $\{T_2, T_3\} \to T_4$.
-The run script handles $T_1$--$T_3$; $T_4$ is invoked manually afterwards.
-Experiments E1--E5 are mutually independent and can run in parallel.
-
-\textbf{E6 (ICON) workflow.}
-Experiment~E6 follows a multi-stage pipeline that mirrors the paper's optimization methodology (Section~III-F):
-
-\begin{description}
-\item[$T_{6.1}$] \textbf{Download data:} the per-loopnest \texttt{loopnest\_1/download\_data.sh} fetches the R02B05 dataset (auto-invoked by \texttt{run\_\{daint,beverin\}.sh}; idempotent).
-
-\item[$T_{6.2}$] \textbf{Access analysis (LOKI):} \texttt{access\_analysis/analyze\_access.py} parses \texttt{velocity\_advection\_preprocessed.f90} with LOKI and extracts the 25~leaf loop nests and their role-tagged array access patterns (\texttt{h:S~v:S~b:S}, \texttt{h:U~v:S~b:S}, \ldots); \texttt{select\_loopnests.py} groups the nests by pattern class and picks one representative per class (6~nests total), writing \texttt{layout\_candidates.json} and \texttt{chosen\_loopnests.md}.
-
-\item[$T_{6.3}$] \textbf{Canonical 6-group taxonomy:} \texttt{access\_analysis/generate\_canonical\_groups.py} assigns each array touched by a representative nest to one of six groups --- \texttt{cv}~(COMPUTE\_VERT), \texttt{ch}~(COMPUTE\_HORIZ), \texttt{f}~(FIELDS), \texttt{s}~(STENCIL), \texttt{n}~(CONN), \texttt{lm}~(LEVMASK) --- by name/role rule, mirroring the split used in the reference DaCe sweep (\texttt{icon-artifacts/velocity/sc26\_layout/permute\_stage8.py}).
-Each group is tagged with its storage axis: \texttt{cv}/\texttt{ch}/\texttt{f}/\texttt{s}/\texttt{lm} consume the \emph{IC}~axis (whether \texttt{je} or \texttt{jk} is innermost on the (h,v,b)~arrays), and \texttt{n} consumes the \emph{IN}~axis (SoA vs.\ AoS on the 2-column connectivity).
-Connectivity aliases (\texttt{icidx}, \texttt{ivblk}, \ldots) are force-added to \texttt{n} because LOKI filters them out of per-nest array lists; \texttt{lm} is split out from \texttt{cv} so the level-mask \texttt{(nblks,nlev)\,$\to$\,(nlev,nblks)} transpose can be expressed independently of the rest of \texttt{cv}.
-Writes \texttt{canonical\_array\_groups.json}. Reviewers can audit the 6-group taxonomy and the 6 representative loopnests side-by-side via the small reporter \texttt{access\_analysis/find\_groups\_and\_loopnests.py}.
-
-\item[$T_{6.4}$] \textbf{Per-loopnest evaluation:} each \texttt{loopnest\_\{1..6\}/} folder is a full benchmark suite that sweeps V1--V7 dimension orderings and, where meaningful, blocked factors B8--B128 at \texttt{nlev=256}.
-Each folder's \texttt{run\_\{daint,beverin\}.sh} compiles, runs, and writes CSVs to \texttt{results/\{daint,beverin\}/}; the per-folder \texttt{README.md} explains the Fortran reference nest and the mapping between the code's macros and the nest class.
-
-\item[$T_{6.5}$] \textbf{Winners cross-product:} \texttt{generate\_winners.py} reads each \texttt{loopnest\_\{1..6\}/results/\{beverin,daint\}/<kernel>\_<backend>.csv} at the chosen \texttt{-{}-nlev} slice (default \texttt{256}, configurable; \texttt{cell\_dist=exact}, \texttt{backend=gpu}), picks the lowest-time non-blocked V-id per (loopnest, platform), and aggregates the empirical winners into a V-id set per access group via \texttt{canonical\_array\_groups.json}'s array memberships. A \emph{promotion rule} then widens narrow per-group sets so the cross-product stays informative: find the largest set $S$ such that more than \texttt{-{}-threshold} (default $50\%$) of the non-empty per-group winner sets are subsets of $S$; if such an $S$ exists, every group whose winner set is a subset of $S$ (including empty groups) is promoted to $S$. The full cross-product over the promoted per-group sets is written to \texttt{full\_velocity\_tendencies/layout\_crossproduct\_winners.\{json,csv\}} in the same JSON schema as the older \texttt{layout\_crossproduct\_v123.json}, so E7's \texttt{tools/run\_layout\_configs.py} consumes it without modification. With the AD's loopnest CSVs at \texttt{nlev=256}, the promotion rule fires on \texttt{\{V1,V2,V6\}}, yielding $3^{6}\,$=$\,729$~raw cells and 64~unique permute-map signatures after IC/IN axis projection.
-
-\item[$T_{6.6}$] \textbf{Analysis:} the per-loopnest plot scripts under \texttt{loopnest\_\{1..6\}/plot\_paper.py} produce Figures~12--13 and Table~IV from the combined results of $T_{6.4}$. Each script iterates an \texttt{NLEVS} list (default \texttt{[90, 96, 128, 256]}) and emits one figure per nlev present in the data; reviewer runs only at \texttt{nlev=256} produce a single \texttt{violins\_<kernel>\_nlev256\_w\_stream\_peak.\{png,pdf\}}.
-\end{description}
-
-\noindent Dependencies: $T_{6.1} \to T_{6.2} \to T_{6.3} \to T_{6.4} \to T_{6.5} \to T_{6.6}$. The full-module sweep is a separate experiment, E7 (below).
-
-\textbf{E6 sub-experiment structure.}
+\textbf{E6 workflow.} Multi-stage, mirroring §III-F:
 \begin{itemize}
-\item \texttt{access\_analysis/} ($T_{6.2}$, $T_{6.3}$): parses the annotated \texttt{velocity\_advection.f90}, canonicalizes the 25~loop nests / 50~arrays into 6~pattern classes and 6~layout-equivalent groups, and emits \texttt{layout\_candidates.json}, \texttt{canonical\_array\_groups.json}, and (via the small reporter) \texttt{groups\_and\_loopnests.json}.
-\item \texttt{loopnest\_\{1..6\}/} ($T_{6.4}$): one subfolder per pattern class, each a C++/OpenMP + CUDA + HIP suite with analytic cost metrics. Classes: (1) indirect stencil / complete vertical; (2) direct stencil / partial vertical; (3) direct stencil / complete vertical; (4) indirect stencil + CFL clip / partial vertical; (5) horizontal-only boundary; (6) vertical-only level reduction.
-\item \texttt{generate\_winners.py} + \texttt{full\_velocity\_tendencies/} ($T_{6.5}$): aggregates the per-loopnest winners into per-access-group V-id sets, applies the $>$50\% promotion rule, and emits the cross-product JSON consumed by E7.
+\item $T_{6.1}$ data fetch (auto-invoked).
+\item $T_{6.2}$ LOKI access analysis $\to$ 25 nests $\to$ 6 representative nests, \texttt{layout\_candidates.json}.
+\item $T_{6.3}$ canonical 6-group taxonomy (\texttt{cv}, \texttt{ch}, \texttt{f}, \texttt{s}, \texttt{n}, \texttt{lm}) $\to$ \texttt{canonical\_array\_groups.json}.
+\item $T_{6.4}$ per-loopnest evaluation under \texttt{loopnest\_\{1..6\}/}; sweeps V1--V7 plus blocked factors over $nlev \in \{90, 96, 128, 256\}$.
+\item $T_{6.5}$ winners cross-product: \texttt{generate\_winners.py}, \texttt{derive\_winners.py}, \texttt{generate\_layout\_groups.py} produce \texttt{winners.json} and the §IV-A 7-group spec \texttt{layout\_groups.json}.
+\item $T_{6.6}$ analysis: \texttt{plot\_paper.py} $\to$ Figs.~12--13, Tab.~IV.
 \end{itemize}
 
-\subsubsection*{E7 --- Full velocity tendencies (full-module GPU permutation sweep)}
+Dependencies $T_{6.1}\to\dots\to T_{6.6}$. \texttt{winners.json} and \texttt{layout\_groups.json} feed E8.
 
-E7 drives a GPU layout-permutation sweep over the full velocity-tendencies module on the stage~4 SDFGs that ship with the AD, using E6's access-analysis output ($T_{6.2}$) to derive its configs. E7 is \emph{self-contained} --- it vendors its own \texttt{utils/}, \texttt{src/}, etc. from \texttt{VelocityTendenciesPipeline}, so reviewers do not need a sibling checkout. \textbf{The reviewer-facing flow is one command per platform:} \texttt{sbatch run\_daint.sh} on Daint.Alps or \texttt{sbatch run\_beverin.sh} on Beverin. Everything below is automated.
+\textbf{E8 workflow.} A single \texttt{sbatch run\_\{daint,beverin\}.sh} resolves the dataset (existing E8 dir $\to$ E7 symlink $\to$ fresh fetch), regenerates \texttt{winners.json} / \texttt{layout\_candidates.json} if missing, then dispatches \texttt{run\_stage8\_permutations.py} with the \texttt{CONFIGS} env (default \texttt{winner\_v1,winner\_v2,winner\_v6}). For each named config, \texttt{compile\_gpu\_stage8} produces shuffled (\texttt{\_ms}) and unshuffled (\texttt{\_mu}) binaries; stdout is captured under \texttt{<plat>\_full\_permutations\_8/} as one TXT per binary. Plotting via \texttt{Figures/plot\_paper\_snapshot.sh} or \texttt{plot\_results.sh}; both auto-detect E8's TXT layout.
 
-\begin{description}
-\item[$T_{7.1}$] \textbf{Data fetch (explicit pre-submission step):} run \texttt{bash tools/download\_data.sh} once before the first \texttt{sbatch}. The script fetches the R02B05 / \texttt{nproma=20480} ICON dataset ($\sim$9~GB) from ETH PolyBox into \texttt{data\_r02b05/} and is idempotent (re-runs on a populated \texttt{data\_r02b05/} are no-ops). Pre-fetching keeps the GPU job focused on compute and protects against transient network or extractor-binary failures (e.g.\ a stale spack-installed \texttt{xz} on a cluster login node) that would otherwise burn allocated wallclock. Env overrides: \texttt{URL=...} for a mirror, \texttt{EXPECTED\_SHA256=...} for tarball verification, \texttt{LOCAL\_DATA\_DIR=/path/to/data\_r02b05} to symlink an already-extracted copy without copying or downloading, \texttt{XZ\_BIN=/path/to/xz} to pin the decompressor when PATH points at a missing spack hash. As a safety net, \texttt{run\_\{daint,beverin\}.sh} also calls the script with the same idempotent guard, so reviewers who skip $T_{7.1}$ still get the dataset on first submission.
+\textbf{Statistical methodology.} Following Hoefler and Belli, every configuration runs 100~reps after 5~warm-ups. An $8192^2$ Jacobi stencil (3~sweeps with buffer swap; \texttt{common/jacobi\_flush.h}) flushes all cache levels between reps. We report medians with 95\% bootstrap CIs of the median (BCa, $n=10{,}000$ resamples). Violin plots show all 100~samples (no outlier trimming); KDE uses Scott's rule and 200 eval points, identical across every figure. RNG seed: \texttt{SC26\_SEED=42}. Bandwidths are normalized to the measured STREAM Triad peak per platform.
 
-\item[$T_{7.2}$] \textbf{Layered sweep:} \texttt{sbatch run\_\{daint,beverin\}.sh}. The static drivers follow the E1--E6 convention (source \texttt{../common/\{activate,setup\_<host>\}.sh}), symlink the shipped \texttt{SDFGs/stage4/} into \texttt{codegen/stage4/}, and run two stacked passes:
-\begin{enumerate}
-\item \emph{Always-on named ablations}, controlled by the \texttt{NAMED\_CONFIGS} env var (default: 8 \texttt{unpermuted}/\texttt{nlev\_first}/\texttt{index\_only} variants in the \texttt{lv}/\texttt{sm} cross-product). Each config is dispatched through \texttt{python -m utils.stages.stage5a --release --optimize --compile --config <name>}, producing \texttt{velocity\_stage5a\_<name>} executables. \texttt{python tools/list\_layout\_configs.py} prints all named configs available to \texttt{stage5a}.
-\item \emph{Empirical winners cross-product}, built by \texttt{tools/run\_layout\_configs.py --optimize --compile --v123-json $<$path$>$}. The default JSON path is \texttt{../E6\_VelocityTendencies/full\_velocity\_tendencies/layout\_crossproduct\_winners.json}; if it is missing or \texttt{REGEN\_WINNERS=1}, the driver invokes E6's \texttt{generate\_winners.py --nlev \$WINNERS\_NLEV} (default \texttt{256}) to refresh it from the loopnest CSVs. The runner expands the cross-product into \texttt{velocity\_stage6\_v123\_*} executables, deduplicating to 64~unique permute-map signatures out of the $3^{6}\,$=$\,$729~raw cells.
-\end{enumerate}
-Each executable is then invoked once per timestep listed in \texttt{TIMESTEPS} (default \texttt{7,9}) with per-binary output landing in \texttt{results/<platform>/<config>/ts<N>/} (one \texttt{run.txt} plus per-config CSVs per timestep). The mutually-exclusive sibling \texttt{stage5b} (neighborhood-list / block-array compression with an always-on \texttt{levmask} transpose, plus an optional JSON-driven per-array permutation) is not part of the default flow.
+\paragraph{Figure $\to$ command map.} Substitute \texttt{<plat>} = \texttt{daint} or \texttt{beverin}. Each command sources \texttt{../common/setup\_<plat>.sh} via the run script.
 
-\item[$T_{7.3}$] \textbf{Optional baseline regeneration:} \texttt{tools/regenerate\_baselines.sh} runs F90 $\to$ stage~4 entirely inside E7. Phase~0 (\texttt{tools/sdfg\_from\_velocity\_f90.py}, the f2dace frontend on \texttt{f2dace/staging}) is marked \emph{dangerous}: the Fortran frontend is unstable on the velocity AST and phase~1's \texttt{StructToContainerGroups} regularly raises rename-collision \texttt{KeyError}s on its output. \textbf{The default flow ships the maintainer-validated post-phase-0 SDFG} (\texttt{baseline/velocity\_no\_nproma.sdfgz}); the script defaults to \texttt{SKIP\_F2DACE=1} so phase~0 is skipped. Reviewers wanting a from-F90 rebuild may opt in (\texttt{SKIP\_F2DACE=0}). Phase~1 runs \texttt{generate\_baselines.py}; phases~2--5 run \texttt{python -m utils.stages.stage\{1..4\} --optimize} on \texttt{yakup/dev}.
-
-\item[$T_{7.4}$] \textbf{Analysis:} The reviewer-facing driver \texttt{Figures/plot\_results.sh} consumes the \texttt{results/<platform>/<config>/ts<N>/} layout produced by $T_{7.2}$ via \texttt{Experiments/E7\_FullVelocityTendencies/plot\_paper\_v2.py} and emits Figure~14 / Table~V using the paper-canonical violin styling (Hoefler--Belli reps, Scott KDE, BCa bootstrap CIs). The frozen-snapshot driver \texttt{Figures/plot\_paper\_snapshot.sh} reads \texttt{PaperSnapshot/E7\_FullVelocityTendencies/results/} via the original \texttt{plot\_paper.py} (preserved untouched for byte-stable regeneration of the submitted figures).
-\end{description}
-
-\noindent Dependencies: $T_{7.1} \to T_{7.2} \to T_{7.4}$. The opt-in $T_{7.3}$ runs before $T_{7.2}$ when the reviewer wants to rebuild stage~4 from F90 instead of using the shipped SDFGs.
-
-\textbf{E7 directory structure.} Mirrors \texttt{VelocityTendenciesPipeline} (\texttt{baseline\_inputs/}, \texttt{baseline/}, \texttt{SDFGs/stage4/}, \texttt{codegen/stage\{1..4,5a,5b,6\}/}, \texttt{utils/}, \texttt{src/}, \texttt{include/}, \texttt{tests/}, \texttt{generate\_baselines.py}, \texttt{main.cpp}) plus static \texttt{run\_\{daint,beverin\}.sh}, two plot scripts (\texttt{plot\_paper.py} for the paper-snapshot layout and \texttt{plot\_paper\_v2.py} for the new reviewer layout), and four E7-specific helpers under \texttt{tools/} (\texttt{download\_data.sh}, \texttt{regenerate\_baselines.sh}, \texttt{list\_layout\_configs.py}, \texttt{run\_layout\_configs.py}).
-
-\textbf{Statistical methodology.}
-Following Hoefler and Belli~[52], every configuration runs 100~reps after 5~warm-ups. An $8192^2$ Jacobi stencil (3~sweeps with buffer swap; \texttt{common/jacobi\_flush.h}) flushes all cache levels between reps. We report medians with 95\% bootstrap CIs of the median (BCa, $n=10{,}000$ resamples). Violin plots show all 100~samples --- no outlier trimming. The KDE uses Scott's rule and 200~equally-spaced eval points, identical across every figure, so violin shapes are directly comparable. All RNG is seeded from \texttt{SC26\_SEED=42} (\texttt{common/prng.h}); bandwidths are normalized to the measured STREAM Triad peak per platform.
+\begin{center}
+\small
+\begin{tabular}{ll}
+\toprule
+Element & Command \\
+\midrule
+Fig.~4              & \texttt{cd Experiments/E1\_MatrixAdd}                      \\
+Fig.~8              & \texttt{cd Experiments/E2\_Conjugation}                    \\
+Fig.~9, Tab.~III    & \texttt{cd Experiments/E3\_Transpose}                      \\
+Fig.~10             & \texttt{cd Experiments/E4\_GAS}                            \\
+Fig.~11             & \texttt{cd Experiments/E5\_USXX}                           \\
+Figs.~12--13, Tab.~IV & \texttt{cd Experiments/E6\_VelocityTendencies/loopnest\_1} \\
+Fig.~14, Tab.~V     & \texttt{cd Experiments/E8\_LegacyVT}                       \\
+\bottomrule
+\end{tabular}
+\end{center}
+\noindent followed in each row by \texttt{sbatch run\_<plat>.sh \&\& python plot\_paper.py}. E6 repeats per loopnest 1--6.
 
 \artout
 
-Each experiment writes to \texttt{results/\{daint,beverin\}/} within its folder:
-\begin{itemize}
-\item CSVs with columns \emph{variant}, \emph{layout}, \emph{rep}, \emph{time}~(ms), \emph{bandwidth}~(GB/s).
-\item PDF violin plots matching the corresponding paper figure (Figures~4, 8--14).
-\item \LaTeX{} metric tables where applicable (Tables~III, IV, V).
-\end{itemize}
-
-\texttt{plot\_paper.py} produces the PDFs from the CSVs. Expected trends (relative layout ordering, gap magnitudes) should be reproducible; absolute bandwidths depend on hardware and system load.
+Each experiment writes results into its own folder (\texttt{results/\{daint,beverin\}/} for E0--E6 CSV-emitting binaries; \texttt{<plat>\_full\_permutations\_8/} for E8's icon-artifacts-style TXTs). \texttt{plot\_paper.py} produces the PDF violin plots matching Figures~4, 8--14; metric tables (Tabs.~III, IV, V) are emitted alongside. Expected trends (relative layout ordering, gap magnitudes) reproduce; absolute bandwidths depend on hardware and system load.
 
 \end{document}

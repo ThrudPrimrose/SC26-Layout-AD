@@ -110,7 +110,8 @@ Both need SLURM + exclusive single-node allocation.
   are RPATH-baked into the spack python).
 - DaCe `yakup/dev` for everything; `f2dace/staging` only for E7's
   opt-in `tools/regenerate_baselines.sh`.
-- Spack GCC 14, CUDA 12.9 (Daint) / ROCm 6.4.1 (Beverin), OpenBLAS
+- Spack GCC 14, CUDA 12.9 (Daint; **must be < 13** — CUDA 13 removes
+  fields DaCe's runtime probes and breaks E8 codegen) / ROCm 6.4.1 (Beverin), OpenBLAS
   0.3.29 / 0.3.30, cuTENSOR / hipTensor and HPTT (E3 only).
 - pip deps: numpy scipy matplotlib pandas.
 

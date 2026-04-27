@@ -89,6 +89,7 @@ Experiments/E6_VelocityTendencies/data_r02b05/
 __pycache__/
 *.py[cod]
 *.egg-info/
+**/.pytest_cache/
 
 # ---- venv (any name) -------------------------------------------------------
 # Catches venv/, .venv/, venv-old/, venv.pyenv-backup/, .venv.new/, etc.

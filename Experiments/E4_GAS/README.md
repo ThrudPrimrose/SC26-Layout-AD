@@ -4,6 +4,10 @@ Indirect scatter-accumulate `y[σ(i)] += x[i]` before and after an
 index-sort shuffle. Evaluated under a uniform-random distribution and
 under the real BaTiO₃ distribution.
 
+**Expected behaviour.** Index-sort shuffle should lift bandwidth on
+every backend; the gap should be largest on GPUs (paper: roughly
+2× lift on MI300A and Hopper; CPU 9–15%).
+
 ## Run
 
 ```bash

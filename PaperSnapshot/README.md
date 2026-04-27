@@ -28,12 +28,21 @@ PaperSnapshot/
 ├── E3_Transpose/results/{daint,beverin}/*.csv
 ├── E4_GAS/results/{daint,beverin}/*.csv
 ├── E5_USXX/results/{daint,beverin}/*.csv
-└── E6_VelocityTendencies/loopnest_{1..6}/results/{daint,beverin}/*.csv
+├── E6_VelocityTendencies/loopnest_{1..6}/results/{daint,beverin}/*.csv
+├── E8_LegacyVT/{daint,beverin}_full_permutations_8/*.txt   ← AD default for Fig 14 / Tab V
+└── E7_FullVelocityTendencies/results/{daint,beverin}/*.csv ← WIP, opportunistic only
 ```
 
 Each directory has the same filename / schema convention as
 `Experiments/<exp>/results/{daint,beverin}/` — the point is that
 `plot_paper.py` doesn't need to know which root it is reading.
+
+E8 is the only experiment whose snapshot files are TXTs rather than
+CSVs (icon-artifacts/sc26 convention: `<config>_<shuffled|unshuffled>.txt`
+captures the binary's stdout including `[Timer] Elapsed time:` lines).
+`Figures/plot_paper_snapshot.sh::has_snapshot_evidence` accepts both
+shapes, so the umbrella driver works against either CSV-emitting or
+TXT-emitting experiments without special-casing.
 
 ## How `Figures/plot_all.sh` uses it
 

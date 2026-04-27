@@ -1,12 +1,35 @@
+# Python / DaCe scratch
 __pycache__
-*.sdfgz
 *.sdfg
 .dacecache
 _dacegraphs
 utils/config.py
+
+# DaCe codegen tree. We ship the FROZEN stage 1..9 SDFGs at the root
+# of codegen/ so reviewers can run stage 8 directly without rebuilding
+# the upstream f2dace chain. Everything else (per-config build dirs
+# `stage8_permuted_<cfg>_<ms|mu>/`, generated .cu files, .o objects,
+# transient .sdfgz produced during permute) is NOT shipped.
+*.sdfgz                                   # default: ignore all .sdfgz...
+!codegen/*.sdfgz                          # ...except the frozen root-of-codegen ones
+codegen/stage8_permuted_*/
+codegen/.dacecache/
+codegen/_dacegraphs/
+
+# Datasets (reused via symlink to E7's data_r02b05/, never tracked).
 data_*/
 data/
+
+# Per-binary verification dumps (O(GB) per timestep) and raw object files.
 **.got
 **.want
 gotwant/
 **.o
+
+# Built executables -- regenerated per submission.
+velocity_gpu*
+
+# Slurm logs land here too; the per-config .txt timing dumps are the
+# evidence we keep, the slurm boilerplate is not.
+*_full_permutations_8/E8_velocity_*.out
+*_full_permutations_8/E8_velocity_*.err

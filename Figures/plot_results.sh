@@ -78,14 +78,11 @@ marker="$(mktemp /tmp/plot_results_marker.XXXXXX)"
 echo "[plot_results] figures will land in each Experiments/<exp>/results/ (or, for E8, next to <plat>_full_permutations_8/)"
 for exp in "${RUNTIME_EXPS[@]}"; do
     exp_dir="${EXP_ROOT}/${exp}"
-    # E7 ships plot_paper_v2.py for the per-timestep run.txt layout;
-    # everyone else (E1-E6, E8) ships plot_paper.py.
-    if [[ -f "${exp_dir}/plot_paper_v2.py" ]]; then
-        script_name="plot_paper_v2.py"
-    elif [[ -f "${exp_dir}/plot_paper.py" ]]; then
-        script_name="plot_paper.py"
-    else
-        echo "  [skip] ${exp}: no plot_paper{,_v2}.py"
+    # Every experiment ships plot_paper.py (E7's was the former
+    # plot_paper_v2.py; both v1/v2 logic lives in the single file now).
+    script_name="plot_paper.py"
+    if [[ ! -f "${exp_dir}/${script_name}" ]]; then
+        echo "  [skip] ${exp}: no ${script_name}"
         continue
     fi
     if ! has_runtime_evidence "${exp_dir}"; then

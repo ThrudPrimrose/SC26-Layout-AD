@@ -22,24 +22,38 @@ tables.
    CSVs. Mirrors `Experiments/<exp>/results/` so the same
    `plot_paper.py` reads from either root unchanged.
 
-## Quick start
+## Reviewer quick-start
 
-```bash
-# 1. One-time per machine: spack-loads Python 3.13 + sqlite, creates
-#    common/venv, clones DaCe yakup/dev, installs deps.
-#    Arch auto-detect: zen3 -> python/asgm25z, neoverse_v2 ->
-#    python/6kewgi6 (override with SC26_PYTHON_SPEC).
-bash Experiments/common/setup.sh
+End-to-end reproduction in five steps; ~22 hr per cluster.
 
-# 2. Pick an experiment and submit
-cd Experiments/E1_MatrixAdd && sbatch run_daint.sh   # or run_beverin.sh
-
-# 3. Plot — figures land next to the CSVs in results/{daint,beverin}/
-python plot_paper.py
-```
+1. Clone this repo and `bash Experiments/common/setup.sh` (one-time per
+   machine — spack-loads Python 3.13, creates `common/venv`, clones
+   DaCe).
+2. Submit microbenchmarks: `cd Experiments/E1_MatrixAdd && sbatch run_daint.sh`
+   (or `run_beverin.sh`); repeat for E2–E6 in any order.
+3. Submit the full velocity-tendencies sweep:
+   `cd Experiments/E8_LegacyVT && sbatch run_daint.sh` (default
+   `CONFIGS="winner_v1,winner_v2,winner_v6"`).
+4. Plot everything: `bash Figures/plot_all.sh Runtime`. Figures land in
+   `Figures/GeneratedFigures/Runtime/`.
+5. Cross-check against the per-experiment "Expected result" anchors in
+   each `Experiments/EX_*/README.md`.
 
 Per-experiment READMEs under `Experiments/EX_*/README.md` document the
-exact CSV filenames each run script emits.
+exact CSV filenames each run script emits and the expected qualitative
+outcome.
+
+## Calibration update
+
+The submitted paper's MI300A %-of-STREAM annotations were normalized
+against ~4.3 TB/s; between submission and AD freeze the cache-flush
+kernel was rewritten as a 3-sweep 8192² Jacobi with buffer swap to
+defeat dead-code-elimination by the GPU compiler, and the MI300A STREAM
+Triad peak was independently cross-checked with AMD performance
+engineering at ~3.55 TB/s. All E1–E6 and E8 figures in this artifact
+are normalized to the corrected peak. Qualitative trends — relative
+ordering of layouts, gap between unpermuted and the V_k winners —
+continue to hold.
 
 ## Figures
 
@@ -52,9 +66,12 @@ Three drivers, separate output destinations so they never clash:
 | `Figures/plot_all.sh` | (umbrella) | illustrative groups + `Peaks` + both above |
 
 Both runtime drivers iterate over E1–E5,
-`E6_VelocityTendencies/loopnest_{1..6}`, and E7. Missing CSVs produce a
-one-line `[skip]` and the sweep continues. All three pin DejaVu Sans
-via `MATPLOTLIBRC=Figures/matplotlibrc` to avoid STIX/CM warnings on
+`E6_VelocityTendencies/loopnest_{1..6}`, and E8 (the legacy full
+velocity-tendencies pipeline that's the AD default for §IV-D / Fig 14;
+E7 is included as work-in-progress and is plotted only when its CSVs
+exist). Missing CSVs produce a one-line `[skip]` and the sweep
+continues. All three pin DejaVu Sans via
+`MATPLOTLIBRC=Figures/matplotlibrc` to avoid STIX/CM warnings on
 stock environments.
 
 `plot_all.sh` accepts subset names: `PaperSnapshot`, `Results`,
@@ -84,13 +101,18 @@ SC26-Layout-AD/
     │   ├── access_analysis/
     │   ├── loopnest_{1..6}/
     │   └── conflict_resolution/
-    └── E7_FullVelocityTendencies/  Figure 14, Table V (full-module GPU
-                                    permutation sweep on shipped stage 5
-                                    SDFGs; reads
-                                    E6/access_analysis/layout_candidates.json
-                                    — run E6 T6.2 first; opt-in
-                                    tools/regenerate_baselines.sh rebuilds
-                                    stage 5 from F90 on f2dace/staging)
+    ├── E7_FullVelocityTendencies/  WIP. New SDFG-driven pipeline (DaCe
+    │                               yakup/dev + OffloadVelocityToGPU +
+    │                               PermuteDimensions). Kept in the tree
+    │                               for the next iteration; not the AD's
+    │                               default reproduction path -- E8 is.
+    └── E8_LegacyVT/                Figure 14, Table V (DEFAULT). Legacy
+                                    icon-artifacts/sc26_layout pipeline
+                                    on f2dace/staging. Drives
+                                    run_stage8_permutations.py with
+                                    --configs winner_v{1,2,6}; reads
+                                    E6/access_analysis/{layout_candidates,
+                                    winners}.json (auto-regenerated).
 ```
 
 STREAM peaks for bandwidth normalization live in
