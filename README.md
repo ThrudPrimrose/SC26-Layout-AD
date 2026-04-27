@@ -1,7 +1,7 @@
 # SC26-Layout-AD
 
-Reproducibility artifact for the SC26 paper **"Layout Algebra and Cost
-Metrics for Memory-Hierarchy-Aware Array Rearrangement"**: everything
+Reproducibility artifact for the SC26 paper **"Why Schedule Transformations Are Not Enough:
+Layout Optimizations for Block-Granular I/O"**: everything
 needed to reproduce Figures 4 and 8–14 and the analytic cost-metric
 tables.
 
