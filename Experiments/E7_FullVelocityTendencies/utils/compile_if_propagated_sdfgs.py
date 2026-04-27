@@ -95,7 +95,19 @@ def _get_flags(gpu: bool, release: bool, lib: bool, debuginfo: bool) -> str:
 
     if gpu and AMD:
         arch = "gfx942"
-        common = f"--offload-arch={arch} -std=c++20 -DNDEBUG"
+        # Pin ROCm + HIP install paths on the command line. Without
+        # them, ROCm clang++ probes for a CUDA install whenever
+        # ROCM_PATH / HIP_PATH env propagation is lost in a subprocess
+        # (LLVM #63660; ROCm/HIP #1716) and dies with ``cannot find
+        # libdevice for sm_35``. Honor ROCM_HOME / ROCM_PATH /
+        # HIP_PATH (set by setup_beverin.sh) but bake them into the
+        # flags as a belt-and-braces guarantee.
+        rocm_path = os.getenv("ROCM_HOME") or os.getenv("ROCM_PATH") or "/opt/rocm"
+        hip_path  = os.getenv("HIP_PATH") or rocm_path
+        common = (
+            f"--rocm-path={rocm_path} --hip-path={hip_path} "
+            f"--offload-arch={arch} -std=c++20 -DNDEBUG"
+        )
         if release:
             flags = (
                 f"{common} -Wall -Wextra {omp_flag} "

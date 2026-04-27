@@ -123,7 +123,7 @@ def get_roofline():
     if AMD:
         name, peak_fp64, peak_bw = "MI300A", 61300.0, 5300.0
         suffix, src = ".cpp", AMD_ROOFLINE_SRC
-        compile_cmd = lambda obj, src: f"hipcc {AMD_FLAGS} -o {obj} {src}"
+        compile_cmd = lambda obj, src: f"hipcc {AMD_FLAGS} -x hip -o {obj} {src}"
     else:
         name, peak_fp64, peak_bw = "GH200", 34000.0, 4023.0
         suffix, src = ".cu", CUDA_ROOFLINE_SRC
@@ -157,7 +157,7 @@ def compile_kernels(force=False):
     if not AMD:
         cmd = f"nvcc -O3 --use_fast_math -std=c++17 -arch=native -Xcompiler=-ffast-math -Xcompiler=-fno-trapping-math -Xcompiler=-fno-math-errno -Xcompiler=-fno-vect-cost-model -o {BINARY} transpose_gpu.cu"
     else:
-        cmd = f"hipcc {AMD_FLAGS} -o {BINARY} transpose_gpu_hip.cpp"
+        cmd = f"hipcc {AMD_FLAGS} -x hip -o {BINARY} transpose_gpu_hip.cpp"
     print(f"  Compiling kernels: {cmd}")
     r = subprocess.run(cmd, shell=True, capture_output=True, text=True)
     if r.returncode != 0:
@@ -181,7 +181,7 @@ def compile_lib(force=False):
         ht_root = (os.environ.get("HIPTENSOR_ROOT")
                    or os.environ.get("SCRATCH", ""))
         ht_flags = f"-I{ht_root}/include -L{ht_root}/lib -Wl,-rpath,{ht_root}/lib" if ht_root else ""
-        cmd = (f"hipcc {AMD_FLAGS} {ht_flags} "
+        cmd = (f"hipcc {AMD_FLAGS} {ht_flags} -x hip "
                f"-o {BINARY_LIB} transpose_hiptensor.cpp -lhiptensor")
         lib = "hipTensor"
 

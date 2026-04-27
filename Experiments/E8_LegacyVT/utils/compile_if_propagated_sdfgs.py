@@ -81,7 +81,20 @@ def _get_flags(gpu: bool, release: bool, lib: bool, debuginfo: bool) -> str:
 
     if gpu and AMD:
         arch = "gfx942"
-        common = f"--offload-arch={arch} -std=c++20 -DNDEBUG"
+        # Pin ROCm + HIP install paths explicitly on the command line.
+        # With ``-x hip`` on .cpp/.cu, ROCm clang++ otherwise probes for
+        # a CUDA install and fails (``cannot find libdevice for sm_35``)
+        # whenever the ``ROCM_PATH`` / ``HIP_PATH`` env propagation is
+        # lost in a subprocess (LLVM #63660; ROCm/HIP #1716). Honor
+        # ROCM_HOME / ROCM_PATH and HIP_PATH (set by setup_beverin.sh)
+        # but also bake them into the flags so a stripped-env caller
+        # can't accidentally fall back to the CUDA code path.
+        rocm_path = os.getenv("ROCM_HOME") or os.getenv("ROCM_PATH") or "/opt/rocm"
+        hip_path  = os.getenv("HIP_PATH") or rocm_path
+        common = (
+            f"--rocm-path={rocm_path} --hip-path={hip_path} "
+            f"--offload-arch={arch} -std=c++20 -DNDEBUG"
+        )
         if release:
             flags = (
                 f"{common} -Wall -Wextra {omp_flag} "
@@ -213,9 +226,22 @@ def _compile_and_link(
         if obj_dir:
             os.makedirs(obj_dir, exist_ok=True)
         xlang = ""
-        if gpu and src.endswith(".cpp"):
+        if gpu and src.endswith((".cpp", ".cu")):
             cc = _nvcc()
-            xlang = "-x cu"
+            # Language-flag dispatch:
+            #   * AMD: hipcc (and underlying ROCm clang++) defaults
+            #     ``.cu`` files to CUDA mode. ``-x hip`` is required
+            #     for BOTH ``.cpp`` and ``.cu`` to keep clang++ on the
+            #     ROCm code path; without it we get
+            #     ``cannot find libdevice for sm_35`` / ``cannot find
+            #     CUDA installation``.
+            #   * NVIDIA + ``.cpp``: nvcc needs explicit ``-x cu`` to
+            #     interpret the source as CUDA.
+            #   * NVIDIA + ``.cu``: that's nvcc's default; no ``-x``.
+            if AMD:
+                xlang = "-x hip"
+            elif src.endswith(".cpp"):
+                xlang = "-x cu"
         else:
             cc = _pick_compiler(src)
         per_flags = (compile_flags if cc.endswith("nvcc") or cc.endswith("hipcc")

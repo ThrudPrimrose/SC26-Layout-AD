@@ -31,7 +31,7 @@ echo "[E5 beverin] host=$(hostname) threads=$OMP_NUM_THREADS"
 
 # --- T2 build (flags from common/setup_beverin.sh) -----------------------
 ${CPU_CXX} ${CPU_CXXFLAGS} -o addusxx_cpu main_cpu.cpp ${CPU_LDFLAGS}
-${GPU_CXX} ${GPU_CXXFLAGS} -fgpu-rdc -o addusxx_gpu main_hip.cpp ${GPU_LDFLAGS}
+${GPU_CXX} ${GPU_CXXFLAGS} -x hip -fgpu-rdc -o addusxx_gpu main_hip.cpp ${GPU_LDFLAGS}
 
 # --- run (binaries write CSV at the path passed as argv[1]) --------------
 ./addusxx_cpu results/beverin/addusxx_cpu_sweep.csv

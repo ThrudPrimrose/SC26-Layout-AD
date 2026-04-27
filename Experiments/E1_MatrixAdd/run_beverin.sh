@@ -26,7 +26,7 @@ echo "[E1 beverin] host=$(hostname) threads=$OMP_NUM_THREADS"
 
 # --- build (flags from common/setup_beverin.sh) --------------------------
 ${CPU_CXX} ${CPU_CXXFLAGS} -o bench_cpu bench_cpu.cpp ${CPU_LDFLAGS}
-${GPU_CXX} ${GPU_CXXFLAGS} -o bench_gpu bench_gpu_hip.cpp ${GPU_LDFLAGS}
+${GPU_CXX} ${GPU_CXXFLAGS} -x hip -o bench_gpu bench_gpu_hip.cpp ${GPU_LDFLAGS}
 
 # --- run -----------------------------------------------------------------
 ./bench_cpu "results/beverin/madd_beverin_cpu.csv"

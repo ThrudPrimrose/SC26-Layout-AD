@@ -106,8 +106,14 @@ def post_codegen_hook(sdfgs) -> None:
     invocation -- if no .cu files have reduction tasklets, the patcher
     is a no-op.
     """
-    roots = [Path(getattr(s, "build_folder", "")) for s in sdfgs]
-    patch_codegen_tree([r for r in roots if str(r)], verbose=True)
+    roots = []
+    for s in sdfgs:
+        bf = getattr(s, "build_folder", None)
+        if bf and bf not in (".", ""):
+            roots.append(Path(bf))
+    n = patch_codegen_tree(roots, verbose=True)
+    print(f"[patch_codegen_reductions] post_codegen_hook: patched {n} files "
+          f"across {len(roots)} SDFG build folders")
 
 
 def main():

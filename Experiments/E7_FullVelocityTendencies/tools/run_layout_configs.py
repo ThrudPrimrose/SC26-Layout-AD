@@ -58,6 +58,28 @@ def fortran_to_sdfg_array_name(s: str) -> str:
     return "__CG_" + s.replace("%", "__m_").strip()
 
 
+# Local Fortran aliases for connectivity arrays (the ``n`` group in
+# ``canonical_array_groups.json``) -> long DaCe SDFG names. Hand-coded
+# because LOKI's INDIRECT_ARRAYS filter strips the long names from the
+# per-nest array lists, leaving only these aliases in the JSON. Without
+# this map the IN axis collapses (every v123 cell would project to
+# identity on connectivity), erasing the V_n distinction. Mirror copy
+# in ``Experiments/E8_LegacyVT/sc26_layout/v123_bridge.py`` -- keep
+# them in sync.
+_CONN_ALIASES: Dict[str, str] = {
+    "icblk":  "__CG_p_patch__CG_edges__m_cell_blk",
+    "icidx":  "__CG_p_patch__CG_edges__m_cell_idx",
+    "ieblk":  "__CG_p_patch__CG_cells__m_edge_blk",
+    "ieidx":  "__CG_p_patch__CG_cells__m_edge_idx",
+    "incblk": "__CG_p_patch__CG_cells__m_neighbor_blk",
+    "incidx": "__CG_p_patch__CG_cells__m_neighbor_idx",
+    "iqblk":  "__CG_p_patch__CG_edges__m_quad_blk",
+    "iqidx":  "__CG_p_patch__CG_edges__m_quad_idx",
+    "ivblk":  "__CG_p_patch__CG_edges__m_vertex_blk",
+    "ividx":  "__CG_p_patch__CG_edges__m_vertex_idx",
+}
+
+
 STAGE_ID = 6
 # Like stage5a, the v123 runner reads from stage 4's output regardless of
 # the output stage id. ``common.stage_input(name, 5)`` -> ``codegen/stage4/<name>.sdfgz``.
@@ -119,10 +141,25 @@ def build_permute_map(cfg: dict, group_arrays: Dict[str, List[str]],
         v = cfg.get(gid, "V1")
         axis = group_axis.get(gid, "IC")
         for fortran_name in arrs:
-            sdfg_name = fortran_to_sdfg_array_name(fortran_name)
-            ndim = sdfg_arrays.get(sdfg_name)
-            if ndim is None:
+            # Resolve in priority order:
+            #   1. Connectivity-group local alias -> long DaCe name
+            #      (gpu_-prefixed if the SDFG uses that form, else bare)
+            #   2. Generic Fortran -> SDFG translation
+            #   3. Short alias as last-resort fallback (matches the
+            #      dry-run's synthesized name set)
+            long_name = _CONN_ALIASES.get(fortran_name)
+            candidates = []
+            if long_name is not None:
+                candidates += ["gpu_" + long_name, long_name, fortran_name]
+            else:
+                generic = fortran_to_sdfg_array_name(fortran_name)
+                candidates += ["gpu_" + generic, generic]
+            sdfg_name = next(
+                (c for c in candidates if c in sdfg_arrays), None
+            )
+            if sdfg_name is None:
                 continue
+            ndim = sdfg_arrays[sdfg_name]
             if axis == "IC":
                 if v_ic_is_v_first(v):
                     perm = _NLEV_FIRST_BY_DIM.get(ndim)

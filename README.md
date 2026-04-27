@@ -31,7 +31,9 @@ End-to-end reproduction; ~36 hr per cluster (E8's full-module sweep is ~18 hr on
    `cd Experiments/E1_MatrixAdd && sbatch run_daint.sh` (or
    `run_beverin.sh`).
 3. Submit the full sweep: `cd Experiments/E8_LegacyVT && sbatch run_daint.sh`
-   (default `CONFIGS="winner_v1,winner_v2,winner_v6"`).
+   (default = curated set: `nlev_first`, `index_only`, `winner_v1` + 64
+   unique `v123_*` cross-product cells from E6 = **67 configs / 134
+   binaries**; override via `CONFIGS=` env to pin a subset).
 4. `bash Figures/plot_all.sh Runtime` — figures land in
    `Figures/GeneratedFigures/Runtime/`.
 5. Cross-check against the **Expected behaviour** anchor at the top of
@@ -92,19 +94,21 @@ SC26-Layout-AD/
     ├── E6_VelocityTendencies/  Figures 12–13, Table IV (per-loopnest)
     │   ├── access_analysis/
     │   ├── loopnest_{1..6}/
-    │   └── conflict_resolution/
-    ├── E7_FullVelocityTendencies/  WIP. New SDFG-driven pipeline (DaCe
-    │                               yakup/dev + OffloadVelocityToGPU +
-    │                               PermuteDimensions). Kept in the tree
-    │                               for the next iteration; not the AD's
-    │                               default reproduction path -- E8 is.
-    └── E8_LegacyVT/                Figure 14, Table V (DEFAULT). Legacy
-                                    icon-artifacts/sc26_layout pipeline
-                                    on f2dace/staging. Drives
-                                    run_stage8_permutations.py with
-                                    --configs winner_v{1,2,6}; reads
-                                    E6/access_analysis/{layout_candidates,
-                                    winners}.json (auto-regenerated).
+    │   └── conflict_resolution/   # vestigial; superseded by generate_winners.py (T6.4)
+    ├── E8_LegacyVT/                Figure 14, Table V (DEFAULT). Legacy
+    │                               icon-artifacts/sc26_layout pipeline
+    │                               on f2dace/staging. Drives
+    │                               run_stage8_permutations.py with the
+    │                               curated default (nlev_first,
+    │                               index_only, winner_v1, + V123
+    │                               cross-product); reads
+    │                               E6/access_analysis/{layout_candidates,
+    │                               winners}.json (auto-regenerated).
+    └── E7_FullVelocityTendencies/  WIP. New SDFG-driven pipeline (DaCe
+                                    yakup/dev + OffloadVelocityToGPU +
+                                    PermuteDimensions). Kept in the tree
+                                    for the AE iteration; not the AD's
+                                    default reproduction path -- E8 is.
 ```
 
 STREAM peaks for bandwidth normalization live in
