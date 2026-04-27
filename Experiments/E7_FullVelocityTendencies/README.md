@@ -1,14 +1,10 @@
-# E7 — Full velocity tendencies (WIP — reviewers should SKIP this)
+# E7 — Full velocity tendencies (in-progress refactor)
 
-> **Status: work-in-progress. Not on the AD reproduction path.** The
-> default §IV-D / Figure 14 / Table V reproduction lives in
-> [`../E8_LegacyVT/`](../E8_LegacyVT/). E7 is a parallel
-> reimplementation of the same module on the new SDFG-driven pipeline
-> (DaCe `yakup/dev` + `OffloadVelocityToGPU` + `PermuteDimensions`)
-> kept in the tree for the next iteration. Reviewers should not
-> `sbatch` E7 — its numbers may diverge from the paper while
-> validation is in progress; submit `E8_LegacyVT/run_{daint,beverin}.sh`
-> instead.
+> **Status: in-progress SDFG-driven refactor.** Not required for the
+> AD reproduction path; the §IV-D / Figure 14 / Table V reproduction
+> lives in [`../E8_LegacyVT/`](../E8_LegacyVT/). E7 rebuilds the same
+> module on DaCe `yakup/dev` with `OffloadVelocityToGPU` +
+> `PermuteDimensions`. Skip for the AD.
 
 GPU layout-permutation sweep on the full ICON velocity-tendencies
 module. E7 is a frozen snapshot of the

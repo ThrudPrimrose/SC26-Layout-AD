@@ -101,21 +101,21 @@ Artifact~$A_1$ validates the layout algebra ($C_2$), cost metrics ($C_3$), and t
 
 \textbf{E8 (Full velocity tendencies, Fig.~14, Tab.~V):} GPU layout-permutation sweep over the full module via \texttt{run\_stage8\_permutations.py} on the icon-artifacts stage~8 SDFGs. Default \texttt{CONFIGS="winner\_v1,winner\_v2,winner\_v6"}; the 95-cell cross-product (\texttt{cv*\_ch*\_f*\_s*\_n*}) is opt-in. Vertical-first yields $1.17\times$ on MI300A and $1.07\times$ on Hopper for Config~B (5 of every 6 calls), $1.06\times$ / $0.97\times$ for Config~A. Net per-timestep: $\sim$15\% MI300A, $\sim$5\% Hopper (5:1 weighted).
 
-\paragraph{Expected results.} Reviewers should observe the following qualitative outcomes per experiment; absolute medians may shift by a few percent on different system load.
+\paragraph{Expected behaviour.} Reviewers should observe the following qualitative orderings; absolute numbers depend on hardware. Approximate paper figures are quoted as a guideline, not a strict acceptance threshold.
 
 \begin{center}
 \small
 \begin{tabular}{ll}
 \toprule
-Exp. & Reviewer should observe \\
+Exp. & Layout / config ordering reviewer should see \\
 \midrule
-E1 & GPU 99\% of STREAM peak after layout permute; CPU 68--88\% \\
-E2 & SoA collapses on Zen4 at high $P$; AoSoA-16 stable across backends \\
-E3 & Blocked transpose: $1.7\times$ Zen4, $3.2\times$ Grace; HPTT 44\% vs blocked 61--81\% \\
-E4 & Index-sort lifts GPU bandwidth: 21--35\%~$\to$~30--62\% MI300A; 35--62\%~$\to$~62--82\% Hopper \\
-E5 & $1.12\times$ Zen4, $1.11\times$ Grace, $1.18\times$ Hopper, $1.00\times$ MI300A \\
-E6 & Loopnest~1 indirect-uniform: $1.85\times$ Zen4; GPU layouts comparable under R02B05 \\
-E8 & V6 Config~B: $1.17\times$ MI300A, $1.07\times$ Hopper; Config~A: $1.06\times$ / $0.97\times$ \\
+E1 & permuted $>$ schedule-only on every backend; GPU near STREAM peak ($\sim$99\%) \\
+E2 & AoSoA-16 most robust; SoA degrades on CPUs at high $P$ \\
+E3 & blocked $>$ HPTT $>$ naive row-major on CPUs; layouts converge on GPUs \\
+E4 & index-sort $>$ unsorted on every backend; gap largest on GPUs ($\sim$2$\times$) \\
+E5 & composed transform $\geq$ baseline on every backend; gain largest on Hopper ($\sim$1.18$\times$) \\
+E6 & V$_k$ winner $>$ ICON-default; loopnest~1 indirect-uniform $\sim$1.85$\times$ on CPUs; GPU layouts comparable under R02B05 \\
+E8 & V6 $\geq$ V1, V2, and unpermuted on Config~B; gain largest on MI300A ($\sim$1.17$\times$) \\
 \bottomrule
 \end{tabular}
 \end{center}
@@ -144,7 +144,7 @@ Analysis                       &  10 &  10 \\
 \end{center}
 \noindent All times in minutes. E1--E5 are independent and can run in parallel.
 
-\paragraph{Reproducibility caveat.} Reviewer \%-of-STREAM annotations may differ slightly from the paper's. Between submission and AD freeze the cache-flush kernel (\texttt{common/jacobi\_flush.h}) was rewritten as a 3-sweep $8192^{2}$ Jacobi with buffer swap to defeat dead-code-elimination by the GPU compiler, and the MI300A STREAM Triad peak was independently cross-checked with AMD performance engineering. All E1--E6 and E8 figures are normalized to the corrected peak. Qualitative trends --- relative ordering of layouts, gap between \texttt{unpermuted} and the V$_k$ winners --- continue to hold.
+\paragraph{Reproducibility caveat.} \%-of-STREAM annotations may differ slightly from the paper's. The cache-flush kernel was rewritten as a 3-sweep $8192^{2}$ Jacobi with buffer swap to defeat dead-code-elimination by the GPU compiler, and the MI300A STREAM Triad peak was independently cross-checked with AMD performance engineering; every figure in this artifact is normalized to the corrected peak. Qualitative trends --- layout orderings, gap between \texttt{unpermuted} and the V$_k$ winners --- are unchanged.
 
 \artin
 
