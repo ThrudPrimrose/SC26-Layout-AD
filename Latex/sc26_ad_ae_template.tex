@@ -69,7 +69,7 @@ E8 & $C_3$, $C_4$         & Fig.~14, Tab.~V     & R1, R2 \\
 \end{center}
 
 \paragraph{E8 is the AD's default full velocity-tendencies path.}
-\texttt{Experiments/E8\_LegacyVT/} drives the stage-8 codegen pipeline on DaCe \texttt{f2dace/staging} and reproduces Fig.~14 / Tab.~V from a single \texttt{sbatch run\_\{daint,beverin\}.sh}. The default \texttt{CONFIGS="winner\_v1,winner\_v2,winner\_v6"} selects the three V$_k$ winners: V1 (identity, Fig.~13 \emph{Original Layout}), V2 (connectivity-only intermediate), and V6 ($v_\textrm{first}$, Fig.~13 \emph{Optimized Layout}). \texttt{E7\_FullVelocityTendencies/} is an in-progress SDFG-driven refactor of the same pipeline (DaCe \texttt{yakup/dev}) and is not required for the AD's reproduction path.
+\texttt{Experiments/E8\_LegacyVT/} drives the stage-8 codegen pipeline on DaCe \texttt{f2dace/staging} and reproduces Fig.~14 / Tab.~V from a single \texttt{sbatch run\_\{daint,beverin\}.sh}. The curated default sweep is 67 configs / 134 binaries: the three named ablations (\texttt{nlev\_first}, \texttt{index\_only}, \texttt{winner\_v1} = unpermuted) plus 64 unique \texttt{v123\_*} cells from the per-group V$_k$ cross-product (E6's \texttt{layout\_crossproduct\_v123.json}). The named winners V1 (identity, Fig.~13 \emph{Original Layout}), V2 (connectivity-only intermediate), and V6 ($v_\textrm{first}$, Fig.~13 \emph{Optimized Layout}) appear among the v123 cells; pin them via \texttt{CONFIGS="winner\_v1,winner\_v2,winner\_v6"} for the minimal Fig.~14 reproduction. \texttt{E7\_FullVelocityTendencies/} is an in-progress SDFG-driven refactor of the same pipeline (DaCe \texttt{yakup/dev}) and is not required for the AD's reproduction path.
 
 Quotient-graph figures (Figures~2--3) are pure matplotlib in \texttt{Figures/}. Runtime figures (Figures~4 and 8--14) regenerate via \texttt{Figures/plot\_all.sh}, whose two drivers \texttt{plot\_paper\_snapshot.sh} and \texttt{plot\_results.sh} read frozen and freshly-collected CSVs respectively, into separate output directories. Throughout, results are reported on Daint.Alps and Beverin (specs in §Artifact Setup).
 
@@ -112,7 +112,7 @@ E4 GAS                         &  60 &  60 \\
 E5 QE \texttt{addusxx\_g}      &  60 &  60 \\
 E6 Loopnest 1                  & 150 & 150 \\
 E6 Loopnests 2--6              & 300 & 300 \\
-E8 Full-module sweep           & 1080 & 1080 \\
+E8 Full-module sweep           & 1080 & 1440 \\
 Analysis                       &  10 &  10 \\
 \midrule
 \textbf{Total}                 & \multicolumn{2}{c}{\textbf{$\sim$36~hr / cluster}} \\

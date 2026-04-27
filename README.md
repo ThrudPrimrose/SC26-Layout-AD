@@ -31,7 +31,9 @@ End-to-end reproduction; ~36 hr per cluster (E8's full-module sweep is ~18 hr on
    `cd Experiments/E1_MatrixAdd && sbatch run_daint.sh` (or
    `run_beverin.sh`).
 3. Submit the full sweep: `cd Experiments/E8_LegacyVT && sbatch run_daint.sh`
-   (default `CONFIGS="winner_v1,winner_v2,winner_v6"`).
+   (default = curated set: `nlev_first`, `index_only`, `winner_v1` + 64
+   unique `v123_*` cross-product cells from E6 = **67 configs / 134
+   binaries**; override via `CONFIGS=` env to pin a subset).
 4. `bash Figures/plot_all.sh Runtime` — figures land in
    `Figures/GeneratedFigures/Runtime/`.
 5. Cross-check against the **Expected behaviour** anchor at the top of

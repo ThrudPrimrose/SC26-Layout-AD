@@ -19,7 +19,7 @@ work mix; gains should be largest on MI300A (paper: ~1.17× MI300A,
 # 1. One-time setup (if not already done)
 bash ../common/setup.sh
 
-# 2. Submit (default = winner_v1, winner_v2, winner_v6)
+# 2. Submit (curated default: 67 configs / 134 binaries; see "Configs")
 cd Experiments/E8_LegacyVT
 sbatch run_daint.sh           # or run_beverin.sh
 
@@ -29,23 +29,24 @@ python plot_paper.py
 
 The `run_{daint,beverin}.sh` scripts handle:
 
-- DaCe branch switch to `f2dace/staging` (E8 requires it).
-- Dataset auto-fetch (R02B05 / `nproma=20480` ICON; ~9 GB). Three
-  cases, in priority order:
-  1. `${EXP_DIR}/data_r02b05/` already populated → use as-is.
-  2. `../E7_FullVelocityTendencies/data_r02b05/` populated → symlink
-     via `LOCAL_DATA_DIR` mode (no copy, no re-download).
-  3. Otherwise → fetch via E7's `tools/download_data.sh`.
-- Regeneration of E6's `layout_candidates.json` (via
-  `select_loopnests.py`) and `winners.json` (via `derive_winners.py`)
-  if either is missing.
-- Compile + run dispatch through `run_stage8_permutations.py` per
-  config in `CONFIGS`.
+- DaCe branch switch to `f2dace/staging` (required for E8).
+- Dataset auto-fetch (R02B05 / `nproma=20480` ICON; ~9 GB) — uses
+  `data_r02b05/` if populated, else symlinks from E7's copy, else
+  downloads via E7's `tools/download_data.sh`.
+- Regeneration of E6's `layout_candidates.json` and `winners.json` if
+  missing.
+- Per-config compile + run via `run_stage8_permutations.py`.
 
 ## Configs
 
-The default `CONFIGS="winner_v1,winner_v2,winner_v6"` reproduces the
-three V$_k$ winners exactly:
+The default sweep (no `CONFIGS=` override) is **67 configs / 134
+binaries**: 3 named (`nlev_first`, `index_only`, `winner_v1` =
+unpermuted) + 64 unique `v123_*` cells from the per-group V_k
+cross-product (`Experiments/E6_VelocityTendencies/full_velocity_tendencies/layout_crossproduct_v123.json`),
+deduped by permute-map signature. The 64 = 2⁵ IC-axis × 2 IN-axis
+(V6 collapses with V2 on the `n` group). Mirror of E7's bridge.
+
+Named V$_k$ aliases (subset of the 67):
 
 | Config | Mapping | Reproduces |
 |---|---|---|
@@ -53,49 +54,34 @@ three V$_k$ winners exactly:
 | `winner_v2` | h_first + AoS-conn (`[0,2,1]` connectivity) | connectivity-only intermediate |
 | `winner_v6` | v_first + AoS-conn (`[2,0,1]` connectivity, level-first data) | Fig 13 *Optimized Layout* / §IV-D adopted layout |
 
-Override via the `CONFIGS` env var (comma-separated):
+Override via the `CONFIGS` env (comma-separated). Common shortcuts:
 
 ```bash
-# Just V1 vs V6 (minimal Fig 13 reproduction)
+# Minimal Fig 13 reproduction (V1 vs V6, ~1 hr)
 CONFIGS="winner_v1,winner_v6" sbatch run_daint.sh
 
-# Full 95-cell cross-product sweep
-CONFIGS="$(python run_stage8_permutations.py --list \
-          | awk 'NR>1 && /^[ ]/{print $1}' | head -95 \
-          | paste -sd,)" sbatch run_daint.sh
+# Just the three named V_k winners (legacy behaviour)
+CONFIGS="winner_v1,winner_v2,winner_v6" sbatch run_daint.sh
 
-# List all available named configs
-python run_stage8_permutations.py --list
-
-# Dry-run: preview every config + output filename without compiling
-python run_stage8_permutations.py --dry-run
+# Preview the full sweep without compiling
+bash run_daint.sh --dry-run
+python run_stage8_permutations.py --list   # all registered configs
 ```
 
-The 95-cell sweep is the cv × ch × f × s × n cross-product from
-[`sc26_layout/permute_stage8.py`](sc26_layout/permute_stage8.py)
-(2 × 2 × 2 × 2 × 6 - 1 = 95 non-identity cells), plus the three
-named V$_k$ aliases.
+The legacy 95-cell `cv*_ch*_f*_s*_n*` cross-product
+(2×2×2×2×6−1 = 95) is still registered in
+[`sc26_layout/permute_stage8.py`](sc26_layout/permute_stage8.py) and
+selectable explicitly via `CONFIGS=cv0_ch0_f0_s0_n012,...`, but is no
+longer the default.
 
 ## Outputs
 
-Per-config TXTs (one per shuffle variant) land under:
-
-```
-{daint,beverin}_full_permutations_8/
-├── winner_v1_shuffled.txt
-├── winner_v1_unshuffled.txt
-├── winner_v2_shuffled.txt
-├── winner_v2_unshuffled.txt
-├── winner_v6_shuffled.txt
-├── winner_v6_unshuffled.txt
-└── E8_velocity_<host>_<jobid>.{out,err}
-```
-
-Each `<config>_<shuffled|unshuffled>.txt` captures the binary's
-stdout — `[Timer] Elapsed time: <ms>` lines plus reduction-correctness
-asserts. The plotting scripts (`plot_paper.py`,
-`Figures/plot_paper_snapshot.sh`) parse the timing lines via the same
-regex used in `icon-artifacts/sc26_layout/plot_stage8.py`.
+Per-config TXTs (two per config — `_shuffled.txt`, `_unshuffled.txt`)
+land under `{daint,beverin}_full_permutations_8/`, alongside the
+Slurm `.out`/`.err`. Each TXT captures the binary's stdout — `[Timer]
+Elapsed time: <ms>` lines + reduction-correctness asserts. The
+plotters (`plot_paper.py`, `Figures/plot_paper_snapshot.sh`) parse
+those timing lines.
 
 ## Dependencies
 
@@ -112,20 +98,28 @@ regex used in `icon-artifacts/sc26_layout/plot_stage8.py`.
 ## Pipeline internals (skim)
 
 - [`sc26_layout/permute_stage8.py`](sc26_layout/permute_stage8.py) —
-  `PERMUTE_CONFIGS` dict (95 sweep cells + named aliases including
-  `winner_v1` / `winner_v2` / `winner_v6`) and the post-codegen
-  `permute_sdfg()` driver.
+  `PERMUTE_CONFIGS` dict: named aliases (`nlev_first`, `index_only`,
+  `winner_v{1,2,6}`), the legacy 95-cell `cv*_ch*_f*_s*_n*` sweep, and
+  `permute_sdfg()` driver. The 64 v123_* cells are registered at
+  import time by [`v123_bridge.py`](sc26_layout/v123_bridge.py) from
+  E6's `layout_crossproduct_v123.json`; mirror of E7's
+  `tools/run_layout_configs.py` semantics (axis projection: V1/V2 →
+  h_first, V6 → v_first; V_odd → SoA, V_even → AoS).
 - [`run_stage8_permutations.py`](run_stage8_permutations.py) — main
-  loop. Imports `PERMUTE_CONFIGS`, accepts `--configs` CSV /
-  `--list` / `--reps`. Compiles per-config binaries via
-  `compile_gpu_stage8`, runs each twice (shuffled / unshuffled),
-  redirects stdout to the TXT files above.
+  loop. Picks the curated default when `--configs` is absent;
+  supports `--list` / `--dry-run` / `--reps`. Compiles per-config
+  binaries via `compile_gpu_stage8` and runs each twice
+  (shuffled / unshuffled).
+- [`tools/patch_codegen_reductions.py`](tools/patch_codegen_reductions.py)
+  — post-codegen hook wired into `compile_action()` via
+  `post_codegen_hook`. Injects `#include "reductions_kernel.cuh"` and
+  rewrites `__dace_current_stream` → `nullptr` in the generated
+  `*_cuda.cu` of every permuted SDFG (otherwise the inlined reduction
+  tasklets fail to compile). Idempotent.
 - [`utils/stages/compile_gpu_stage8.py`](utils/stages/compile_gpu_stage8.py)
-  — produces `velocity_gpu.stage8_standalone_release_permuted_<cfg>_<ms|mu>`
+  — produces the per-config
+  `velocity_gpu.stage8_standalone_release_permuted_<cfg>_<ms|mu>`
   binaries.
-- `sc26_layout/permute_stage4.py` and `permute_stage8.py` are the two
-  named entry points; E8 runs only the latter for the AD's full-VT
-  result.
 
 ## Statistical methodology
 
