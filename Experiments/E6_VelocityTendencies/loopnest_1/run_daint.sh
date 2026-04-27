@@ -25,7 +25,7 @@ cd "${EXP_DIR}"
 
 # R02B05 connectivity + serialised ICON fields. Override ICON_DATA_PATH
 # in the environment for non-Daint locations.
-export ICON_DATA_PATH="${ICON_DATA_PATH:-/capstor/scratch/cscs/ybudanaz/icon-artifacts/velocity/data_r02b05}"
+export ICON_DATA_PATH="${ICON_DATA_PATH:-${EXP_DIR}/data_r02b05}"
 
 echo "[E6L1 daint] host=$(hostname) threads=$OMP_NUM_THREADS data=$ICON_DATA_PATH"
 

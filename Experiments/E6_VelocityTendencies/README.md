@@ -62,8 +62,8 @@ the same schema as the older `layout_crossproduct_v123.json`, so
 consumes it unchanged.
 
 ```bash
-python generate_winners.py                          # nlev=256, gpu, exact, threshold 0.5
-python generate_winners.py --nlev 90                # different vertical resolution
+python generate_winners.py                          # nlev=128 (Tab IV default), gpu, exact, threshold 0.5
+python generate_winners.py --nlev 256               # other slices (sweep covers {90, 96, 128, 256})
 python generate_winners.py --no-promotion           # raw per-group winners only
 python generate_winners.py --threshold 0.66         # tighter promotion bar
 ```

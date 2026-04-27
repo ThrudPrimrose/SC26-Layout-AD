@@ -39,6 +39,11 @@ done
 EXP_DIR="${SLURM_SUBMIT_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}"
 COMMON_DIR="$(cd "${EXP_DIR}/../common" && pwd)"
 
+# E7 (WIP SDFG-driven pipeline) requires DaCe on yakup/dev. Pin
+# explicitly so a shell that previously sourced E8 (which exports
+# DACE_BRANCH=f2dace/staging) doesn't carry the wrong branch in.
+export DACE_BRANCH="yakup/dev"
+
 source "${COMMON_DIR}/activate.sh"
 source "${COMMON_DIR}/setup_daint.sh"
 

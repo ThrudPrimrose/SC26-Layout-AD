@@ -37,6 +37,7 @@ export MATPLOTLIBRC="${FIG_DIR}/matplotlibrc"
 # ``{daint,beverin}_full_permutations_8/*.txt`` shape (placed at the
 # snapshot dir's root, not under ``results/``).
 RUNTIME_EXPS=(
+  E0_NUMA
   E1_MatrixAdd
   E2_Conjugation
   E3_Transpose

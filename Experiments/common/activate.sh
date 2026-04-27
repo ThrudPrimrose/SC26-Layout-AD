@@ -18,7 +18,7 @@
 #
 # Env overrides:
 #   SC26_PYTHON_SPEC   auto-selected by arch; override to force
-#   DACE_BRANCH        default yakup/dev  (e.g. f2dace/staging for E6 full module)
+#   DACE_BRANCH        default yakup/dev  (E8 sets f2dace/staging before sourcing)
 #   DACE_DIR           default <common>/dace
 #   VENV_DIR           default <common>/venv
 #
@@ -86,6 +86,10 @@ if [[ -d "${DACE_DIR}/.git" ]]; then
     git fetch origin --quiet
     git checkout "${DACE_BRANCH}"
   fi
+  # Sync submodules unconditionally: yakup/dev and f2dace/staging
+  # may pin different submodule SHAs, and a hand-checkout outside
+  # this script may leave them stale.
+  git submodule update --init --recursive --quiet
   popd >/dev/null
 else
   echo "[activate] WARNING: ${DACE_DIR} is not a git clone. Run setup.sh." >&2

@@ -17,7 +17,7 @@ the longest single experiment.
 | [E3_Transpose/](E3_Transpose/) | Fig. 9, Tab. III | C₂–C₄ | ≈ 180 min | none | `results/{daint,beverin}/transpose_*.csv` + `transpose_metrics_{cpu,gpu}.csv` |
 | [E4_GAS/](E4_GAS/) | Fig. 10 | C₂–C₄ | ≈ 60 min | ≈ 200 MB BaTiO₃ — `bash E4_GAS/download_data.sh` | `results/{daint,beverin}/zaxpy_sweep_{small,1gb}{,_cpu}.csv` |
 | [E5_USXX/](E5_USXX/) | Fig. 11, Lst. 1 | C₂–C₄ | ≈ 60 min | ≈ 1 GB BaTiO₃ — `bash E5_USXX/download_data.sh` | `results/{daint,beverin}/addusxx_{cpu,gpu}_sweep.csv` |
-| [E6_VelocityTendencies/](E6_VelocityTendencies/) | Fig. 12–13, Tab. IV | C₃, C₄ | ≈ 450 min | ICON R02B05 — per-subtask `download_data.sh` | per-subtask READMEs |
+| [E6_VelocityTendencies/](E6_VelocityTendencies/) | Fig. 12–13, Tab. IV | C₃, C₄ | ≈ 450 min | ICON R02B05 — pre-fetch into `loopnest_1/data_r02b05/` (or symlink to E7/E8's copy); shared by all `loopnest_*` | per-subtask READMEs |
 | [E8_LegacyVT/](E8_LegacyVT/) **(default)** | Fig. 14, Tab. V | C₃, C₄ | ≈ 1080 min | ICON nproma=20480 — symlinked from E7 if present, else auto-fetched; reads `E6/access_analysis/{layout_candidates,winners}.json` (auto-regenerated on first run) | `{daint,beverin}_full_permutations_8/<config>_<shuffled\|unshuffled>.txt` |
 | [E7_FullVelocityTendencies/](E7_FullVelocityTendencies/) **(WIP)** | (succeeds E8) | — | — | same as E8 | (WIP) |
 
@@ -78,17 +78,20 @@ interactive runs, source the two manually before `bash run_*.sh`.
 ## Datasets
 
 E0–E3 and the proof figures synthesize inputs in-process.
-E4/E5/E6 (loopnest_1)/E7 auto-fetch their datasets on first `sbatch`
-via the per-experiment `download_data.sh` (E7 uses
-`tools/download_data.sh`); the guard is idempotent (`[[ -d <dir> ]] ||
-bash download_data.sh`), so re-runs are free.
+E4/E5/E7/E8 auto-fetch their datasets on first `sbatch` via the
+per-experiment `download_data.sh` (E7/E8 use `tools/download_data.sh`);
+the guard is idempotent (`[[ -d <dir> ]] || bash download_data.sh`),
+so re-runs are free. E6's loopnest sweeps share the R02B05 dataset but
+have no per-loopnest fetcher script — pre-place the data at
+`loopnest_1/data_r02b05/` (or symlink to E7/E8's `data_r02b05/`).
 
-| Script | Dataset | Size |
+| Script / path | Dataset | Size |
 |---|---|---|
 | [`E4_GAS/download_data.sh`](E4_GAS/download_data.sh) | BaTiO₃ indirect-access index set | ≈ 200 MB |
 | [`E5_USXX/download_data.sh`](E5_USXX/download_data.sh) | Serialized BaTiO₃ for QE addusxx_g | ≈ 1 GB |
-| [`E6_VelocityTendencies/loopnest_1/download_data.sh`](E6_VelocityTendencies/loopnest_1/download_data.sh) | ICON R02B05 (shared by every loopnest_*) | ≈ 3 GB |
+| `E6_VelocityTendencies/loopnest_1/data_r02b05/` | ICON R02B05 (shared by every loopnest_*) — pre-place or symlink to E7/E8's copy | ≈ 3 GB |
 | [`E7_FullVelocityTendencies/tools/download_data.sh`](E7_FullVelocityTendencies/tools/download_data.sh) | ICON nproma=20480 | ≈ 9 GB |
+| [`E8_LegacyVT/run_{daint,beverin}.sh`](E8_LegacyVT/) (delegated) | ICON nproma=20480 — auto-symlinks E7's copy or fetches via `E7/tools/download_data.sh` | ≈ 9 GB |
 
 Outbound HTTPS from ETH PolyBox; URL/checksum overridable via env
 (`DATA_URL`, `EXPECTED_SHA256`).
@@ -99,7 +102,8 @@ Outbound HTTPS from ETH PolyBox; URL/checksum overridable via env
   LPDDR5X) + H200 (4 TB/s HBM3). STREAM Triad: CPU 1.807, GPU 3.780
   TB/s.
 - **Beverin** — quad-MI300A, 24 Zen4 cores sharing 128 GB unified
-  HBM3. STREAM Triad: CPU 1.161, GPU 4.294 TB/s.
+  HBM3. STREAM Triad: CPU 1.161, GPU 3.551 TB/s
+  (post-calibration; see top-level README for the rationale).
 
 Both need SLURM + exclusive single-node allocation.
 

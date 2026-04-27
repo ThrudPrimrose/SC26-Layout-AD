@@ -1,0 +1,25 @@
+{
+  "title": "Artifact Description / Artifact Evaluation: Why Schedule Transformations Are Not Enough: Layout Optimizations for Block-Granular I/O",
+  "upload_type": "software",
+  "license": "GPL-3.0-or-later",
+  "creators": [
+    {
+      "name": "Budanaz, Yakup",
+      "affiliation": "ETH Zurich"
+    }
+  ],
+  "description": "Reproducibility artifact for the SC26 paper \"Why Schedule Transformations Are Not Enough: Layout Optimizations for Block-Granular I/O\". Contains all benchmarks (E0-E8), frozen paper-canonical CSV snapshots, figure regeneration drivers, and the AD/AE appendix sources needed to reproduce Figures 4 and 8-14 and the analytic cost-metric tables on Daint.Alps (GH200) and Beverin (MI300A).",
+  "keywords": [
+    "reproducibility",
+    "data layout",
+    "GPU",
+    "memory hierarchy",
+    "ICON",
+    "DaCe",
+    "SDFG",
+    "performance engineering",
+    "block-granular I/O",
+    "SC26"
+  ],
+  "access_right": "open"
+}
