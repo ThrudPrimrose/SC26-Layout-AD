@@ -53,7 +53,7 @@ WARMUP="${WARMUP:-5}"
 
 E6_DIR="${EXP_DIR}/../E6_VelocityTendencies"
 WINNERS_JSON="${WINNERS_JSON:-${E6_DIR}/full_velocity_tendencies/layout_crossproduct_winners.json}"
-WINNERS_NLEV="${WINNERS_NLEV:-256}"
+WINNERS_NLEV="${WINNERS_NLEV:-128}"
 REGEN_WINNERS="${REGEN_WINNERS:-0}"
 
 echo "[E7 beverin] host=$(hostname) threads=$OMP_NUM_THREADS data=$ICON_DATA_PATH"

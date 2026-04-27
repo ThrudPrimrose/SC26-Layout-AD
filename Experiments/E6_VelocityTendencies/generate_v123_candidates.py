@@ -203,9 +203,9 @@ def main():
     ap.add_argument("--uncovered", default="V1,V2,V6",
                     help="V-ids to sweep for groups WITHOUT empirical "
                          "evidence (default: V1,V2,V6)")
-    ap.add_argument("--nlev", default=256, type=int,
+    ap.add_argument("--nlev", default=128, type=int,
                     help="nlev slice to consult for empirical evidence "
-                         "(default: 256)")
+                         "(default: 128, matches §IV-D / Table IV)")
     ap.add_argument("--cell-dist", default="exact",
                     help="cell_dist filter for evidence ('exact', 'uniform', "
                          "or '' for none)")
