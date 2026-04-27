@@ -377,6 +377,30 @@ PERMUTE_CONFIGS["winner_v6"] = _make_config(dict(PERMUTE_CONFIGS["nlev_first"]["
 
 
 # ---------------------------------------------------------------------------
+# V_k cross-product bridge -- read E6's winners JSON and register every
+# unique v123 cell into PERMUTE_CONFIGS (mirrors E7's mechanism). No-op
+# if either JSON is missing. The bridge skips arrays that aren't in
+# E8's known set, so connectivity (n) name aliases land harmlessly --
+# E8's existing _CONN_ARRAYS coverage handles connectivity globally
+# via the named winner_v* configs.
+# ---------------------------------------------------------------------------
+from . import v123_bridge as _v123_bridge  # noqa: E402
+
+# Build ``{e8_array_name: ndim}`` from E8's existing PermMaps + _CONN_ARRAYS.
+_E8_KNOWN_DIMS: Dict[str, int] = {}
+for _src in (_COMPUTE_VERT_PERMUTED, _COMPUTE_HORIZ_PERMUTED,
+             _FIELDS_PERMUTED, _STENCIL_PERMUTED):
+    for _arr, _perm in _src.items():
+        _E8_KNOWN_DIMS[_arr] = len(_perm)
+for _arr in _CONN_ARRAYS:
+    _E8_KNOWN_DIMS[_arr] = 3   # connectivity arrays are all rank 3
+
+_V123_REGISTERED, _V123_RAW = _v123_bridge.register_v123_into(
+    PERMUTE_CONFIGS, _make_config, _E8_KNOWN_DIMS,
+)
+
+
+# ---------------------------------------------------------------------------
 # Query helpers
 # ---------------------------------------------------------------------------
 

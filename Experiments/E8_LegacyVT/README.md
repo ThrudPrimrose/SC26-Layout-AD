@@ -66,6 +66,9 @@ CONFIGS="$(python run_stage8_permutations.py --list \
 
 # List all available named configs
 python run_stage8_permutations.py --list
+
+# Dry-run: preview every config + output filename without compiling
+python run_stage8_permutations.py --dry-run
 ```
 
 The 95-cell sweep is the cv × ch × f × s × n cross-product from

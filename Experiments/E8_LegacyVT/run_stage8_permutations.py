@@ -18,7 +18,22 @@ import argparse
 import os
 import subprocess
 import sys
+import warnings
 from pathlib import Path
+
+# DaCe's SymbolPropagation pass emits one ``UserWarning: loop_body maps
+# to unused symbol(s): {<200 names>}`` per nested map per config. On the
+# E8 sweep that's 50k+ chars of noise per binary that drowns the actual
+# compile errors when you paste a log into chat. The warning is benign
+# (unbound shape symbols carried by struct propagation; codegen emits
+# them as placeholders). Suppress it here so the .out log is readable.
+warnings.filterwarnings(
+    "ignore",
+    message=r".*maps to unused symbol\(s\):.*",
+    category=UserWarning,
+)
+os.environ.setdefault("PYTHONWARNINGS",
+                      "ignore:.*maps to unused symbol\\(s\\):UserWarning")
 
 # Ensure DaCe is on f2dace/staging BEFORE importing sc26_layout (which
 # itself imports dace). E8 is the legacy stage-8 pipeline that still
@@ -76,10 +91,27 @@ def ensure_out_dir():
 
 
 def compile_config(name: str) -> bool:
-    """Compile both ms and mu variants for *name* in one call."""
-    cmd = f"{COMPILE_CMD} --compile --permutations {name}"
+    """Compile both ms and mu variants for *name* in one call.
+
+    Pass ``--optimize`` and ``--compile`` so the optimization pipeline
+    runs even when the user invokes the runner without flags. Release
+    builds come from ``_RELEASE=1`` exported in setup_{daint,beverin}.sh
+    -- compile_action() in utils/stages/common.py reads that env.
+
+    On compile failure, run the post-codegen reductions patcher and
+    retry once. The patcher fixes the two known failure modes for
+    permuted SDFGs:
+      1. missing ``#include "reductions_kernel.cuh"``
+      2. out-of-scope ``__dace_current_stream`` (rewritten to nullptr)
+    """
+    cmd = f"{COMPILE_CMD} --optimize --compile --permutations {name}"
     print(f"[compile] {cmd}")
     ret = subprocess.run(cmd, shell=True)
+    if ret.returncode != 0:
+        patch_cmd = "python tools/patch_codegen_reductions.py"
+        print(f"[compile] retrying after {patch_cmd}", file=sys.stderr)
+        subprocess.run(patch_cmd, shell=True)
+        ret = subprocess.run(cmd, shell=True)
     if ret.returncode != 0:
         print(f"[compile] FAILED for {name} (rc={ret.returncode})", file=sys.stderr)
     return ret.returncode == 0
@@ -175,6 +207,17 @@ def main():
     _NAMED = {"index_only", "nlev_first"}
     all_names = [k for k in PERMUTE_CONFIGS if k not in _NAMED]
 
+    # Curated default selection: nlev_first -> index_only -> unpermuted
+    # (= winner_v1) -> empirical V_k cross-product cells from E6's
+    # layout_crossproduct_winners.json (registered via v123_bridge as
+    # v123_cv_V?_ch_V?_..._lm_V?). Mirrors E7's --v123-json default,
+    # see Experiments/E7_FullVelocityTendencies/tools/run_layout_configs.py.
+    _v123_names = sorted(k for k in PERMUTE_CONFIGS if k.startswith("v123_"))
+    _CURATED_DEFAULT = (
+        ["nlev_first", "index_only", "winner_v1"]
+        + _v123_names
+    )
+
     ap = argparse.ArgumentParser(description="Run stage-8 layout permutation sweep")
     ap.add_argument("--configs", type=str, default=None,
                     help="Comma-separated config names (default: all 95 sweep configs)")
@@ -226,8 +269,14 @@ def main():
     elif args.unpermuted:
         selected = []   # --unpermuted alone: skip sweep entirely
     else:
-        selected = all_names
-        #selected = [n for n in all_names if "cv0" not in n]
+        # Default = curated (nlev_first, index_only, winner_v1, then all
+        # v123_* registered by v123_bridge). Falls back to the legacy
+        # 95-cell sweep if the v123 bridge produced nothing (e.g. E6
+        # JSON missing). Use --configs to override explicitly.
+        if any(n.startswith("v123_") for n in PERMUTE_CONFIGS):
+            selected = [n for n in _CURATED_DEFAULT if n in PERMUTE_CONFIGS]
+        else:
+            selected = all_names
 
 
     # Summary

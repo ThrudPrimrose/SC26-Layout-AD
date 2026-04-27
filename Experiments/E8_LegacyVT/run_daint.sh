@@ -101,10 +101,12 @@ if [[ ! -f "${WINNERS_JSON}" ]]; then
     python "${EXP_DIR}/../E6_VelocityTendencies/access_analysis/derive_winners.py" || true
 fi
 
-# Default CONFIGS reproduces the V1 / V2 / V6 winner comparison from
-# the AD; override via CONFIGS env (comma-separated for
-# run_stage8_permutations.py's --configs).
-CONFIGS="${CONFIGS:-winner_v1,winner_v2,winner_v6}"
+# Default CONFIGS unset -> run_stage8_permutations.py picks the curated
+# sweep: nlev_first, index_only, winner_v1 (= unpermuted), then every
+# v123_* cell registered from E6's layout_crossproduct_winners.json
+# (~64 unique signatures out of 729 raw cells). Override with a
+# comma-separated CONFIGS env to pin a specific subset.
+CONFIGS="${CONFIGS:-}"
 REPS="${REPS:-100}"
 
 echo "[E8 daint] host=$(hostname) data=${ICON_DATA_PATH}"
@@ -117,7 +119,9 @@ echo "[E8 daint] configs=${CONFIGS}  reps=${REPS}  dry_run=${DRY_RUN}"
 # whole batch keeps going.
 DRY_FLAG=""
 (( DRY_RUN == 1 )) && DRY_FLAG="--dry-run"
-python run_stage8_permutations.py --configs "${CONFIGS}" --reps "${REPS}" ${DRY_FLAG}
+CFG_FLAG=""
+[[ -n "${CONFIGS}" ]] && CFG_FLAG="--configs ${CONFIGS}"
+python run_stage8_permutations.py ${CFG_FLAG} --reps "${REPS}" ${DRY_FLAG}
 
 if (( DRY_RUN == 1 )); then
   echo "[E8 daint] dry-run complete -- no compile or execution."

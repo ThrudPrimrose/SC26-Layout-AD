@@ -20,7 +20,7 @@ parser.add_argument("--csv", default="metrics.csv")
 parser.add_argument("--target", required=True)
 parser.add_argument("--runtime", required=True)
 parser.add_argument("--gpu-config", default="1x1_32x16")
-parser.add_argument("--nlev", type=int, default=90)
+parser.add_argument("--nlev", type=int, default=128)
 parser.add_argument("--blocked", action="store_true",
                     help="Analyze blocked configs (variant=0, blocking>0)")
 parser.add_argument("--no-plot", action="store_true")

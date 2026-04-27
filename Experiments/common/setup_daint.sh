@@ -29,6 +29,14 @@ export CPLUS_INCLUDE_PATH=$CUDA_HOME/include:$CUTENSOR_HOME/include:${CPLUS_INCL
 export ARCH=sm_90
 export DAINT=1
 
+# Stage 8 / propagated-SDFG compile honors _RELEASE: '1' picks the
+# release flag set in utils/stages/common.py:compile_action() (-O3
+# --use_fast_math, no -g). Default '0' (debug) is intended for codegen
+# triage and produces unusable run-time numbers, so pin release here so
+# every E8 sbatch defaults to release builds. Override with
+# ``_RELEASE=0 sbatch ...`` to debug.
+export _RELEASE="${_RELEASE:-1}"
+
 # Daint special case: alias `python` to system python3.11 outside the venv.
 # Inside the venv, ${VIRTUAL_ENV}/bin/python wins via PATH precedence and
 # this alias is shadowed.

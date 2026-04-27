@@ -322,8 +322,8 @@ def print_loki_summary(groups):
 def main():
     ap = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawTextHelpFormatter)
-    ap.add_argument("--nlev", default=96, type=int,
-                    help="nlev slice of the CSV to rank (default: 96)")
+    ap.add_argument("--nlev", default=128, type=int,
+                    help="nlev slice of the CSV to rank (default: 128 -- canonical for Tab IV)")
     ap.add_argument("--cell-dist", default="exact",
                     help="cell_dist filter ('exact', 'uniform', or '' for none)")
     ap.add_argument("-k", "--top-k", default=2, type=int,

@@ -206,6 +206,26 @@ Every experiment is driven by its \texttt{run\_<plat>.sh}, which compiles the be
   \end{itemize}
 \end{itemize}
 
+\paragraph{Inspecting configs before \texttt{sbatch} (dry run).} Both E7 and E8 expose a dry-run that lists every config that would be compiled and run without touching the GPU. E8:
+{\footnotesize\begin{verbatim}
+$ python run_stage8_permutations.py --dry-run
+[DRY RUN] sweep: 98 configs (196 exes)
+out: daint_full_permutations_8/
+  cv0_ch0_f0_s0_n021  (14 arrs) -> ...
+  cv0_ch0_f0_s0_n102  (14 arrs) -> ...
+  ...
+\end{verbatim}}
+\noindent E7:
+{\footnotesize\begin{verbatim}
+$ python tools/run_layout_configs.py --dry-run
+[run_layout_configs] 729 V-id configs
+  unique permute-map signatures: 64 / 729
+  [v123_cv_V1_..._lm_V1]   0 arr perms
+  [v123_cv_V1_..._lm_V6]   2 arr perms
+  ...
+\end{verbatim}}
+\noindent The cross-product axes differ by design: E8 (legacy stage-8 only) sweeps \texttt{cv\,$\times$\,ch\,$\times$\,f\,$\times$\,s\,$\times$\,n}\,=\,95 cells; E7 (full-module refactor) adds \texttt{em}, \texttt{lv}, \texttt{sm} for 64 unique cells out of 729 raw. The named \texttt{winner\_v\{1,2,6\}} aliases are byte-identical on both paths --- both consume \texttt{layout\_groups.json} from E6 at the canonical \texttt{nlev=128} slice.
+
 \paragraph{Statistical methodology.} Following Hoefler and Belli, every configuration runs 100 repetitions after 5 warm-ups, with cache flushes between repetitions (an $8192^2$ Jacobi stencil over 3 sweeps with buffer swap; \texttt{common/jacobi\_flush.h}). We report medians with 95\% BCa-bootstrap confidence intervals ($n=10{,}000$ resamples). Violin plots show all 100 samples without outlier trimming; every violin uses the same KDE settings (Scott's rule, 200 evaluation points). The RNG seed is \texttt{SC26\_SEED=42}, and bandwidths are normalized to the measured STREAM Triad peak per platform.
 
 \paragraph{Figure $\to$ command map.} Each row resolves to \texttt{cd Experiments/<dir> \&\& sbatch run\_<plat>.sh \&\& python plot\_paper.py}.

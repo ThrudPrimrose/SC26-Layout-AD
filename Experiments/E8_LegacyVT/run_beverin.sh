@@ -79,7 +79,10 @@ if [[ ! -f "${WINNERS_JSON}" ]]; then
     python "${EXP_DIR}/../E6_VelocityTendencies/access_analysis/derive_winners.py" || true
 fi
 
-CONFIGS="${CONFIGS:-winner_v1,winner_v2,winner_v6}"
+# Default CONFIGS unset -> run_stage8_permutations.py picks the curated
+# sweep (see run_daint.sh for the rationale). Override with a
+# comma-separated CONFIGS env to pin a specific subset.
+CONFIGS="${CONFIGS:-}"
 REPS="${REPS:-100}"
 
 echo "[E8 beverin] host=$(hostname) data=${ICON_DATA_PATH}"
@@ -89,7 +92,9 @@ echo "[E8 beverin] configs=${CONFIGS}  reps=${REPS}  dry_run=${DRY_RUN}"
 # OUT_DIR (beverin_full_permutations_8 vs daint_full_permutations_8).
 DRY_FLAG=""
 (( DRY_RUN == 1 )) && DRY_FLAG="--dry-run"
-BEVERIN=1 python run_stage8_permutations.py --configs "${CONFIGS}" --reps "${REPS}" ${DRY_FLAG}
+CFG_FLAG=""
+[[ -n "${CONFIGS}" ]] && CFG_FLAG="--configs ${CONFIGS}"
+BEVERIN=1 python run_stage8_permutations.py ${CFG_FLAG} --reps "${REPS}" ${DRY_FLAG}
 
 if (( DRY_RUN == 1 )); then
   echo "[E8 beverin] dry-run complete -- no compile or execution."
