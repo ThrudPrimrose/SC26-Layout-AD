@@ -42,7 +42,8 @@ in-progress SDFG-driven refactor.
 
 [`generate_winners.py`](generate_winners.py) reads each
 `loopnest_{1..6}/results/{beverin,daint}/<kernel>_<backend>.csv` at
-the chosen `--nlev` slice (default 256, configurable), picks the
+the chosen `--nlev` slice (default 128, matches §IV-D / Table IV;
+configurable), picks the
 lowest-time non-blocked V-id per (loopnest, platform), and aggregates
 the empirical winners into a V-id set per access group via
 [`access_analysis/canonical_array_groups.json`](access_analysis/canonical_array_groups.json).

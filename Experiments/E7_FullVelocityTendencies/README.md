@@ -83,7 +83,7 @@ Override knobs (env vars, all optional):
 |---|---|---|
 | `NAMED_CONFIGS` | 8 unpermuted/nlev_first/index_only variants | Replace the always-on ablation set. |
 | `WINNERS_JSON` | `…/E6/full_velocity_tendencies/layout_crossproduct_winners.json` | Point at a hand-edited cross-product JSON. |
-| `WINNERS_NLEV` | `256` | nlev slice the regenerator reads from the loopnest CSVs. |
+| `WINNERS_NLEV` | `128` | nlev slice the regenerator reads from the loopnest CSVs. |
 | `REGEN_WINNERS` | `0` | Force regeneration of `WINNERS_JSON` even if it exists. |
 | `TIMESTEPS` | `7,9` | Comma-separated timestep list for the per-binary runs. |
 | `REPS` / `WARMUP` | `100` / `5` | Per-binary timing reps + untimed warm-ups. |

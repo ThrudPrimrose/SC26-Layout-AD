@@ -19,7 +19,7 @@
 #      ``nlev_first_lv*_sm*``, ``index_only_lv*_sm*`` -- compiled via
 #      ``utils.stages.stage5a`` to ``velocity_stage5a_<CFG>`` binaries.
 #   2. Empirical winners cross-product: per-group V-id sets from
-#      ``E6/generate_winners.py`` (default --nlev 256), expanded by
+#      ``E6/generate_winners.py`` (default --nlev 128), expanded by
 #      ``tools/run_layout_configs.py`` into ``velocity_stage6_v123_*``
 #      binaries -- 64 unique permute-map signatures out of the
 #      3**6 = 729 raw cells.
@@ -70,7 +70,7 @@ WARMUP="${WARMUP:-5}"
 # the per-group winners are read from (default 256).
 E6_DIR="${EXP_DIR}/../E6_VelocityTendencies"
 WINNERS_JSON="${WINNERS_JSON:-${E6_DIR}/full_velocity_tendencies/layout_crossproduct_winners.json}"
-WINNERS_NLEV="${WINNERS_NLEV:-256}"
+WINNERS_NLEV="${WINNERS_NLEV:-128}"
 REGEN_WINNERS="${REGEN_WINNERS:-0}"
 
 echo "[E7 daint] host=$(hostname) threads=$OMP_NUM_THREADS data=$ICON_DATA_PATH"
