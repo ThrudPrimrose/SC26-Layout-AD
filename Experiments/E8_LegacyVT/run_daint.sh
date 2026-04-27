@@ -32,6 +32,12 @@ set -u
 EXP_DIR="${SLURM_SUBMIT_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}"
 COMMON_DIR="$(cd "${EXP_DIR}/../common" && pwd)"
 
+# E8 (legacy stage-8 pipeline) requires DaCe on f2dace/staging.
+# ``activate.sh`` reads ``DACE_BRANCH`` and switches the DaCe checkout
+# to it; default is ``yakup/dev`` (correct for E1-E7, wrong for E8).
+# Pin to f2dace/staging here so activate.sh never makes the wrong move.
+export DACE_BRANCH="f2dace/staging"
+
 source "${COMMON_DIR}/activate.sh"
 source "${COMMON_DIR}/setup_daint.sh"
 

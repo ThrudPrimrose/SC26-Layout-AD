@@ -21,10 +21,10 @@ the longest single experiment.
 | [E8_LegacyVT/](E8_LegacyVT/) **(default)** | Fig. 14, Tab. V | C₃, C₄ | ≈ 240 min | ICON nproma=20480 — symlinked from E7 if present, else auto-fetched; reads `E6/access_analysis/{layout_candidates,winners}.json` (auto-regenerated on first run) | `{daint,beverin}_full_permutations_8/<config>_<shuffled\|unshuffled>.txt` |
 | [E7_FullVelocityTendencies/](E7_FullVelocityTendencies/) **(WIP)** | (succeeds E8) | — | — | same as E8 | (WIP) |
 
-E8 is the AD's full-velocity-tendencies path. E7 is a parallel
-work-in-progress reimplementation on the new SDFG-driven pipeline; it
-remains in the tree for the next iteration but is not the default
-reproduction path -- skip it for the AD and use E8 for §IV-D / Fig 14.
+E8 is the AD's full-velocity-tendencies path. E7 is an in-progress
+SDFG-driven refactor of the same module; skip it for the AD. See the
+top-level [README](../README.md#reviewer-quick-start) for the full
+reviewer flow.
 
 Total: ~22 hr per cluster end-to-end (E1–E5 parallel: ~10 hr; E6: ~7.5
 hr; E8: ~4 hr; setup + analysis: ~25 min).

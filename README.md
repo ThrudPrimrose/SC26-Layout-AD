@@ -24,36 +24,28 @@ tables.
 
 ## Reviewer quick-start
 
-End-to-end reproduction in five steps; ~22 hr per cluster.
+End-to-end reproduction; ~22 hr per cluster.
 
-1. Clone this repo and `bash Experiments/common/setup.sh` (one-time per
-   machine — spack-loads Python 3.13, creates `common/venv`, clones
-   DaCe).
-2. Submit microbenchmarks: `cd Experiments/E1_MatrixAdd && sbatch run_daint.sh`
-   (or `run_beverin.sh`); repeat for E2–E6 in any order.
-3. Submit the full velocity-tendencies sweep:
-   `cd Experiments/E8_LegacyVT && sbatch run_daint.sh` (default
-   `CONFIGS="winner_v1,winner_v2,winner_v6"`).
-4. Plot everything: `bash Figures/plot_all.sh Runtime`. Figures land in
+1. `bash Experiments/common/setup.sh` (one-time per machine).
+2. Submit microbenchmarks E1–E6 in any order:
+   `cd Experiments/E1_MatrixAdd && sbatch run_daint.sh` (or
+   `run_beverin.sh`).
+3. Submit the full sweep: `cd Experiments/E8_LegacyVT && sbatch run_daint.sh`
+   (default `CONFIGS="winner_v1,winner_v2,winner_v6"`).
+4. `bash Figures/plot_all.sh Runtime` — figures land in
    `Figures/GeneratedFigures/Runtime/`.
-5. Cross-check against the per-experiment "Expected result" anchors in
-   each `Experiments/EX_*/README.md`.
-
-Per-experiment READMEs under `Experiments/EX_*/README.md` document the
-exact CSV filenames each run script emits and the expected qualitative
-outcome.
+5. Cross-check against the **Expected behaviour** anchor at the top of
+   each per-experiment README.
 
 ## Calibration update
 
-The submitted paper's MI300A %-of-STREAM annotations were normalized
-against ~4.3 TB/s; between submission and AD freeze the cache-flush
-kernel was rewritten as a 3-sweep 8192² Jacobi with buffer swap to
-defeat dead-code-elimination by the GPU compiler, and the MI300A STREAM
-Triad peak was independently cross-checked with AMD performance
-engineering at ~3.55 TB/s. All E1–E6 and E8 figures in this artifact
-are normalized to the corrected peak. Qualitative trends — relative
-ordering of layouts, gap between unpermuted and the V_k winners —
-continue to hold.
+The MI300A %-of-STREAM annotations on the submitted paper were
+normalized against ~4.3 TB/s; that peak was inflated because the
+cache-flush kernel was being dead-code-eliminated by the GPU compiler.
+The fix (3-sweep buffer-swap Jacobi in `common/jacobi_flush.h`) plus
+an AMD performance-engineering cross-check put the corrected peak at
+~3.55 TB/s. Every figure in this artifact is normalized to the
+corrected peak; qualitative trends are unchanged.
 
 ## Figures
 

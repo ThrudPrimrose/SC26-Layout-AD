@@ -1,14 +1,17 @@
 # E8 — Full velocity tendencies (legacy pipeline, AD default)
 
-> **Status: this is the AD's default reproduction path for §IV-D / Figure 14 / Table V.**
-> The sibling [`../E7_FullVelocityTendencies/`](../E7_FullVelocityTendencies/)
-> is a parallel work-in-progress reimplementation on the new SDFG-driven pipeline
-> and is **not** required for the AD — reviewers should skip it and run E8.
+> **AD default for §IV-D / Figure 14 / Table V.** The sibling
+> [`../E7_FullVelocityTendencies/`](../E7_FullVelocityTendencies/) is
+> an in-progress SDFG-driven refactor and is not required for the AD.
 
-GPU layout-permutation sweep on the full ICON velocity-tendencies module,
-driving the legacy `icon-artifacts/sc26_layout` codegen pipeline on
-DaCe `f2dace/staging`. Reproduces the V$_k$ winner comparison from
-paper Fig 13 / 14 and Table V.
+GPU layout-permutation sweep on the full ICON velocity-tendencies
+module, driving `icon-artifacts/sc26_layout` on DaCe `f2dace/staging`.
+Reproduces the V_k winner comparison from paper Fig 13 / 14 / Tab V.
+
+**Expected behaviour.** Vertical-first (V6) should match or beat both
+the ICON-default unpermuted layout and V1/V2 on the dominant Config B
+work mix; gains should be largest on MI300A (paper: ~1.17× MI300A,
+~1.07× Hopper for Config B; ~1.06× / ~0.97× for Config A).
 
 ## Quick start
 
