@@ -4,6 +4,15 @@
 # venv activated by ../common/activate.sh (manual VIRTUAL_ENV + PATH export).
 unset __HIP_PLATFORM_AMD__ HIP_PLATFORM_AMD BEVERIN
 
+# Defensively scrub AMD-platform env vars in case the shell was previously
+# polluted by a ``source setup_beverin.sh`` (or a cluster-site profile).
+# ``utils/compile_if_propagated_sdfgs.py`` reads ``__HIP_PLATFORM_AMD__`` /
+# ``HIP_PLATFORM_AMD`` ONCE at module import to decide whether to build
+# with hipcc/HIP or nvcc/CUDA -- if either var is set when daint imports
+# that module, daint will try to build with hipcc and fail with
+# ``hipcc: command not found``.
+unset __HIP_PLATFORM_AMD__ HIP_PLATFORM_AMD BEVERIN
+
 spack load gcc/76jw6nu   # 14.3
 spack load cuda@12.9
 spack load cutensor

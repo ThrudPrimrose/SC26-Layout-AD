@@ -72,18 +72,15 @@ if [[ "${REGEN_WINNERS}" -eq 1 ]] || [[ ! -f "${WINNERS_JSON}" ]]; then
   ( cd "${E6_DIR}" && python3 generate_winners.py --nlev "${WINNERS_NLEV}" )
 fi
 
-# ── Step 1: build named ablations via stage5a ──
-for CFG in ${NAMED_CONFIGS}; do
-  echo "[E7 beverin] codegen + compile NAMED config=${CFG}"
-  python -m utils.stages.stage5a --release --optimize --compile --config "${CFG}"
-done
+# ── Helpers ──
+have_all_outputs() {
+  local cfg="$1" ts
+  for ts in ${TIMESTEPS//,/ }; do
+    [[ -f "${EXP_DIR}/results/beverin/${cfg}/ts${ts}/run.txt" ]] || return 1
+  done
+  return 0
+}
 
-# ── Step 2: build winners cross-product via run_layout_configs.py ──
-echo "[E7 beverin] codegen + compile WINNERS cross-product"
-python tools/run_layout_configs.py --optimize --compile \
-    --v123-json "${WINNERS_JSON}"
-
-# ── Step 3: iterate every produced binary, one per timestep ──
 run_binary_per_ts() {
   local CFG="$1" bin="$2" sweep_label="$3"
   if [[ ! -x "${bin}" ]]; then
@@ -116,16 +113,35 @@ run_binary_per_ts() {
   done
 }
 
+# Enumerate winners cnames once.
+echo "[E7 beverin] enumerating WINNERS cross-product"
+mapfile -t V123_CFGS < <(
+  python tools/run_layout_configs.py --dry-run --v123-json "${WINNERS_JSON}" 2>/dev/null \
+    | awk -F'[][]' '/^  \[v123_/{print $2}'
+)
+echo "[E7 beverin] WINNERS unique configs: ${#V123_CFGS[@]}"
+
+# ── Per-config sweep: build → run → next config (resumable) ──
 for CFG in ${NAMED_CONFIGS}; do
+  if have_all_outputs "${CFG}"; then
+    echo "[E7 beverin] skip NAMED ${CFG}: results/beverin/${CFG}/ts{${TIMESTEPS}}/run.txt all present"
+    continue
+  fi
+  echo "[E7 beverin] codegen + compile NAMED ${CFG}"
+  python -m utils.stages.stage5a --release --optimize --compile --config "${CFG}"
   run_binary_per_ts "${CFG}" "${EXP_DIR}/velocity_stage5a_${CFG}" "NAMED"
 done
 
-shopt -s nullglob
-for d in "${EXP_DIR}/codegen/stage6"/v123_*/; do
-  CFG="$(basename "${d}")"
+for CFG in "${V123_CFGS[@]}"; do
+  if have_all_outputs "${CFG}"; then
+    echo "[E7 beverin] skip WINNERS ${CFG}: results/beverin/${CFG}/ts{${TIMESTEPS}}/run.txt all present"
+    continue
+  fi
+  echo "[E7 beverin] codegen + compile WINNERS ${CFG}"
+  python tools/run_layout_configs.py --optimize --compile \
+      --v123-json "${WINNERS_JSON}" --config "${CFG}"
   run_binary_per_ts "${CFG}" "${EXP_DIR}/velocity_stage6_${CFG}" "WINNERS"
 done
-shopt -u nullglob
 
 for d in "${EXP_DIR}/codegen/stage5a"/*/ "${EXP_DIR}/codegen/stage6"/v123_*/; do
   [[ -d "${d}" ]] || continue

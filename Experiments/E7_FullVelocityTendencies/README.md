@@ -19,9 +19,34 @@ E7 reads two artefacts from E6:
 
 ## Default flow
 
-**One command per platform** — `run_{daint,beverin}.sh` is the single
-entry point. It auto-fetches data, symlinks the shipped stage 4 SDFGs
-(`SDFGs/stage4/` → `codegen/stage4/`), and runs **two layered sweeps**:
+### Step 0 — fetch the dataset (do this once, before sbatch)
+
+The R02B05 / `nproma=20480` ICON dataset is ~9 GB and has to live at
+`data_r02b05/` before any binary can run. Fetch it explicitly so a
+network glitch or `xz` PATH issue doesn't cost you GPU wallclock from
+inside a Slurm job:
+
+```bash
+cd Experiments/E7_FullVelocityTendencies
+bash tools/download_data.sh                            # PolyBox → data_r02b05/
+# OR, if the data already lives on the cluster:
+LOCAL_DATA_DIR=/path/to/existing/data_r02b05 bash tools/download_data.sh   # symlink, no copy
+```
+
+The script is idempotent — re-running it on a populated `data_r02b05/`
+is a no-op. Override the URL with `URL=...` for mirror fallback,
+verify the tarball with `EXPECTED_SHA256=...`, point at a different
+xz binary with `XZ_BIN=/path/to/xz` if the cluster's spack-installed
+xz has rotted. The sbatch driver also calls `download_data.sh` as a
+safety net (idempotent guard `[[ -d data_r02b05 ]] && [[ -n "$(ls -A
+...)" ]] || bash tools/download_data.sh`), but pre-fetching keeps the
+GPU job focused on compute.
+
+### Step 1 — submit the layered sweep
+
+`run_{daint,beverin}.sh` is the single entry point. It symlinks the
+shipped stage 4 SDFGs (`SDFGs/stage4/` → `codegen/stage4/`) and runs
+**two layered sweeps**:
 
 1. **Always-on named ablations** via `utils.stages.stage5a` →
    `velocity_stage5a_<CFG>` binaries. Default set:
@@ -57,17 +82,6 @@ Override knobs (env vars, all optional):
 | `TIMESTEPS` | `7,9` | Comma-separated timestep list for the per-binary runs. |
 | `REPS` / `WARMUP` | `100` / `5` | Per-binary timing reps + untimed warm-ups. |
 | `--verify` (CLI flag) | off | Keep per-timestep `*.got` / `*.want` blobs (O(GB)) for offline reference comparison. |
-
-The R02B05 / nproma=20480 dataset (~9 GB) is auto-fetched on first
-submission via `tools/download_data.sh` (matches E4/E5/E6/loopnest_1's
-guard pattern: `[[ -d data_r02b05 ]] && [[ -n "$(ls -A ...)" ]] || bash
-tools/download_data.sh`). To pre-fetch or symlink to an existing copy:
-
-```bash
-bash tools/download_data.sh                            # download from PolyBox
-LOCAL_DATA_DIR=~/Work/icon-artifacts/velocity/data_r02b05 \
-    bash tools/download_data.sh                        # symlink an existing copy
-```
 
 To inspect the ablation / cross-product config sets without launching:
 

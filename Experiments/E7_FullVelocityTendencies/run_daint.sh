@@ -97,18 +97,18 @@ if [[ "${REGEN_WINNERS}" -eq 1 ]] || [[ ! -f "${WINNERS_JSON}" ]]; then
   ( cd "${E6_DIR}" && python3 generate_winners.py --nlev "${WINNERS_NLEV}" )
 fi
 
-# ── Step 1: build named ablations via stage5a ──
-for CFG in ${NAMED_CONFIGS}; do
-  echo "[E7 daint] codegen + compile NAMED config=${CFG}"
-  python -m utils.stages.stage5a --release --optimize --compile --config "${CFG}"
-done
+# ── Helpers ──
+# Skip predicate: every TIMESTEPS slot already has a results/<config>/ts<N>/run.txt.
+# This makes the script resumable -- a second submission only fills in
+# the gaps left by an earlier interrupted run.
+have_all_outputs() {
+  local cfg="$1" ts
+  for ts in ${TIMESTEPS//,/ }; do
+    [[ -f "${EXP_DIR}/results/daint/${cfg}/ts${ts}/run.txt" ]] || return 1
+  done
+  return 0
+}
 
-# ── Step 2: build winners cross-product via run_layout_configs.py ──
-echo "[E7 daint] codegen + compile WINNERS cross-product"
-python tools/run_layout_configs.py --optimize --compile \
-    --v123-json "${WINNERS_JSON}"
-
-# ── Step 3: iterate every produced binary, one per timestep ──
 run_binary_per_ts() {
   local CFG="$1" bin="$2" sweep_label="$3"
   if [[ ! -x "${bin}" ]]; then
@@ -141,18 +141,43 @@ run_binary_per_ts() {
   done
 }
 
-# Named ablation binaries.
+# Enumerate the unique winners-cross-product config names ONCE up front
+# so we can interleave build+run per config (instead of build-all,
+# then run-all, which costs a full re-walk on every Slurm restart).
+echo "[E7 daint] enumerating WINNERS cross-product"
+mapfile -t V123_CFGS < <(
+  python tools/run_layout_configs.py --dry-run --v123-json "${WINNERS_JSON}" 2>/dev/null \
+    | awk -F'[][]' '/^  \[v123_/{print $2}'
+)
+echo "[E7 daint] WINNERS unique configs: ${#V123_CFGS[@]}"
+
+# ── Per-config sweep: build → run → next config ──
+# Each iteration independently checks have_all_outputs first so a
+# rerun of the sbatch only does the work that's missing.
+
+# NAMED ablations -- compiled via stage5a → velocity_stage5a_<cfg>.
 for CFG in ${NAMED_CONFIGS}; do
+  if have_all_outputs "${CFG}"; then
+    echo "[E7 daint] skip NAMED ${CFG}: results/daint/${CFG}/ts{${TIMESTEPS}}/run.txt all present"
+    continue
+  fi
+  echo "[E7 daint] codegen + compile NAMED ${CFG}"
+  python -m utils.stages.stage5a --release --optimize --compile --config "${CFG}"
   run_binary_per_ts "${CFG}" "${EXP_DIR}/velocity_stage5a_${CFG}" "NAMED"
 done
 
-# Winners cross-product binaries: one per ``codegen/stage6/v123_*/`` dir.
-shopt -s nullglob
-for d in "${EXP_DIR}/codegen/stage6"/v123_*/; do
-  CFG="$(basename "${d}")"
+# WINNERS cross-product -- compiled via tools/run_layout_configs.py
+# with --config <name> → velocity_stage6_v123_*.
+for CFG in "${V123_CFGS[@]}"; do
+  if have_all_outputs "${CFG}"; then
+    echo "[E7 daint] skip WINNERS ${CFG}: results/daint/${CFG}/ts{${TIMESTEPS}}/run.txt all present"
+    continue
+  fi
+  echo "[E7 daint] codegen + compile WINNERS ${CFG}"
+  python tools/run_layout_configs.py --optimize --compile \
+      --v123-json "${WINNERS_JSON}" --config "${CFG}"
   run_binary_per_ts "${CFG}" "${EXP_DIR}/velocity_stage6_${CFG}" "WINNERS"
 done
-shopt -u nullglob
 
 # Mirror any CSVs that landed inside the per-config codegen trees.
 for d in "${EXP_DIR}/codegen/stage5a"/*/ "${EXP_DIR}/codegen/stage6"/v123_*/; do
