@@ -54,21 +54,28 @@ marker="$(mktemp /tmp/plot_results_marker.XXXXXX)"
 echo "[plot_results] figures will land in each Experiments/<exp>/results/"
 for exp in "${RUNTIME_EXPS[@]}"; do
     exp_dir="${EXP_ROOT}/${exp}"
-    script="${exp_dir}/plot_paper.py"
-    if [[ ! -f "${script}" ]]; then
-        echo "  [skip] ${exp}: no plot_paper.py"
+    # E7 (and any future experiment that ships a v2 plotter) prefers
+    # plot_paper_v2.py because the on-disk results layout differs from
+    # the paper-snapshot layout (per-timestep run.txt subdirs instead of
+    # flat CSVs). Fall back to plot_paper.py for everyone else.
+    if [[ -f "${exp_dir}/plot_paper_v2.py" ]]; then
+        script_name="plot_paper_v2.py"
+    elif [[ -f "${exp_dir}/plot_paper.py" ]]; then
+        script_name="plot_paper.py"
+    else
+        echo "  [skip] ${exp}: no plot_paper{,_v2}.py"
         continue
     fi
     if [[ ! -d "${exp_dir}/results" ]] \
-       || [[ -z "$(find "${exp_dir}/results" -type f -name '*.csv' -print -quit)" ]]; then
-        echo "  [skip] ${exp}: Experiments/${exp}/results/ has no CSVs (run sbatch first)"
+       || [[ -z "$(find "${exp_dir}/results" -type f \( -name '*.csv' -o -name 'run.txt' \) -print -quit)" ]]; then
+        echo "  [skip] ${exp}: Experiments/${exp}/results/ has no CSVs or run.txt (run sbatch first)"
         continue
     fi
     out="${exp_dir}/results"
-    echo "  [plot] ${exp} -> ${out#${REPO_ROOT}/}/"
+    echo "  [plot] ${exp} -> ${out#${REPO_ROOT}/}/  (${script_name})"
     touch "${marker}"
-    if ! ( cd "${exp_dir}" && python plot_paper.py ); then
-        echo "  [warn] ${exp}/plot_paper.py failed" >&2
+    if ! ( cd "${exp_dir}" && python "${script_name}" ); then
+        echo "  [warn] ${exp}/${script_name} failed" >&2
         continue
     fi
     moved=0
