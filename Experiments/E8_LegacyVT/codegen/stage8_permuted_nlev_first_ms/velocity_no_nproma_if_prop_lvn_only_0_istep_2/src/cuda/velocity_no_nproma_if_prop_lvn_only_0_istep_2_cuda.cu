@@ -3,6 +3,7 @@
 #include <dace/dace.h>
 
 
+#include "reductions_device.cuh"
 #include "reductions_kernel.cuh"
 struct t_grid_domain_decomp_info {
     int __f2dace_SA_owner_mask_d_0_s = {};

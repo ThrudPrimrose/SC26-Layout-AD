@@ -40,6 +40,13 @@ from typing import Iterable, List, Tuple
 
 REDUCTIONS_INCLUDE = '#include "reductions_kernel.cuh"'
 REDUCTIONS_CPU_INCLUDE = '#include "reductions_cpu.h"'
+# ``reductions_device.cuh`` defines ``__REDUCE_DEVICE__`` and the
+# ``__device__ __inline__ reduce_*_device(...)`` family. Including it
+# in any pure-device codegen file flips the tasklets' #ifdef chain so
+# the ``__REDUCE_DEVICE__`` branch wins (instead of ``__REDUCE_GPU__``,
+# which calls the host-side ``reduce_*_gpu`` and therefore fails to
+# compile from a ``__device__`` scope).
+REDUCTIONS_DEVICE_INCLUDE = '#include "reductions_device.cuh"'
 DACE_INCLUDE_RE = re.compile(r'^#include\s*<dace/dace\.h>\s*$', re.MULTILINE)
 
 # AMD detection: same env signals as compile_if_propagated_sdfgs.py.
@@ -77,21 +84,45 @@ _STREAM_REF_RE = re.compile(
 
 
 def _patch_one(path: Path) -> Tuple[bool, bool]:
-    """Returns (added_include, replaced_stream)."""
+    """Patch a pure-device codegen file (``*_cuda.cu`` or
+    ``src/cuda/hip/*_cuda.cpp``).
+
+    Two injections + one rewrite:
+      1. ``#include "reductions_kernel.cuh"`` -- declares the host-side
+         ``reduce_*_gpu(stream)`` family. Kept for completeness; the
+         dominant code path no longer needs it once the tasklet flips
+         to the device branch (see #2).
+      2. ``#include "reductions_device.cuh"`` -- defines
+         ``__REDUCE_DEVICE__`` AND the ``__device__ reduce_*_device``
+         functions. With ``__REDUCE_DEVICE__`` defined, the tasklet's
+         ``#ifdef __REDUCE_DEVICE__`` branch wins ahead of
+         ``__REDUCE_GPU__``, calling the device-callable variant. This
+         is required because the tasklet bodies are inlined into
+         ``__device__ loop_body_*`` helpers by the permute pass, and
+         calling the host ``reduce_scan_gpu`` from device scope is a
+         hard nvcc error.
+      3. All value-uses of ``__dace_current_stream`` -> ``nullptr``
+         (declarations + LHS-of-assignment kept intact).
+    """
     text = path.read_text()
     added_include = False
     replaced_stream = False
 
-    if REDUCTIONS_INCLUDE not in text and "reduce_" in text:
-        # Inject right after ``#include <dace/dace.h>`` -- if that line
-        # isn't there for some reason, fall back to top of file.
+    if "reduce_" in text:
         match = DACE_INCLUDE_RE.search(text)
-        if match:
-            insert_at = match.end()
-            text = text[:insert_at] + "\n" + REDUCTIONS_INCLUDE + text[insert_at:]
-        else:
-            text = REDUCTIONS_INCLUDE + "\n" + text
-        added_include = True
+        injections = []
+        if REDUCTIONS_INCLUDE not in text:
+            injections.append(REDUCTIONS_INCLUDE)
+        if REDUCTIONS_DEVICE_INCLUDE not in text:
+            injections.append(REDUCTIONS_DEVICE_INCLUDE)
+        if injections:
+            block = "\n" + "\n".join(injections)
+            if match:
+                insert_at = match.end()
+                text = text[:insert_at] + block + text[insert_at:]
+            else:
+                text = block.lstrip("\n") + "\n" + text
+            added_include = True
 
     new_text, n = _STREAM_REF_RE.subn('nullptr', text)
     if n > 0:
