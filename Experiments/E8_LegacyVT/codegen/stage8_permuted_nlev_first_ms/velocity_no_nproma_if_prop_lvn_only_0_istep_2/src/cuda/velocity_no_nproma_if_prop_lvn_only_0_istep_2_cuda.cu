@@ -3,6 +3,7 @@
 #include <dace/dace.h>
 
 
+#include "reductions_kernel.cuh"
 struct t_grid_domain_decomp_info {
     int __f2dace_SA_owner_mask_d_0_s = {};
     int __f2dace_SA_owner_mask_d_1_s = {};
@@ -687,7 +688,7 @@ DACE_DFI void loop_body_31_5_0(const uint8_t * __restrict__ gpu_cfl_clipping, ui
                 #ifdef __REDUCE_DEVICE__
                 out = reduce_scan_device(in_arr, in_size);
                 #elif defined(__REDUCE_GPU__)
-                out = reduce_scan_gpu(in_arr, in_size, __dace_current_stream);
+                out = reduce_scan_gpu(in_arr, in_size, nullptr);
                 #else
                 out = reduce_scan_cpu(in_arr, in_size);
                 #endif
