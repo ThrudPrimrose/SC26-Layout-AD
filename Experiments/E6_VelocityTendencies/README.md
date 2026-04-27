@@ -3,7 +3,7 @@
 Per-loopnest evaluation of the ICON velocity-tendencies module (25 loop
 nests, 50 arrays): canonicalize → score with µ/Δ → per-class benchmark →
 collapse to per-access-group winners → emit the winners cross-product
-that drives E7.
+that drives E8 (and the in-progress E7 refactor).
 
 **Expected behaviour.** A V_k winner permutation should beat the
 ICON-default layout on every backend; on CPUs the indirect-stencil
@@ -13,12 +13,14 @@ runs are comparable across layouts — the layout matters less than the
 indirection regime. Tab. IV defaults to nlev=128 (sweep:
 nlev ∈ {90, 96, 128, 256}).
 
-The full-module GPU permutation sweep that used to live under
-`full_velocity_tendencies/` has been promoted to its own experiment,
-**[E7](../E7_FullVelocityTendencies/)**. E7 reads
+The full-module GPU permutation sweep is **[E8](../E8_LegacyVT/)** (AD
+default; legacy `icon-artifacts/sc26_layout` pipeline on DaCe
+`f2dace/staging`). E8's `run_{daint,beverin}.sh` auto-regenerates
 [`access_analysis/layout_candidates.json`](access_analysis/layout_candidates.json)
-**and** [`full_velocity_tendencies/layout_crossproduct_winners.json`](full_velocity_tendencies/)
-from this folder, so run E6's tasks `T6.2` and `T6.4` before submitting E7.
+and `access_analysis/winners.json` if missing, so the only manual E6
+prerequisite for E8 is the per-loopnest sweep (`T6.3`). E7
+(`../E7_FullVelocityTendencies/`) is the in-progress SDFG-driven
+refactor and is not on the AD path.
 
 E6 runs entirely on DaCe `yakup/dev`.
 
@@ -32,8 +34,9 @@ E6 runs entirely on DaCe `yakup/dev`.
 | T6.4 Winners cross-product | this folder | `python generate_winners.py` |
 | T6.5 Plots | subfolders | `loopnest_1/plot_paper.py` (Fig. 12 / Tab. IV) |
 
-The full-module sweep (former T6.5/T6.6) is now
-[E7](../E7_FullVelocityTendencies/) — see its README.
+The full-module sweep (former T6.5/T6.6) lives in
+[E8](../E8_LegacyVT/) (AD default); see its README. E7 is the
+in-progress SDFG-driven refactor.
 
 ## T6.4 — Winners cross-product
 
@@ -85,14 +88,14 @@ sbatch run_daint.sh              # or run_beverin.sh
 
 ## Status
 
-- ✅ `access_analysis/` — produces `layout_candidates.json` + `canonical_array_groups.json` consumed by E7.
+- ✅ `access_analysis/` — produces `layout_candidates.json` + `canonical_array_groups.json` + `winners.json` consumed by E8.
 - ✅ `loopnest_{1..6}` — CPU + GPU benchmarks (single-source CUDA/HIP via `common/gpu_compat.cuh`) + `cost_metrics.cpp`.
-- ✅ `generate_winners.py` — emits `full_velocity_tendencies/layout_crossproduct_winners.json` consumed by E7.
+- ✅ `generate_winners.py` — emits `full_velocity_tendencies/layout_crossproduct_winners.json` consumed by E8.
 
 ## Outputs
 
 - `loopnest_{1..6}/results/{daint,beverin}/*.csv` (Figure 12, Table IV).
-- `full_velocity_tendencies/layout_crossproduct_winners.{json,csv}` — winners cross-product fed to E7.
+- `full_velocity_tendencies/layout_crossproduct_winners.{json,csv}` — winners cross-product fed to E8.
 
 ## Data loading
 

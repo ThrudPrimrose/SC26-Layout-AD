@@ -55,4 +55,4 @@ connectivity and uniform-random.
 
 - `results/{daint,beverin}/z_v_grad_w_{cpu,gpu}.csv`.
 - `metrics{,90,128}.csv` — µ tables for 64 B / 90-level / 128 B cases.
-- `mu_{64B,128B}.pdf`, `violins_nlev96.pdf` — Figure 12.
+- `mu_{64B,128B}.pdf`, `violins_nlev128.pdf` — Figure 12 (default nlev=128; the plotter also emits `violins_nlev{90,96,256}.pdf` if the data is present).

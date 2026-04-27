@@ -24,7 +24,7 @@ tables.
 
 ## Reviewer quick-start
 
-End-to-end reproduction; ~22 hr per cluster.
+End-to-end reproduction; ~36 hr per cluster (E8's full-module sweep is ~18 hr).
 
 1. `bash Experiments/common/setup.sh` (one-time per machine).
 2. Submit microbenchmarks E1–E6 in any order:
