@@ -353,7 +353,23 @@ def _parse_name(config_name: str):
     if base == "index_only":
         return 0, 0, 0, 0, [2, 0, 1]
 
-    # Split each token at the boundary between letters and digits.
+    # V_k cross-product cells from v123_bridge (defensive parity with
+    # permute_stage8._parse_name; v123 configs aren't routed to stage 4
+    # today, but would crash with KeyError if they ever were):
+    #   v123_cv_V?_ch_V?_f_V?_s_V?_n_V?_lm_V?
+    if base.startswith("v123_"):
+        import re
+        v123_parts = dict(re.findall(r'(cv|ch|f|s|n|lm)_V(\d+)', base))
+        def _ic_bit(gid: str) -> int:
+            v = int(v123_parts.get(gid, "1"))
+            return 0 if v < 3 else 1
+        v_n = int(v123_parts.get("n", "1"))
+        conn_perm = [0, 1, 2] if v_n == 1 else [2, 0, 1]
+        return (_ic_bit("cv"), _ic_bit("ch"), _ic_bit("f"),
+                _ic_bit("s"), conn_perm)
+
+    # Legacy 95-cell names: ``cv1_ch0_f1_s0_n201`` etc. Split each token
+    # at the boundary between letters and digits.
     # "cv1" → ("cv", "1"),  "f1" → ("f", "1"),  "n201" → ("n", "201")
     import re
     parts = {m.group(1): m.group(2)

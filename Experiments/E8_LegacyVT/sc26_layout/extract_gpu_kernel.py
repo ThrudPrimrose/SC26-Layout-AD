@@ -59,9 +59,33 @@ def add_timer_around_gpu(sdfg: dace.SDFG, state: dace.SDFGState, root_sdfg: dace
         code_global=f"""
 
 #include <iostream>
-#include <cuda_runtime.h>
 #include <cstdlib>
 #include <cstdio>
+
+// Portable GPU runtime (HIP on AMD, CUDA on NVIDIA). See the matching
+// shim in permute_stage8.py for the full rationale.
+#if defined(__HIP_PLATFORM_AMD__) || defined(HIP_PLATFORM_AMD)
+#include <hip/hip_runtime.h>
+#define cudaError_t            hipError_t
+#define cudaSuccess            hipSuccess
+#define cudaGetErrorString     hipGetErrorString
+#define cudaGetLastError       hipGetLastError
+#define cudaMalloc             hipMalloc
+#define cudaMemcpy             hipMemcpy
+#define cudaMemcpyDeviceToHost hipMemcpyDeviceToHost
+#define cudaMemcpyHostToDevice hipMemcpyHostToDevice
+#define cudaDeviceSynchronize  hipDeviceSynchronize
+#define cudaStream_t           hipStream_t
+#define cudaStreamSynchronize  hipStreamSynchronize
+#define cudaEvent_t            hipEvent_t
+#define cudaEventCreate        hipEventCreate
+#define cudaEventRecord        hipEventRecord
+#define cudaEventSynchronize   hipEventSynchronize
+#define cudaEventElapsedTime   hipEventElapsedTime
+#define cudaEventDestroy       hipEventDestroy
+#else
+#include <cuda_runtime.h>
+#endif
 
 static constexpr int FLUSH_N        = 8192*4;
 static constexpr int FLUSH_STEPS    = 20;

@@ -45,5 +45,5 @@ the median.
 Inherits common pins (see
 [`../README.md`](../README.md#reviewer-hint----todo-version)).
 Experiment-specific: the dataset URL inside `download_data.sh` —
-override with `DATA_URL=<mirror> bash download_data.sh` if PolyBox
+override with `USXX_DATA_URL=<mirror> bash download_data.sh` if PolyBox
 moves.

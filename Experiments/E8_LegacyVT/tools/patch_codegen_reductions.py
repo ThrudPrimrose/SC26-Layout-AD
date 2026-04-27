@@ -32,6 +32,7 @@ Usage:
 """
 
 import argparse
+import os
 import re
 import sys
 from pathlib import Path
@@ -39,6 +40,23 @@ from typing import Iterable, List, Tuple
 
 REDUCTIONS_INCLUDE = '#include "reductions_kernel.cuh"'
 DACE_INCLUDE_RE = re.compile(r'^#include\s*<dace/dace\.h>\s*$', re.MULTILINE)
+
+# AMD detection: same env signals as compile_if_propagated_sdfgs.py.
+_AMD = (
+    os.getenv("__HIP_PLATFORM_AMD__", "0") == "1"
+    or os.getenv("HIP_PLATFORM_AMD", "0") == "1"
+    or os.getenv("BEVERIN", "0") == "1"
+)
+
+# DaCe's CPU codegen target hardcodes <cuda_runtime.h> in the host-side
+# glue (src/cpu/*.cpp) even when ``compiler.cuda.backend = "hip"`` is
+# set. ROCm clang++ then chokes with ``cuda_runtime.h: file not found``.
+# Rewrite to the HIP header. Idempotent (skips files that already use
+# hip/hip_runtime.h). AMD-only -- on NVIDIA we leave the include alone.
+_CUDA2HIP_HEADERS = [
+    (re.compile(r'#include\s*<cuda_runtime\.h>'),     '#include <hip/hip_runtime.h>'),
+    (re.compile(r'#include\s*<cuda_runtime_api\.h>'), '#include <hip/hip_runtime_api.h>'),
+]
 
 # Match calls like ``reduce_scan_gpu(in_arr, in_size, __dace_current_stream)``
 # anywhere in the file. Conservative: only rewrite the third argument and
@@ -76,10 +94,27 @@ def _patch_one(path: Path) -> Tuple[bool, bool]:
     return added_include, replaced_stream
 
 
+def _patch_cpu_includes(path: Path) -> bool:
+    """Rewrite ``<cuda_runtime.h>`` -> ``<hip/hip_runtime.h>`` (and the
+    _api variant) in a CPU-glue ``.cpp`` file. AMD-only. Returns True if
+    the file was modified, False otherwise (incl. no-op idempotent case).
+    """
+    text = path.read_text()
+    new_text = text
+    for pat, repl in _CUDA2HIP_HEADERS:
+        new_text = pat.sub(repl, new_text)
+    if new_text != text:
+        path.write_text(new_text)
+        return True
+    return False
+
+
 def patch_codegen_tree(roots: Iterable[Path], verbose: bool = True) -> int:
     """Walk *roots* (one or more codegen / SDFG build_folder paths),
-    patch every ``src/cuda/*.cu`` under each. Returns total file count
-    patched. Programmatic entry point for ``post_codegen_hook``.
+    patch every ``src/cuda/*.cu`` (reductions hook) and -- on AMD --
+    every ``src/cpu/*.cpp`` (cuda_runtime.h -> hip/hip_runtime.h).
+    Returns total file count patched. Programmatic entry point for
+    ``post_codegen_hook``.
     """
     n_patched = 0
     for root in roots:
@@ -95,6 +130,12 @@ def patch_codegen_tree(roots: Iterable[Path], verbose: bool = True) -> int:
                     if inc: tags.append("+include")
                     if sub: tags.append("+nullstream")
                     print(f"  [patch_codegen_reductions] {cu}  [{','.join(tags)}]")
+        if _AMD:
+            for cpp in sorted(root.rglob("src/cpu/*.cpp")):
+                if _patch_cpu_includes(cpp):
+                    n_patched += 1
+                    if verbose:
+                        print(f"  [patch_codegen_reductions] {cpp}  [+hip_runtime]")
     return n_patched
 
 

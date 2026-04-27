@@ -415,7 +415,25 @@ def _parse_name(config_name: str):
     if base == "winner_v1":
         return 0, 0, 0, 0, [0, 1, 2]
 
-    # Split each token at the boundary between letters and digits.
+    # V_k cross-product cell names emitted by ``v123_bridge.py``:
+    #   v123_cv_V?_ch_V?_f_V?_s_V?_n_V?_lm_V?
+    # Map V_k assignments back to the (cv, ch, f, s, conn_perm) tuple
+    # consumers expect. IC axis: V1/V2 -> h_first (0); V6 (and V3..V7)
+    # -> v_first (1). IN axis: V1 -> SoA (identity); V2/V6 -> AoS
+    # ([2,0,1] in this encoding).
+    if base.startswith("v123_"):
+        import re
+        v123_parts = dict(re.findall(r'(cv|ch|f|s|n|lm)_V(\d+)', base))
+        def _ic_bit(gid: str) -> int:
+            v = int(v123_parts.get(gid, "1"))
+            return 0 if v < 3 else 1
+        v_n = int(v123_parts.get("n", "1"))
+        conn_perm = [0, 1, 2] if v_n == 1 else [2, 0, 1]
+        return (_ic_bit("cv"), _ic_bit("ch"), _ic_bit("f"),
+                _ic_bit("s"), conn_perm)
+
+    # Legacy 95-cell names: ``cv1_ch0_f1_s0_n201`` etc. Split each token
+    # at the boundary between letters and digits.
     # "cv1" → ("cv", "1"),  "f1" → ("f", "1"),  "n201" → ("n", "201")
     import re
     parts = {m.group(1): m.group(2)
@@ -499,15 +517,42 @@ def add_timers_w_states(sdfg, copy_in_state: dace.SDFGState, copy_out_state: dac
     clock_out = sdfg.add_state_before(copy_out_state,  "clock_out")
     _flush_code = f"""
 #include <iostream>
-#include <cuda_runtime.h>
 #include <cstdlib>
 #include <cstdio>
+
+// Portable GPU runtime: HIP on AMD, CUDA on NVIDIA. The preprocessor
+// branch is taken at compile time based on `-D__HIP_PLATFORM_AMD__=1`
+// (set by setup_beverin.sh). On AMD we alias the cuda_* names that
+// this file uses to their hip_* equivalents so the body compiles
+// unchanged on both backends.
+#if defined(__HIP_PLATFORM_AMD__) || defined(HIP_PLATFORM_AMD)
+#include <hip/hip_runtime.h>
+#define cudaError_t            hipError_t
+#define cudaSuccess            hipSuccess
+#define cudaGetErrorString     hipGetErrorString
+#define cudaGetLastError       hipGetLastError
+#define cudaMalloc             hipMalloc
+#define cudaMemcpy             hipMemcpy
+#define cudaMemcpyDeviceToHost hipMemcpyDeviceToHost
+#define cudaMemcpyHostToDevice hipMemcpyHostToDevice
+#define cudaDeviceSynchronize  hipDeviceSynchronize
+#define cudaStream_t           hipStream_t
+#define cudaStreamSynchronize  hipStreamSynchronize
+#define cudaEvent_t            hipEvent_t
+#define cudaEventCreate        hipEventCreate
+#define cudaEventRecord        hipEventRecord
+#define cudaEventSynchronize   hipEventSynchronize
+#define cudaEventElapsedTime   hipEventElapsedTime
+#define cudaEventDestroy       hipEventDestroy
+#else
+#include <cuda_runtime.h>
+#endif
 
 #define CCHECK(call)                                                        \\
     do {{                                                                        \\
         cudaError_t _e = (call);                                                \\
         if (_e != cudaSuccess) {{                                                \\
-            fprintf(stderr, "[CUDA] %s:%d  %s\\n",                             \\
+            fprintf(stderr, "[GPU] %s:%d  %s\\n",                             \\
                     __FILE__, __LINE__, cudaGetErrorString(_e));                \\
             std::abort();                                                       \\
         }}                                                                       \\
