@@ -29,6 +29,17 @@
 # logs and continues per-config).
 set -u
 
+# --dry-run: list configs that *would* run and exit. Skips the slow
+# setup (data download, aenum install) so it's safe to invoke as
+# ``bash run_daint.sh --dry-run`` from a login node.
+DRY_RUN=0
+for arg in "$@"; do
+  case "${arg}" in
+    --dry-run) DRY_RUN=1 ;;
+    *) echo "[E8 daint] unrecognised arg: ${arg}" >&2 ;;
+  esac
+done
+
 EXP_DIR="${SLURM_SUBMIT_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}"
 COMMON_DIR="$(cd "${EXP_DIR}/../common" && pwd)"
 
@@ -45,8 +56,10 @@ source "${COMMON_DIR}/setup_daint.sh"
 # imports ``aenum`` -- not in DaCe's setup.py extras, so a clean
 # yakup-env may lack it. ``pip install`` is idempotent (no-op when the
 # wheel is already in the venv); run quietly so it doesn't pollute
-# the .out log.
-python -m pip install --quiet aenum 2>/dev/null || true
+# the .out log. Skip in dry-run -- listing configs doesn't need it.
+if (( DRY_RUN == 0 )); then
+  python -m pip install --quiet aenum 2>/dev/null || true
+fi
 
 mkdir -p "${EXP_DIR}/daint_full_permutations_8"
 cd "${EXP_DIR}"
@@ -62,7 +75,9 @@ cd "${EXP_DIR}"
 # handles idempotency, sha256 verification, and stale-spack-xz fallback.
 DOWNLOAD_DATA_SH="${EXP_DIR}/../E7_FullVelocityTendencies/tools/download_data.sh"
 E7_DATA_DIR="${EXP_DIR}/../E7_FullVelocityTendencies/data_r02b05"
-if [[ -d "${EXP_DIR}/data_r02b05" ]] && [[ -n "$(ls -A "${EXP_DIR}/data_r02b05" 2>/dev/null)" ]]; then
+if (( DRY_RUN == 1 )); then
+    : # Skip dataset fetch -- not needed for a config listing.
+elif [[ -d "${EXP_DIR}/data_r02b05" ]] && [[ -n "$(ls -A "${EXP_DIR}/data_r02b05" 2>/dev/null)" ]]; then
     : # Already populated -- skip.
 elif [[ -d "${E7_DATA_DIR}" ]] && [[ -n "$(ls -A "${E7_DATA_DIR}" 2>/dev/null)" ]]; then
     echo "[E8 daint] data_r02b05 already in E7 tree; symlinking via LOCAL_DATA_DIR mode"
@@ -93,13 +108,19 @@ CONFIGS="${CONFIGS:-winner_v1,winner_v2,winner_v6}"
 REPS="${REPS:-100}"
 
 echo "[E8 daint] host=$(hostname) data=${ICON_DATA_PATH}"
-echo "[E8 daint] configs=${CONFIGS}  reps=${REPS}"
+echo "[E8 daint] configs=${CONFIGS}  reps=${REPS}  dry_run=${DRY_RUN}"
 
 # run_stage8_permutations.py compiles each config and runs both
 # shuffled (_ms = map-shuffled) and unshuffled (_mu = map-unshuffled)
 # variants, capturing stdout to ${OUT_DIR}/<config>_<shuffled|unshuffled>.txt.
 # It logs but doesn't abort on a per-config failure -- by design, the
 # whole batch keeps going.
-python run_stage8_permutations.py --configs "${CONFIGS}" --reps "${REPS}"
+DRY_FLAG=""
+(( DRY_RUN == 1 )) && DRY_FLAG="--dry-run"
+python run_stage8_permutations.py --configs "${CONFIGS}" --reps "${REPS}" ${DRY_FLAG}
 
-echo "[E8 daint] done. TXTs under daint_full_permutations_8/"
+if (( DRY_RUN == 1 )); then
+  echo "[E8 daint] dry-run complete -- no compile or execution."
+else
+  echo "[E8 daint] done. TXTs under daint_full_permutations_8/"
+fi

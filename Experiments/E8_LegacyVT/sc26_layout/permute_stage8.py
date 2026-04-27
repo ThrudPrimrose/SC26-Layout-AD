@@ -60,11 +60,28 @@ from __future__ import annotations
 from itertools import permutations as _iter_perms
 from typing import Dict, List
 
-import dace
-from dace.codegen.control_flow import ConditionalBlock
-from dace.properties import CodeBlock
-from dace.transformation.layout.permute_dimensions import PermuteDimensions
-from dace.sdfg.construction_utils import move_state_after, move_state_before
+# DaCe imports are deferred to function call time so that
+# ``run_stage8_permutations.py --dry-run`` (and other config-listing
+# entry points) can import this module on a host that doesn't have a
+# usable f2dace/staging checkout. The data structures below
+# (PERMUTE_CONFIGS, _COMPUTE_*_PERMUTED, etc.) are pure stdlib; only
+# permute_sdfg / add_timers / SDFG helpers actually need dace.
+try:
+    import dace
+    from dace.codegen.control_flow import ConditionalBlock
+    from dace.properties import CodeBlock
+    from dace.transformation.layout.permute_dimensions import PermuteDimensions
+    from dace.sdfg.construction_utils import move_state_after, move_state_before
+except ModuleNotFoundError as _e:
+    dace = None  # type: ignore[assignment]
+    ConditionalBlock = None  # type: ignore[assignment]
+    CodeBlock = None  # type: ignore[assignment]
+    PermuteDimensions = None  # type: ignore[assignment]
+    move_state_after = None  # type: ignore[assignment]
+    move_state_before = None  # type: ignore[assignment]
+    _DACE_IMPORT_ERROR = _e
+else:
+    _DACE_IMPORT_ERROR = None
 
 
 # ---------------------------------------------------------------------------
