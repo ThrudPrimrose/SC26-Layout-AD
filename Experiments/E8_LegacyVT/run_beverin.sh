@@ -1,0 +1,65 @@
+#!/usr/bin/env bash
+#SBATCH --job-name=E8_velocity_beverin
+#SBATCH --nodes=1
+#SBATCH --partition=mi300
+#SBATCH --time=24:00:00
+#SBATCH --ntasks=1
+#SBATCH --gpus-per-task=1
+#SBATCH --cpus-per-task=192
+#SBATCH --exclusive
+#SBATCH --chdir=.
+#SBATCH --output=beverin_full_permutations_8/E8_velocity_beverin_%j.out
+#SBATCH --error=beverin_full_permutations_8/E8_velocity_beverin_%j.err
+#
+# E8 / Full velocity tendencies (LEGACY pipeline) on Beverin (MI300A).
+# See run_daint.sh for the full doc-comment.
+
+set -u
+
+EXP_DIR="${SLURM_SUBMIT_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}"
+COMMON_DIR="$(cd "${EXP_DIR}/../common" && pwd)"
+
+source "${COMMON_DIR}/activate.sh"
+source "${COMMON_DIR}/setup_beverin.sh"
+
+mkdir -p "${EXP_DIR}/beverin_full_permutations_8"
+cd "${EXP_DIR}"
+
+# ICON R02B05 dataset. See run_daint.sh for the full doc-comment.
+# Order: existing E8 data > E7's data (symlink via LOCAL_DATA_DIR) > fresh download.
+DOWNLOAD_DATA_SH="${EXP_DIR}/../E7_FullVelocityTendencies/tools/download_data.sh"
+E7_DATA_DIR="${EXP_DIR}/../E7_FullVelocityTendencies/data_r02b05"
+if [[ -d "${EXP_DIR}/data_r02b05" ]] && [[ -n "$(ls -A "${EXP_DIR}/data_r02b05" 2>/dev/null)" ]]; then
+    :
+elif [[ -d "${E7_DATA_DIR}" ]] && [[ -n "$(ls -A "${E7_DATA_DIR}" 2>/dev/null)" ]]; then
+    echo "[E8 beverin] data_r02b05 already in E7 tree; symlinking via LOCAL_DATA_DIR mode"
+    LOCAL_DATA_DIR="${E7_DATA_DIR}" OUTPUT_DIR="${EXP_DIR}/data_r02b05" \
+        bash "${DOWNLOAD_DATA_SH}"
+else
+    echo "[E8 beverin] no on-disk data found; fetching into ${EXP_DIR}/data_r02b05"
+    OUTPUT_DIR="${EXP_DIR}/data_r02b05" bash "${DOWNLOAD_DATA_SH}"
+fi
+export ICON_DATA_PATH="${ICON_DATA_PATH:-${EXP_DIR}/data_r02b05}"
+
+LAYOUT_JSON="${EXP_DIR}/../E6_VelocityTendencies/access_analysis/layout_candidates.json"
+WINNERS_JSON="${EXP_DIR}/../E6_VelocityTendencies/access_analysis/winners.json"
+if [[ ! -f "${LAYOUT_JSON}" ]]; then
+    echo "[E8 beverin] ${LAYOUT_JSON} missing; running select_loopnests.py"
+    python "${EXP_DIR}/../E6_VelocityTendencies/access_analysis/select_loopnests.py"
+fi
+if [[ ! -f "${WINNERS_JSON}" ]]; then
+    echo "[E8 beverin] ${WINNERS_JSON} missing; running derive_winners.py"
+    python "${EXP_DIR}/../E6_VelocityTendencies/access_analysis/derive_winners.py" || true
+fi
+
+CONFIGS="${CONFIGS:-winner_v1,winner_v2,winner_v6}"
+REPS="${REPS:-100}"
+
+echo "[E8 beverin] host=$(hostname) data=${ICON_DATA_PATH}"
+echo "[E8 beverin] configs=${CONFIGS}  reps=${REPS}"
+
+# run_stage8_permutations.py needs BEVERIN=1 to pick the beverin
+# OUT_DIR (beverin_full_permutations_8 vs daint_full_permutations_8).
+BEVERIN=1 python run_stage8_permutations.py --configs "${CONFIGS}" --reps "${REPS}"
+
+echo "[E8 beverin] done. TXTs under beverin_full_permutations_8/"
