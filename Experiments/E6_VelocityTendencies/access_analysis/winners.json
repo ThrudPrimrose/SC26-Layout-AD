@@ -1,0 +1,799 @@
+{
+  "schema_version": 1,
+  "doc": "Empirical V_k winners derived from Experiments/E6_VelocityTendencies/loopnest_<N>/results/. Read by E7 (and the AD reader) to verify that the named winner_v* configs in E7 match the per-loopnest V_k that E6 measured under R02B05 connectivity.",
+  "cell_dist": "exact",
+  "winners": [
+    {
+      "loopnest": 1,
+      "platform": "daint",
+      "backend": "cpu",
+      "v_winner": "V4",
+      "time_ms_median": 0.8921,
+      "runner_up": "V3",
+      "runner_up_time_ms_median": 0.899,
+      "ranked": [
+        {
+          "v": "V4",
+          "time_ms_median": 0.8921
+        },
+        {
+          "v": "V3",
+          "time_ms_median": 0.899
+        },
+        {
+          "v": "V1",
+          "time_ms_median": 2.5616
+        },
+        {
+          "v": "V2",
+          "time_ms_median": 2.6208
+        }
+      ],
+      "csv": "Experiments/E6_VelocityTendencies/loopnest_1/results/daint/z_v_grad_w_cpu.csv"
+    },
+    {
+      "loopnest": 1,
+      "platform": "daint",
+      "backend": "gpu",
+      "v_winner": "V6",
+      "time_ms_median": 0.3063,
+      "runner_up": "V1",
+      "runner_up_time_ms_median": 0.3117,
+      "ranked": [
+        {
+          "v": "V6",
+          "time_ms_median": 0.3063
+        },
+        {
+          "v": "V1",
+          "time_ms_median": 0.3117
+        },
+        {
+          "v": "V4",
+          "time_ms_median": 0.3222
+        },
+        {
+          "v": "V5",
+          "time_ms_median": 0.3223
+        },
+        {
+          "v": "V3",
+          "time_ms_median": 0.3273
+        },
+        {
+          "v": "V7",
+          "time_ms_median": 0.4108
+        }
+      ],
+      "csv": "Experiments/E6_VelocityTendencies/loopnest_1/results/daint/z_v_grad_w_gpu.csv"
+    },
+    {
+      "loopnest": 1,
+      "platform": "beverin",
+      "backend": "cpu",
+      "v_winner": "V3",
+      "time_ms_median": 1.732,
+      "runner_up": "V4",
+      "runner_up_time_ms_median": 1.7634,
+      "ranked": [
+        {
+          "v": "V3",
+          "time_ms_median": 1.732
+        },
+        {
+          "v": "V4",
+          "time_ms_median": 1.7634
+        },
+        {
+          "v": "V1",
+          "time_ms_median": 6.0766
+        },
+        {
+          "v": "V2",
+          "time_ms_median": 6.1035
+        }
+      ],
+      "csv": "Experiments/E6_VelocityTendencies/loopnest_1/results/beverin/z_v_grad_w_cpu.csv"
+    },
+    {
+      "loopnest": 1,
+      "platform": "beverin",
+      "backend": "gpu",
+      "v_winner": "V6",
+      "time_ms_median": 0.5781,
+      "runner_up": "V3",
+      "runner_up_time_ms_median": 0.6399,
+      "ranked": [
+        {
+          "v": "V6",
+          "time_ms_median": 0.5781
+        },
+        {
+          "v": "V3",
+          "time_ms_median": 0.6399
+        },
+        {
+          "v": "V1",
+          "time_ms_median": 0.6422
+        },
+        {
+          "v": "V4",
+          "time_ms_median": 0.6605
+        },
+        {
+          "v": "V5",
+          "time_ms_median": 0.6609
+        },
+        {
+          "v": "V7",
+          "time_ms_median": 1.0292
+        }
+      ],
+      "csv": "Experiments/E6_VelocityTendencies/loopnest_1/results/beverin/z_v_grad_w_gpu.csv"
+    },
+    {
+      "loopnest": 2,
+      "platform": "daint",
+      "backend": "cpu",
+      "v_winner": "V1",
+      "time_ms_median": 4.274,
+      "runner_up": "V2",
+      "runner_up_time_ms_median": 4.2979,
+      "ranked": [
+        {
+          "v": "V1",
+          "time_ms_median": 4.274
+        },
+        {
+          "v": "V2",
+          "time_ms_median": 4.2979
+        },
+        {
+          "v": "V3",
+          "time_ms_median": 9.7839
+        },
+        {
+          "v": "V4",
+          "time_ms_median": 9.8447
+        }
+      ],
+      "csv": "Experiments/E6_VelocityTendencies/loopnest_2/results/daint/z_w_concorr_me_cpu.csv"
+    },
+    {
+      "loopnest": 2,
+      "platform": "daint",
+      "backend": "gpu",
+      "v_winner": "V2",
+      "time_ms_median": 0.3383,
+      "runner_up": "V1",
+      "runner_up_time_ms_median": 0.3383,
+      "ranked": [
+        {
+          "v": "V2",
+          "time_ms_median": 0.3383
+        },
+        {
+          "v": "V1",
+          "time_ms_median": 0.3383
+        },
+        {
+          "v": "V4",
+          "time_ms_median": 1.1082
+        },
+        {
+          "v": "V3",
+          "time_ms_median": 1.1083
+        }
+      ],
+      "csv": "Experiments/E6_VelocityTendencies/loopnest_2/results/daint/z_w_concorr_me_gpu.csv"
+    },
+    {
+      "loopnest": 2,
+      "platform": "beverin",
+      "backend": "cpu",
+      "v_winner": "V2",
+      "time_ms_median": 11.4576,
+      "runner_up": "V1",
+      "runner_up_time_ms_median": 11.7058,
+      "ranked": [
+        {
+          "v": "V2",
+          "time_ms_median": 11.4576
+        },
+        {
+          "v": "V1",
+          "time_ms_median": 11.7058
+        },
+        {
+          "v": "V4",
+          "time_ms_median": 37.7941
+        },
+        {
+          "v": "V3",
+          "time_ms_median": 38.0441
+        }
+      ],
+      "csv": "Experiments/E6_VelocityTendencies/loopnest_2/results/beverin/z_w_concorr_me_cpu.csv"
+    },
+    {
+      "loopnest": 2,
+      "platform": "beverin",
+      "backend": "gpu",
+      "v_winner": "V2",
+      "time_ms_median": 0.4922,
+      "runner_up": "V1",
+      "runner_up_time_ms_median": 0.4936,
+      "ranked": [
+        {
+          "v": "V2",
+          "time_ms_median": 0.4922
+        },
+        {
+          "v": "V1",
+          "time_ms_median": 0.4936
+        },
+        {
+          "v": "V3",
+          "time_ms_median": 1.9227
+        },
+        {
+          "v": "V4",
+          "time_ms_median": 1.9261
+        }
+      ],
+      "csv": "Experiments/E6_VelocityTendencies/loopnest_2/results/beverin/z_w_concorr_me_gpu.csv"
+    },
+    {
+      "loopnest": 3,
+      "platform": "daint",
+      "backend": "cpu",
+      "v_winner": "V1",
+      "time_ms_median": 1.4775,
+      "runner_up": "V2",
+      "runner_up_time_ms_median": 1.5102,
+      "ranked": [
+        {
+          "v": "V1",
+          "time_ms_median": 1.4775
+        },
+        {
+          "v": "V2",
+          "time_ms_median": 1.5102
+        },
+        {
+          "v": "V3",
+          "time_ms_median": 11.1468
+        },
+        {
+          "v": "V4",
+          "time_ms_median": 12.6068
+        }
+      ],
+      "csv": "Experiments/E6_VelocityTendencies/loopnest_3/results/daint/z_v_grad_w_full_cpu.csv"
+    },
+    {
+      "loopnest": 3,
+      "platform": "daint",
+      "backend": "gpu",
+      "v_winner": "V1",
+      "time_ms_median": 0.3668,
+      "runner_up": "V2",
+      "runner_up_time_ms_median": 0.3668,
+      "ranked": [
+        {
+          "v": "V1",
+          "time_ms_median": 0.3668
+        },
+        {
+          "v": "V2",
+          "time_ms_median": 0.3668
+        },
+        {
+          "v": "V3",
+          "time_ms_median": 1.072
+        },
+        {
+          "v": "V4",
+          "time_ms_median": 1.0796
+        }
+      ],
+      "csv": "Experiments/E6_VelocityTendencies/loopnest_3/results/daint/z_v_grad_w_full_gpu.csv"
+    },
+    {
+      "loopnest": 3,
+      "platform": "beverin",
+      "backend": "cpu",
+      "v_winner": "V2",
+      "time_ms_median": 3.0968,
+      "runner_up": "V1",
+      "runner_up_time_ms_median": 3.1015,
+      "ranked": [
+        {
+          "v": "V2",
+          "time_ms_median": 3.0968
+        },
+        {
+          "v": "V1",
+          "time_ms_median": 3.1015
+        },
+        {
+          "v": "V4",
+          "time_ms_median": 38.2326
+        },
+        {
+          "v": "V3",
+          "time_ms_median": 39.2679
+        }
+      ],
+      "csv": "Experiments/E6_VelocityTendencies/loopnest_3/results/beverin/z_v_grad_w_full_cpu.csv"
+    },
+    {
+      "loopnest": 3,
+      "platform": "beverin",
+      "backend": "gpu",
+      "v_winner": "V2",
+      "time_ms_median": 0.5598,
+      "runner_up": "V1",
+      "runner_up_time_ms_median": 0.5615,
+      "ranked": [
+        {
+          "v": "V2",
+          "time_ms_median": 0.5598
+        },
+        {
+          "v": "V1",
+          "time_ms_median": 0.5615
+        },
+        {
+          "v": "V3",
+          "time_ms_median": 2.1425
+        },
+        {
+          "v": "V4",
+          "time_ms_median": 2.1446
+        }
+      ],
+      "csv": "Experiments/E6_VelocityTendencies/loopnest_3/results/beverin/z_v_grad_w_full_gpu.csv"
+    },
+    {
+      "loopnest": 4,
+      "platform": "daint",
+      "backend": "cpu",
+      "v_winner": "V4",
+      "time_ms_median": 15.3013,
+      "runner_up": "V3",
+      "runner_up_time_ms_median": 15.3534,
+      "ranked": [
+        {
+          "v": "V4",
+          "time_ms_median": 15.3013
+        },
+        {
+          "v": "V3",
+          "time_ms_median": 15.3534
+        },
+        {
+          "v": "V2",
+          "time_ms_median": 24.8574
+        },
+        {
+          "v": "V1",
+          "time_ms_median": 25.6469
+        }
+      ],
+      "csv": "Experiments/E6_VelocityTendencies/loopnest_4/results/daint/ddt_vn_vert_cpu.csv"
+    },
+    {
+      "loopnest": 4,
+      "platform": "daint",
+      "backend": "gpu",
+      "v_winner": "V1",
+      "time_ms_median": 1.1288,
+      "runner_up": "V2",
+      "runner_up_time_ms_median": 1.1288,
+      "ranked": [
+        {
+          "v": "V1",
+          "time_ms_median": 1.1288
+        },
+        {
+          "v": "V2",
+          "time_ms_median": 1.1288
+        },
+        {
+          "v": "V3",
+          "time_ms_median": 1.8863
+        },
+        {
+          "v": "V4",
+          "time_ms_median": 1.8884
+        }
+      ],
+      "csv": "Experiments/E6_VelocityTendencies/loopnest_4/results/daint/ddt_vn_vert_gpu.csv"
+    },
+    {
+      "loopnest": 4,
+      "platform": "beverin",
+      "backend": "cpu",
+      "v_winner": "V1",
+      "time_ms_median": 26.1186,
+      "runner_up": "V2",
+      "runner_up_time_ms_median": 26.3337,
+      "ranked": [
+        {
+          "v": "V1",
+          "time_ms_median": 26.1186
+        },
+        {
+          "v": "V2",
+          "time_ms_median": 26.3337
+        },
+        {
+          "v": "V4",
+          "time_ms_median": 60.963
+        },
+        {
+          "v": "V3",
+          "time_ms_median": 60.9925
+        }
+      ],
+      "csv": "Experiments/E6_VelocityTendencies/loopnest_4/results/beverin/ddt_vn_vert_cpu.csv"
+    },
+    {
+      "loopnest": 4,
+      "platform": "beverin",
+      "backend": "gpu",
+      "v_winner": "V2",
+      "time_ms_median": 3.3966,
+      "runner_up": "V1",
+      "runner_up_time_ms_median": 3.3969,
+      "ranked": [
+        {
+          "v": "V2",
+          "time_ms_median": 3.3966
+        },
+        {
+          "v": "V1",
+          "time_ms_median": 3.3969
+        },
+        {
+          "v": "V3",
+          "time_ms_median": 4.0858
+        },
+        {
+          "v": "V4",
+          "time_ms_median": 4.0862
+        }
+      ],
+      "csv": "Experiments/E6_VelocityTendencies/loopnest_4/results/beverin/ddt_vn_vert_gpu.csv"
+    },
+    {
+      "loopnest": 5,
+      "platform": "daint",
+      "backend": "cpu",
+      "v_winner": "V2",
+      "time_ms_median": 0.0347,
+      "runner_up": "V1",
+      "runner_up_time_ms_median": 0.0348,
+      "ranked": [
+        {
+          "v": "V2",
+          "time_ms_median": 0.0347
+        },
+        {
+          "v": "V1",
+          "time_ms_median": 0.0348
+        },
+        {
+          "v": "V3",
+          "time_ms_median": 0.0677
+        },
+        {
+          "v": "V4",
+          "time_ms_median": 0.0681
+        }
+      ],
+      "csv": "Experiments/E6_VelocityTendencies/loopnest_5/results/daint/vn_ie_boundary_cpu.csv"
+    },
+    {
+      "loopnest": 5,
+      "platform": "daint",
+      "backend": "gpu",
+      "v_winner": "V1",
+      "time_ms_median": 0.0101,
+      "runner_up": "V2",
+      "runner_up_time_ms_median": 0.0101,
+      "ranked": [
+        {
+          "v": "V1",
+          "time_ms_median": 0.0101
+        },
+        {
+          "v": "V2",
+          "time_ms_median": 0.0101
+        },
+        {
+          "v": "V3",
+          "time_ms_median": 0.0561
+        },
+        {
+          "v": "V4",
+          "time_ms_median": 0.0562
+        }
+      ],
+      "csv": "Experiments/E6_VelocityTendencies/loopnest_5/results/daint/vn_ie_boundary_gpu.csv"
+    },
+    {
+      "loopnest": 5,
+      "platform": "beverin",
+      "backend": "cpu",
+      "v_winner": "V2",
+      "time_ms_median": 0.1181,
+      "runner_up": "V1",
+      "runner_up_time_ms_median": 0.1357,
+      "ranked": [
+        {
+          "v": "V2",
+          "time_ms_median": 0.1181
+        },
+        {
+          "v": "V1",
+          "time_ms_median": 0.1357
+        },
+        {
+          "v": "V4",
+          "time_ms_median": 0.3113
+        },
+        {
+          "v": "V3",
+          "time_ms_median": 0.3116
+        }
+      ],
+      "csv": "Experiments/E6_VelocityTendencies/loopnest_5/results/beverin/vn_ie_boundary_cpu.csv"
+    },
+    {
+      "loopnest": 5,
+      "platform": "beverin",
+      "backend": "gpu",
+      "v_winner": "V1",
+      "time_ms_median": 0.0164,
+      "runner_up": "V2",
+      "runner_up_time_ms_median": 0.0165,
+      "ranked": [
+        {
+          "v": "V1",
+          "time_ms_median": 0.0164
+        },
+        {
+          "v": "V2",
+          "time_ms_median": 0.0165
+        },
+        {
+          "v": "V4",
+          "time_ms_median": 0.043
+        },
+        {
+          "v": "V3",
+          "time_ms_median": 0.0432
+        }
+      ],
+      "csv": "Experiments/E6_VelocityTendencies/loopnest_5/results/beverin/vn_ie_boundary_gpu.csv"
+    },
+    {
+      "loopnest": 6,
+      "platform": "daint",
+      "backend": "cpu",
+      "v_winner": "V3",
+      "time_ms_median": 0.1458,
+      "runner_up": "V4",
+      "runner_up_time_ms_median": 0.1468,
+      "ranked": [
+        {
+          "v": "V3",
+          "time_ms_median": 0.1458
+        },
+        {
+          "v": "V4",
+          "time_ms_median": 0.1468
+        },
+        {
+          "v": "V1",
+          "time_ms_median": 0.1514
+        },
+        {
+          "v": "V2",
+          "time_ms_median": 0.152
+        }
+      ],
+      "csv": "Experiments/E6_VelocityTendencies/loopnest_6/results/daint/levelmask_cpu.csv"
+    },
+    {
+      "loopnest": 6,
+      "platform": "daint",
+      "backend": "gpu",
+      "v_winner": "V2",
+      "time_ms_median": 0.6273,
+      "runner_up": "V1",
+      "runner_up_time_ms_median": 0.6283,
+      "ranked": [
+        {
+          "v": "V2",
+          "time_ms_median": 0.6273
+        },
+        {
+          "v": "V1",
+          "time_ms_median": 0.6283
+        },
+        {
+          "v": "V3",
+          "time_ms_median": 0.8816
+        },
+        {
+          "v": "V4",
+          "time_ms_median": 0.8817
+        }
+      ],
+      "csv": "Experiments/E6_VelocityTendencies/loopnest_6/results/daint/levelmask_gpu.csv"
+    },
+    {
+      "loopnest": 6,
+      "platform": "beverin",
+      "backend": "cpu",
+      "v_winner": "V1",
+      "time_ms_median": 0.4638,
+      "runner_up": "V2",
+      "runner_up_time_ms_median": 0.4664,
+      "ranked": [
+        {
+          "v": "V1",
+          "time_ms_median": 0.4638
+        },
+        {
+          "v": "V2",
+          "time_ms_median": 0.4664
+        },
+        {
+          "v": "V4",
+          "time_ms_median": 0.478
+        },
+        {
+          "v": "V3",
+          "time_ms_median": 0.486
+        }
+      ],
+      "csv": "Experiments/E6_VelocityTendencies/loopnest_6/results/beverin/levelmask_cpu.csv"
+    },
+    {
+      "loopnest": 6,
+      "platform": "beverin",
+      "backend": "gpu",
+      "v_winner": "V2",
+      "time_ms_median": 0.2129,
+      "runner_up": "V1",
+      "runner_up_time_ms_median": 0.2223,
+      "ranked": [
+        {
+          "v": "V2",
+          "time_ms_median": 0.2129
+        },
+        {
+          "v": "V1",
+          "time_ms_median": 0.2223
+        },
+        {
+          "v": "V3",
+          "time_ms_median": 1.0971
+        },
+        {
+          "v": "V4",
+          "time_ms_median": 1.0972
+        }
+      ],
+      "csv": "Experiments/E6_VelocityTendencies/loopnest_6/results/beverin/levelmask_gpu.csv"
+    }
+  ],
+  "summary": {
+    "daint_cpu": {
+      "v_first": 3,
+      "h_first": 3
+    },
+    "daint_gpu": {
+      "v_first": 1,
+      "h_first": 5
+    },
+    "beverin_cpu": {
+      "v_first": 1,
+      "h_first": 5
+    },
+    "beverin_gpu": {
+      "v_first": 1,
+      "h_first": 5
+    }
+  },
+  "cross_product": {
+    "daint_cpu": {
+      "axes": {
+        "loopnest_1": [
+          "V1",
+          "V4"
+        ],
+        "loopnest_4": [
+          "V1",
+          "V4"
+        ],
+        "loopnest_5": [
+          "V1",
+          "V2"
+        ],
+        "loopnest_6": [
+          "V1",
+          "V3"
+        ]
+      },
+      "n_combinations": 16
+    },
+    "daint_gpu": {
+      "axes": {
+        "loopnest_1": [
+          "V1",
+          "V6"
+        ],
+        "loopnest_2": [
+          "V1",
+          "V2"
+        ],
+        "loopnest_6": [
+          "V1",
+          "V2"
+        ]
+      },
+      "n_combinations": 8
+    },
+    "beverin_cpu": {
+      "axes": {
+        "loopnest_1": [
+          "V1",
+          "V3"
+        ],
+        "loopnest_2": [
+          "V1",
+          "V2"
+        ],
+        "loopnest_3": [
+          "V1",
+          "V2"
+        ],
+        "loopnest_5": [
+          "V1",
+          "V2"
+        ]
+      },
+      "n_combinations": 16
+    },
+    "beverin_gpu": {
+      "axes": {
+        "loopnest_1": [
+          "V1",
+          "V6"
+        ],
+        "loopnest_2": [
+          "V1",
+          "V2"
+        ],
+        "loopnest_3": [
+          "V1",
+          "V2"
+        ],
+        "loopnest_4": [
+          "V1",
+          "V2"
+        ],
+        "loopnest_6": [
+          "V1",
+          "V2"
+        ]
+      },
+      "n_combinations": 32
+    }
+  }
+}

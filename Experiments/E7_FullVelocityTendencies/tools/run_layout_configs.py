@@ -59,6 +59,9 @@ def fortran_to_sdfg_array_name(s: str) -> str:
 
 
 STAGE_ID = 6
+# Like stage5a, the v123 runner reads from stage 4's output regardless of
+# the output stage id. ``common.stage_input(name, 5)`` -> ``codegen/stage4/<name>.sdfgz``.
+_INPUT_STAGE = 5
 
 # Default JSON path: E6's full_velocity_tendencies/ output.
 _E6_DIR = _E7_ROOT.parent / "E6_VelocityTendencies"
@@ -221,7 +224,7 @@ def main():
         first_sdfg = None
         sdfg_arr_dims_by_name: Dict[str, Dict[str, int]] = {}
         for name in names:
-            infile = common.stage_input(name, STAGE_ID)
+            infile = common.stage_input(name, _INPUT_STAGE)
             if not args.dry_run:
                 print(f"Stage #{STAGE_ID}: loading {name} from {infile}")
             sdfg = dace.SDFG.from_file(infile)
@@ -273,7 +276,7 @@ def main():
         for name in names:
             if name not in sdfg_arr_dims_by_name:
                 continue
-            sdfg = dace.SDFG.from_file(common.stage_input(name, STAGE_ID))
+            sdfg = dace.SDFG.from_file(common.stage_input(name, _INPUT_STAGE))
             sdfg.name = name
             sdfg_arr_dims = sdfg_arr_dims_by_name[name]
 

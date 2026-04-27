@@ -13,20 +13,21 @@
 #SBATCH --error=results/daint/E7_velocity_daint_%j.err
 #
 # E7 / Full velocity tendencies -- GPU layout-permutation sweep on
-# Daint.Alps. Runs stage 5a (the permutation driver) against the stage 4
-# SDFGs that ship with the AD. Always uses DaCe yakup/dev (no branch
-# switching). For an F90 -> stage 4 regeneration, run
-# tools/regenerate_baselines.sh first.
+# Daint.Alps. Runs two layered sweeps:
+#
+#   1. Always-on named ablations: ``unpermuted_lv*_sm*``,
+#      ``nlev_first_lv*_sm*``, ``index_only_lv*_sm*`` -- compiled via
+#      ``utils.stages.stage5a`` to ``velocity_stage5a_<CFG>`` binaries.
+#   2. Empirical winners cross-product: per-group V-id sets from
+#      ``E6/generate_winners.py`` (default --nlev 256), expanded by
+#      ``tools/run_layout_configs.py`` into ``velocity_stage6_v123_*``
+#      binaries -- 64 unique permute-map signatures out of the
+#      3**6 = 729 raw cells.
+#
+# Each binary is run once per timestep listed in ${TIMESTEPS}.
 
-# Note: no `set -e` / `pipefail`. A crashed binary on one config (e.g.
-# std::out_of_range from a missing data field) must not abort the whole
-# batch -- subsequent configs still need to run. We handle setup
-# failures explicitly where they matter (JSON missing, codegen fails).
 set -u
 
-# --verify retains the per-timestep got/want numerical-comparison blobs
-# (O(GB) each) for offline validation against a reference run. Default
-# is to delete them after each binary invocation.
 VERIFY=0
 for arg in "$@"; do
   case "${arg}" in
@@ -44,88 +45,81 @@ source "${COMMON_DIR}/setup_daint.sh"
 mkdir -p "${EXP_DIR}/results/daint"
 cd "${EXP_DIR}"
 
-# R02B05 / nproma=20480 dataset. tools/download_data.sh fetches into
-# ${EXP_DIR}/data_r02b05/; idempotent (skips if non-empty).
+# R02B05 / nproma=20480 dataset.
 [[ -d "${EXP_DIR}/data_r02b05" ]] && [[ -n "$(ls -A "${EXP_DIR}/data_r02b05" 2>/dev/null)" ]] \
     || bash tools/download_data.sh
 export ICON_DATA_PATH="${ICON_DATA_PATH:-${EXP_DIR}/data_r02b05}"
 
-# Layout configs to run. Default reproduces the paper's V1/V2/V6
-# winner-comparison (§IV-D, Table IV) plus the lv-axis variants of
-# nlev_first / index_only for the layout-conflict-resolution discussion:
-#   winner_v1           V1 = h_first + SoA-conn (identity baseline)
-#   winner_v2           V2 = h_first + AoS-conn (only connectivity permuted)
-#   winner_v6           V6 = v_first + AoS-conn (the empirical winner)
-#   unpermuted_lv*_sm*  baseline + map-shuffle ablations
-#   nlev_first_lv*_sm*  v_first ablations (lv0 keeps levmask, lv1 transposes)
-#   index_only_lv*_sm*  conn-only ablations
-# Override at submission time, e.g.
-#   CONFIGS="winner_v1 winner_v2 winner_v6" sbatch run_daint.sh
-CONFIGS="${CONFIGS:-winner_v1_sm0 winner_v1_sm1 \
-winner_v2_sm0 winner_v2_sm1 \
-winner_v6_sm0 winner_v6_sm1 \
-unpermuted_lv0_sm0 unpermuted_lv0_sm1 \
+# Always-on named ablations (independent of measured winners).
+NAMED_CONFIGS="${NAMED_CONFIGS:-unpermuted_lv0_sm0 unpermuted_lv0_sm1 \
 nlev_first_lv0_sm0 nlev_first_lv0_sm1 nlev_first_lv1_sm0 nlev_first_lv1_sm1 \
 index_only_lv0_sm0 index_only_lv0_sm1}"
 
-# Per-binary run knobs. Default to TS={7,9} -- the cells used in the
-# paper's reported numbers; each timestep runs as a separate binary
-# invocation (one CSV per ts/<config>). REPS=100 timed reps after
-# WARMUP=5 untimed warm-up reps follows the Hoefler & Belli convention.
+# Per-binary run knobs.
 TIMESTEPS="${TIMESTEPS:-7,9}"
 REPS="${REPS:-100}"
 WARMUP="${WARMUP:-5}"
 
-echo "[E7 daint] host=$(hostname) threads=$OMP_NUM_THREADS data=$ICON_DATA_PATH"
-echo "[E7 daint] configs=$CONFIGS"
-echo "[E7 daint] timesteps=$TIMESTEPS reps=$REPS warmup=$WARMUP"
+# Winners cross-product source. Regenerated from E6's loopnest CSVs
+# whenever absent or REGEN_WINNERS=1. WINNERS_NLEV picks the slice
+# the per-group winners are read from (default 256).
+E6_DIR="${EXP_DIR}/../E6_VelocityTendencies"
+WINNERS_JSON="${WINNERS_JSON:-${E6_DIR}/full_velocity_tendencies/layout_crossproduct_winners.json}"
+WINNERS_NLEV="${WINNERS_NLEV:-256}"
+REGEN_WINNERS="${REGEN_WINNERS:-0}"
 
-# Stage 5a reads codegen/stage4/<variant>.sdfgz. The shipped stage 4 SDFGs
-# live next to this script under SDFGs/stage4/; symlink them in place if
-# tools/regenerate_baselines.sh has not been run.
+echo "[E7 daint] host=$(hostname) threads=$OMP_NUM_THREADS data=$ICON_DATA_PATH"
+echo "[E7 daint] named_configs=$NAMED_CONFIGS"
+echo "[E7 daint] timesteps=$TIMESTEPS reps=$REPS warmup=$WARMUP"
+echo "[E7 daint] winners_json=$WINNERS_JSON (nlev=$WINNERS_NLEV)"
+
+# Stage 5a / runner read codegen/stage4/<variant>.sdfgz. Symlink the
+# shipped frozen SDFGs in if the generated tree is empty.
 if [[ ! -d "${EXP_DIR}/codegen/stage4" ]] && [[ -d "${EXP_DIR}/SDFGs/stage4" ]]; then
   mkdir -p "${EXP_DIR}/codegen"
   ln -sfn "${EXP_DIR}/SDFGs/stage4" "${EXP_DIR}/codegen/stage4"
 fi
 
-# E7 reads E6's access-analysis output (layout_candidates.json). Prefer
-# the committed copy; if it's missing -- e.g. cluster checkout pulled
-# only E7 -- regenerate it from the committed analysis.md.
-LAYOUT_JSON="${EXP_DIR}/../E6_VelocityTendencies/access_analysis/layout_candidates.json"
+# E6 access-analysis JSON (consumed by both the named ablations and
+# the winners cross-product runner).
+LAYOUT_JSON="${E6_DIR}/access_analysis/layout_candidates.json"
 if [[ ! -f "${LAYOUT_JSON}" ]]; then
   echo "[E7 daint] ${LAYOUT_JSON} missing; running select_loopnests.py"
-  python "${EXP_DIR}/../E6_VelocityTendencies/access_analysis/select_loopnests.py"
+  python "${E6_DIR}/access_analysis/select_loopnests.py"
 fi
 
-for CFG in ${CONFIGS}; do
-  echo "[E7 daint] codegen + compile config=${CFG}"
+# Refresh the winners JSON from the latest loopnest CSVs (or generate
+# it for the first time). The generator reads
+# loopnest_{1..6}/results/{beverin,daint}/<kernel>_gpu.csv at the
+# requested nlev slice and applies the >50% promotion rule.
+if [[ "${REGEN_WINNERS}" -eq 1 ]] || [[ ! -f "${WINNERS_JSON}" ]]; then
+  echo "[E7 daint] (re)generating winners JSON at nlev=${WINNERS_NLEV}"
+  ( cd "${E6_DIR}" && python3 generate_winners.py --nlev "${WINNERS_NLEV}" )
+fi
+
+# ── Step 1: build named ablations via stage5a ──
+for CFG in ${NAMED_CONFIGS}; do
+  echo "[E7 daint] codegen + compile NAMED config=${CFG}"
   python -m utils.stages.stage5a --release --optimize --compile --config "${CFG}"
+done
 
-  bin="${EXP_DIR}/velocity_stage5a_${CFG}"
+# ── Step 2: build winners cross-product via run_layout_configs.py ──
+echo "[E7 daint] codegen + compile WINNERS cross-product"
+python tools/run_layout_configs.py --optimize --compile \
+    --v123-json "${WINNERS_JSON}"
+
+# ── Step 3: iterate every produced binary, one per timestep ──
+run_binary_per_ts() {
+  local CFG="$1" bin="$2" sweep_label="$3"
   if [[ ! -x "${bin}" ]]; then
-    echo "[E7 daint] WARN: ${bin} not built; skipping run for ${CFG}" >&2
-    continue
+    echo "[E7 daint] WARN: ${bin} not built; skipping ${sweep_label} ${CFG}" >&2
+    return
   fi
-
-  # Run the binary once per timestep so each timestep lands in its
-  # own output dir (results/daint/<config>/ts<N>/...) -- matches what
-  # Figures/plot_paper_snapshot.sh expects. Stdout/stderr are tee'd to
-  # ${out_dir}/run.txt so the slurm log keeps the live output AND the
-  # per-timestep TXT records the same stream (icon-artifacts/velocity
-  # convention -- a single TXT per (config, timestep) the plotting
-  # script reads). When --verify is NOT passed, the got/want
-  # numerical-comparison blobs (O(GB) per pair) are deleted after the
-  # run; --verify keeps them for one-shot reference comparison.
   for TS in ${TIMESTEPS//,/ }; do
-    out_dir="${EXP_DIR}/results/daint/${CFG}/ts${TS}"
+    local out_dir="${EXP_DIR}/results/daint/${CFG}/ts${TS}"
     mkdir -p "${out_dir}"
-    txt="${out_dir}/run.txt"
-    echo "[E7 daint] running ${CFG} TS=${TS} reps=${REPS} warmup=${WARMUP} -> ${txt}"
-    # Capture the binary's exit status explicitly: the bench can throw
-    # std::out_of_range (or any other unhandled C++ exception) during
-    # its load phase before producing useful timings, and we want to
-    # log + skip that timestep without aborting the rest of the sweep.
-    # PIPESTATUS[0] is the binary's exit; tee always succeeds.
+    local txt="${out_dir}/run.txt"
+    echo "[E7 daint] running ${sweep_label} ${CFG} TS=${TS} reps=${REPS} warmup=${WARMUP} -> ${txt}"
     {
       echo "=== ${CFG} ts=${TS} reps=${REPS} warmup=${WARMUP} ==="
       "${bin}" \
@@ -135,23 +129,34 @@ for CFG in ${CONFIGS}; do
           --timesteps "${TS}" \
           --output-dir "${out_dir}"
     } 2>&1 | tee -a "${txt}"
-    rc=${PIPESTATUS[0]:-0}
+    local rc=${PIPESTATUS[0]:-0}
     if (( rc != 0 )); then
       echo "[E7 daint] WARN: ${CFG} ts=${TS} aborted (rc=${rc}); continuing" >&2
       echo "=== ABORTED rc=${rc} ===" >> "${txt}"
     fi
     if [[ "${VERIFY}" -eq 0 ]]; then
-      # Always reclaim got/want and any core dump from this run, even
-      # on abort -- they can be O(GB) and we don't keep them.
       find "${out_dir}" -maxdepth 1 \( -name '*.got' -o -name '*.want' \) -delete
       find "${out_dir}" -maxdepth 1 -name 'core*' -delete
     fi
   done
+}
+
+# Named ablation binaries.
+for CFG in ${NAMED_CONFIGS}; do
+  run_binary_per_ts "${CFG}" "${EXP_DIR}/velocity_stage5a_${CFG}" "NAMED"
 done
 
-# Mirror any CSVs that landed inside the per-config codegen tree (some
-# pipeline steps emit them next to the SDFG instead of to --output-dir).
-for d in "${EXP_DIR}/codegen/stage5a"/*/; do
+# Winners cross-product binaries: one per ``codegen/stage6/v123_*/`` dir.
+shopt -s nullglob
+for d in "${EXP_DIR}/codegen/stage6"/v123_*/; do
+  CFG="$(basename "${d}")"
+  run_binary_per_ts "${CFG}" "${EXP_DIR}/velocity_stage6_${CFG}" "WINNERS"
+done
+shopt -u nullglob
+
+# Mirror any CSVs that landed inside the per-config codegen trees.
+for d in "${EXP_DIR}/codegen/stage5a"/*/ "${EXP_DIR}/codegen/stage6"/v123_*/; do
+  [[ -d "${d}" ]] || continue
   cfg="$(basename "${d}")"
   mkdir -p "${EXP_DIR}/results/daint/${cfg}"
   find "${d}" -maxdepth 2 -name '*.csv' -exec cp -v {} "${EXP_DIR}/results/daint/${cfg}/" \;

@@ -1,0 +1,151 @@
+{
+  "access_groups": [
+    {
+      "group_id": "cv",
+      "label": "COMPUTE_VERT   (2D/3D work arrays written in jk-outer loops)",
+      "axis": "IC",
+      "n_arrays": 8,
+      "arrays": [
+        "z_ekinh",
+        "z_kin_hor_e",
+        "z_v_grad_w",
+        "z_vt_ie",
+        "z_w_con_c",
+        "z_w_con_c_full",
+        "z_w_v",
+        "zeta"
+      ]
+    },
+    {
+      "group_id": "ch",
+      "label": "COMPUTE_HORIZ  (work arrays written by horizontal stencils)",
+      "axis": "IC",
+      "n_arrays": 3,
+      "arrays": [
+        "cfl_clipping",
+        "z_w_concorr_mc",
+        "z_w_concorr_me"
+      ]
+    },
+    {
+      "group_id": "f",
+      "label": "FIELDS         (prognostic + diagnostic state)",
+      "axis": "IC",
+      "n_arrays": 9,
+      "arrays": [
+        "p_diag%ddt_vn_apc_pc",
+        "p_diag%ddt_vn_cor_pc",
+        "p_diag%ddt_w_adv_pc",
+        "p_diag%vn_ie",
+        "p_diag%vn_ie_ubc",
+        "p_diag%vt",
+        "p_diag%w_concorr_c",
+        "p_prog%vn",
+        "p_prog%w"
+      ]
+    },
+    {
+      "group_id": "s",
+      "label": "STENCIL        (read-only metric + interp coefficients)",
+      "axis": "IC",
+      "n_arrays": 28,
+      "arrays": [
+        "p_int%c_lin_e",
+        "p_int%e_bln_c_s",
+        "p_int%geofac_grdiv",
+        "p_int%geofac_n2s",
+        "p_int%rbf_vec_coeff_e",
+        "p_metrics%coeff1_dwdz",
+        "p_metrics%coeff2_dwdz",
+        "p_metrics%coeff_gradekin",
+        "p_metrics%ddqz_z_full_e",
+        "p_metrics%ddqz_z_half",
+        "p_metrics%ddxn_z_full",
+        "p_metrics%ddxt_z_full",
+        "p_metrics%deepatmo_gradh_ifc",
+        "p_metrics%deepatmo_gradh_mc",
+        "p_metrics%deepatmo_invr_ifc",
+        "p_metrics%deepatmo_invr_mc",
+        "p_metrics%wgtfac_c",
+        "p_metrics%wgtfac_e",
+        "p_metrics%wgtfacq_e",
+        "p_patch%cells%area",
+        "p_patch%cells%decomp_info%owner_mask",
+        "p_patch%edges%area_edge",
+        "p_patch%edges%f_e",
+        "p_patch%edges%fn_e",
+        "p_patch%edges%ft_e",
+        "p_patch%edges%inv_dual_edge_length",
+        "p_patch%edges%inv_primal_edge_length",
+        "p_patch%edges%tangent_orientation"
+      ]
+    },
+    {
+      "group_id": "n",
+      "label": "CONN           (edge/vertex/cell index connectivity tables)",
+      "axis": "IN",
+      "n_arrays": 10,
+      "arrays": [
+        "icblk",
+        "icidx",
+        "ieblk",
+        "ieidx",
+        "incblk",
+        "incidx",
+        "iqblk",
+        "iqidx",
+        "ivblk",
+        "ividx"
+      ]
+    },
+    {
+      "group_id": "lm",
+      "label": "LEVMASK        (level-mask 2D arrays; current (nblks,nlev), preferred (nlev,nblks))",
+      "axis": "IC",
+      "n_arrays": 2,
+      "arrays": [
+        "levelmask",
+        "levmask"
+      ]
+    }
+  ],
+  "loopnests": [
+    {
+      "loopnest_id": 1,
+      "kernel": "z_v_grad_w",
+      "class_label": "indirect stencil, full vertical",
+      "results_dir": "loopnest_1/results"
+    },
+    {
+      "loopnest_id": 2,
+      "kernel": "z_w_concorr_me",
+      "class_label": "direct stencil, partial vertical",
+      "results_dir": "loopnest_2/results"
+    },
+    {
+      "loopnest_id": 3,
+      "kernel": "z_v_grad_w_full",
+      "class_label": "direct stencil, full vertical",
+      "results_dir": "loopnest_3/results"
+    },
+    {
+      "loopnest_id": 4,
+      "kernel": "ddt_vn_vert",
+      "class_label": "indirect stencil, partial vertical",
+      "results_dir": "loopnest_4/results"
+    },
+    {
+      "loopnest_id": 5,
+      "kernel": "vn_ie_boundary",
+      "class_label": "horizontal-only (boundary)",
+      "results_dir": "loopnest_5/results"
+    },
+    {
+      "loopnest_id": 6,
+      "kernel": "levelmask",
+      "class_label": "vertical-only (level reduction)",
+      "results_dir": "loopnest_6/results"
+    }
+  ],
+  "loopnest_selection_source": "select_loopnests.py (manually pinned + auto-tiebreak)"
+}
