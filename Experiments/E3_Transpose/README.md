@@ -4,9 +4,10 @@
 variants vs. vendor libraries: HPTT (CPU), cuTENSOR (Daint GPU),
 hipTensor (Beverin GPU).
 
-**Expected result.** Blocking gains ~1.7× on Zen4 and ~3.2× on Grace
-over row-major. Blocked transpose reaches 61–81% of STREAM peak vs
-HPTT's ~44%. On GPUs shared-memory tiling absorbs the stride.
+**Expected behaviour.** On CPUs the ordering naive row-major < HPTT <
+blocked should hold (paper: ~1.7× Zen4, ~3.2× Grace; blocked 61–81%
+of STREAM peak vs HPTT ~44%). On GPUs shared-memory tiling absorbs
+the stride and layouts converge.
 
 ## Run
 

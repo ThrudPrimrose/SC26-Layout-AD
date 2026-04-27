@@ -5,11 +5,13 @@ nests, 50 arrays): canonicalize → score with µ/Δ → per-class benchmark →
 collapse to per-access-group winners → emit the winners cross-product
 that drives E7.
 
-**Expected result.** Loopnest 1 (indirect stencil + complete vertical)
-gains ~1.85× on Zen4 under uniform-random indirection; under exact
-R02B05 connectivity GPUs are comparable across layouts. Tab. IV
-reports µ for both regimes at nlev=128 (the paper-canonical default;
-loopnest sweeps cover nlev ∈ {90, 96, 128, 256}).
+**Expected behaviour.** A V_k winner permutation should beat the
+ICON-default layout on every backend; on CPUs the indirect-stencil
+loopnest 1 should show the largest gain (paper: ~1.85× on Zen4 under
+uniform-random indirection). Under exact R02B05 connectivity, GPU
+runs are comparable across layouts — the layout matters less than the
+indirection regime. Tab. IV defaults to nlev=128 (sweep:
+nlev ∈ {90, 96, 128, 256}).
 
 The full-module GPU permutation sweep that used to live under
 `full_velocity_tendencies/` has been promoted to its own experiment,
