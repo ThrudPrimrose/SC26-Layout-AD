@@ -8,23 +8,55 @@ config inspector, static `run_{daint,beverin}.sh`).
 
 ## Prerequisites
 
-E7 reads `../E6_VelocityTendencies/access_analysis/layout_candidates.json`
-to derive its layout configs. **Run E6 task `T_{6.2}` first**, or rely
-on the snapshot already committed under E6.
+E7 reads two artefacts from E6:
+
+- `../E6_VelocityTendencies/access_analysis/layout_candidates.json`
+  (run E6 task `T6.2`).
+- `../E6_VelocityTendencies/full_velocity_tendencies/layout_crossproduct_winners.json`
+  (run E6 task `T6.4` — `python generate_winners.py`). The sbatch
+  driver will regenerate this for you on demand (see below), so you
+  can skip the manual step if you trust the latest loopnest CSVs.
 
 ## Default flow
 
-**One command per platform** — `run_{daint,beverin}.sh` is the
-single entry point. It auto-fetches data, symlinks the shipped
-stage 4 SDFGs (`SDFGs/stage4/` → `codegen/stage4/`), then runs
-`stage5a` (the permutation sweep) for each layout config. No
-manual stage1–4 invocation is needed.
+**One command per platform** — `run_{daint,beverin}.sh` is the single
+entry point. It auto-fetches data, symlinks the shipped stage 4 SDFGs
+(`SDFGs/stage4/` → `codegen/stage4/`), and runs **two layered sweeps**:
+
+1. **Always-on named ablations** via `utils.stages.stage5a` →
+   `velocity_stage5a_<CFG>` binaries. Default set:
+   `unpermuted_lv{0,1}_sm{0,1}`, `nlev_first_lv{0,1}_sm{0,1}`,
+   `index_only_lv{0,1}_sm{0,1}` (8 configs). Override with
+   `NAMED_CONFIGS="..."`.
+2. **Empirical winners cross-product** via
+   [`tools/run_layout_configs.py`](tools/run_layout_configs.py) →
+   `velocity_stage6_v123_*` binaries. Reads
+   `E6/full_velocity_tendencies/layout_crossproduct_winners.json`
+   (regenerated from the loopnest CSVs at `--nlev=$WINNERS_NLEV`,
+   default 256, when missing or `REGEN_WINNERS=1`); produces 64 unique
+   permute-map signatures from the 3⁶ = 729 raw cells.
+
+Each binary then runs once per timestep listed in `${TIMESTEPS}`
+(default `7,9`); per-timestep CSVs land at
+`results/<platform>/<config>/ts<N>/`.
 
 ```bash
 cd Experiments/E7_FullVelocityTendencies
 sbatch run_daint.sh        # NVIDIA H200 / GH200
 sbatch run_beverin.sh      # AMD MI300A
 ```
+
+Override knobs (env vars, all optional):
+
+| Knob | Default | Purpose |
+|---|---|---|
+| `NAMED_CONFIGS` | 8 unpermuted/nlev_first/index_only variants | Replace the always-on ablation set. |
+| `WINNERS_JSON` | `…/E6/full_velocity_tendencies/layout_crossproduct_winners.json` | Point at a hand-edited cross-product JSON. |
+| `WINNERS_NLEV` | `256` | nlev slice the regenerator reads from the loopnest CSVs. |
+| `REGEN_WINNERS` | `0` | Force regeneration of `WINNERS_JSON` even if it exists. |
+| `TIMESTEPS` | `7,9` | Comma-separated timestep list for the per-binary runs. |
+| `REPS` / `WARMUP` | `100` / `5` | Per-binary timing reps + untimed warm-ups. |
+| `--verify` (CLI flag) | off | Keep per-timestep `*.got` / `*.want` blobs (O(GB)) for offline reference comparison. |
 
 The R02B05 / nproma=20480 dataset (~9 GB) is auto-fetched on first
 submission via `tools/download_data.sh` (matches E4/E5/E6/loopnest_1's
@@ -37,14 +69,12 @@ LOCAL_DATA_DIR=~/Work/icon-artifacts/velocity/data_r02b05 \
     bash tools/download_data.sh                        # symlink an existing copy
 ```
 
-`run_{daint,beverin}.sh` follow the E1–E6 convention: SBATCH header,
-source `../common/{activate,setup_<host>}.sh`, build via
-`CPU_CXX{,FLAGS}` / `GPU_CXX{,FLAGS}`. Default config list is
-`unpermuted nlev_first index_only`; override per submission:
+To inspect the ablation / cross-product config sets without launching:
 
 ```bash
-CONFIGS="unpermuted curated_nlev_first" sbatch run_daint.sh
-python tools/list_layout_configs.py            # see all available configs
+python tools/list_layout_configs.py                                # named configs available to stage5a
+python tools/run_layout_configs.py --dry-run \
+    --v123-json ../E6_VelocityTendencies/full_velocity_tendencies/layout_crossproduct_winners.json
 ```
 
 ## Optional: regenerate from F90
@@ -151,7 +181,8 @@ E7_FullVelocityTendencies/
 │   ├── regenerate_baselines.sh              optional F90 → stage 4 driver
 │   ├── sdfg_from_velocity_f90.py            f2dace stage 2
 │   ├── analyze_lbounds.cpp                  used by generate_baselines.py
-│   └── list_layout_configs.py               inspector: prints available configs
+│   ├── list_layout_configs.py               inspector: prints named configs (stage5a)
+│   └── run_layout_configs.py                consumes E6's winners cross-product JSON; emits velocity_stage6_v123_* binaries
 └── results/                                 per-platform CSVs                       (gitignored)
 ```
 

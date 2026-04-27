@@ -240,16 +240,24 @@ def _compile_and_link(
         obj_dir = os.path.dirname(obj)
         if obj_dir:
             os.makedirs(obj_dir, exist_ok=True)
-        # In GPU mode, DaCe puts CUDA runtime calls
-        # (``cudaMalloc``, ``DACE_GPU_CHECK``, stream/context refs)
-        # into the host .cpp as well -- so that file must go through
-        # nvcc with ``-x cu`` so nvcc treats it as CUDA (without that
-        # flag nvcc delegates .cpp to the host compiler, which doesn't
-        # know the CUDA runtime).
+        # In GPU mode, DaCe puts GPU runtime calls (``cudaMalloc`` /
+        # ``hipMalloc``, ``DACE_GPU_CHECK``, stream/context refs) into
+        # the host .cpp as well -- so that file must go through the
+        # GPU compiler with the right ``-x`` so it is treated as a
+        # device translation unit (without that flag the compiler
+        # delegates .cpp to the host C++ frontend, which doesn't know
+        # the GPU runtime).
+        #
+        # On NVIDIA, ``nvcc -x cu`` is the canonical form. On AMD the
+        # equivalent is ``hipcc -x hip``: hipcc forwards ``-x cu`` to
+        # its bundled clang++ unchanged, which then enters CUDA-host
+        # mode and looks for an NVIDIA libdevice (defaulting to
+        # ``sm_35`` if ``-arch`` is absent), failing on AMD-only
+        # machines that have no CUDA toolkit installed.
         xlang = ""
         if gpu and src.endswith(".cpp"):
             cc = _nvcc()
-            xlang = "-x cu"
+            xlang = "-x hip" if AMD else "-x cu"
         else:
             cc = _pick_compiler(src)
         per_flags = (compile_flags if cc.endswith("nvcc") or cc.endswith("hipcc")
