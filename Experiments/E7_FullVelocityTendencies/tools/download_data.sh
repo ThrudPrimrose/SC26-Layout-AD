@@ -70,7 +70,22 @@ if [[ -n "${EXPECTED_SHA256:-}" ]]; then
 fi
 
 echo "[download_data] extracting to ${OUTPUT_DIR}"
-tar -xJf "${TAR_FILE}" -C "${OUTPUT_DIR}"
+# ``tar -xJ`` resolves ``xz`` via PATH, which on cluster login nodes
+# can point at a stale spack hash whose binary no longer exists on
+# disk (we have seen ``Cannot exec: No such file or directory`` on
+# Beverin's spack-installed xz). Pick the first xz that actually exists
+# and pass it explicitly via ``--use-compress-program`` so the tar
+# invocation survives PATH rot.
+XZ=""
+for cand in "${XZ_BIN:-}" "$(command -v xz 2>/dev/null || true)" /usr/bin/xz /bin/xz; do
+  if [[ -n "${cand}" && -x "${cand}" ]]; then XZ="${cand}"; break; fi
+done
+if [[ -z "${XZ}" ]]; then
+  echo "[download_data] no working xz found; install xz-utils or set XZ_BIN" >&2
+  exit 1
+fi
+echo "[download_data] using xz at ${XZ}"
+tar --use-compress-program="${XZ}" -xf "${TAR_FILE}" -C "${OUTPUT_DIR}"
 rm -f "${TAR_FILE}"
 
 echo "[download_data] done. $(find "${OUTPUT_DIR}" -maxdepth 1 -type f | wc -l) file(s) under ${OUTPUT_DIR}"
