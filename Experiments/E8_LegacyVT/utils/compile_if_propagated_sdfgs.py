@@ -462,6 +462,24 @@ def compile_if_propagated_sdfgs(
         if gpu:
             sources.append(gpu_file)
 
+    # Link the E8 reductions implementation. The header
+    # ``include/reductions_kernel.cuh`` declares the host-side
+    # ``reduce_*_gpu`` symbols; the body lives in:
+    #   * ``src/reductions_kernel.cu``  -- CUDA path; ``#else`` branch
+    #     guarded by ``__HIP_PLATFORM_AMD__`` selects ``cub::DeviceReduce``
+    #     and ``kernel<<<...>>>`` syntax.
+    #   * ``src/reductions_kernel.cpp`` -- HIP path; trimmed to the
+    #     ``__HIP_PLATFORM_AMD__`` branch only so hipcc doesn't try to
+    #     parse the ``#else`` CUDA-syntax kernel launches.
+    # The CPU-side ``reduce_*_cpu`` impls live in ``src/reductions.cpp``
+    # and are linked unconditionally (called from the host glue under
+    # ``codegen/.../src/cpu/*.cpp``).
+    if gpu:
+        _e8_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        _gpu_red = "reductions_kernel.cpp" if AMD else "reductions_kernel.cu"
+        sources.append(os.path.join(_e8_root, "src", _gpu_red))
+        sources.append(os.path.join(_e8_root, "src", "reductions.cpp"))
+
     if post_codegen_hook is not None:
         post_codegen_hook(sdfgs)
 
