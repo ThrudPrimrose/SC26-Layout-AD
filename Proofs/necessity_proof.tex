@@ -1,0 +1,61 @@
+\documentclass[11pt]{article}
+
+\usepackage{amsmath,amssymb,amsfonts,amsthm}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage[margin=1in]{geometry}
+\usepackage[hidelinks]{hyperref}
+\usepackage[numbers, sort]{natbib}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{booktabs}
+\usepackage{minted}
+
+% --- macros from conference_101719.tex preamble ---
+\newcommand{\arr}{\operatorname{arr}}
+\DeclareMathOperator*{\argmin}{arg\,min}
+\DeclareMathOperator*{\argmax}{arg\,max}
+
+% --- theorem environments ---
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{lemma}[theorem]{Lemma}
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{example}[theorem]{Example}
+\theoremstyle{remark}
+\newtheorem{observation}[theorem]{Observation}
+\newtheorem{remark}[theorem]{Remark}
+
+% --- author-annotation macros (no-ops for the standalone document) ---
+\newcommand{\todo}[1]{}
+\newcommand{\remember}[1]{}
+\newcommand{\plan}[1]{}
+\newcommand{\shriram}[1]{}
+\newcommand{\lex}[1]{}
+\newcommand{\ben}[1]{}
+\newcommand{\greg}[1]{}
+
+\title{Necessity of Layout Transformations\\
+  \large Full Proof of Contribution $C_1$}
+\author{(extracted from the pre-shortened paper draft)}
+\date{}
+
+\begin{document}
+\maketitle
+
+\noindent\textit{This document contains the full theoretical proof
+underlying contribution~$C_1$ of the SC26 paper ``Why Schedule
+Transformations Are Not Enough: Layout Optimizations for
+Block-Granular I/O''. The proof was cut from the paper's main body for
+space; the source is reproduced here verbatim from the pre-shortened
+April-1 manuscript snapshot.}
+
+\bigskip
+
+\input{proofs}
+
+\bibliographystyle{IEEEtranN}
+\bibliography{references}
+
+\end{document}

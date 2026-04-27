@@ -156,3 +156,6 @@ trimming, Scott-rule violin KDE with 200 eval points.
   — the E6→E7/E8 audit chain (`layout_groups.json`, `winners.json`).
 - [`../E7_FullVelocityTendencies/`](../E7_FullVelocityTendencies/) —
   WIP reimplementation; **skip for the AD**.
+- [`ICONArtifact/`](ICONArtifact/) — vendored ICON source / data-loading
+  helpers; *not* required for the default `sbatch run_*.sh` reproduction
+  (the stage-8 SDFGs in `codegen/` are already lowered).

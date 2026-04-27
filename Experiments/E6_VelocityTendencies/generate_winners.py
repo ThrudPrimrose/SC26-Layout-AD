@@ -217,9 +217,10 @@ def project(lid, axis):
 def main():
     ap = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawTextHelpFormatter)
-    ap.add_argument("--nlev", type=int, default=256,
+    ap.add_argument("--nlev", type=int, default=128,
                     help="nlev slice consulted for per-loopnest winners "
-                         "(default: 256)")
+                         "(default: 128 -- matches Tab IV / paper §IV-D; "
+                         "loopnest sweeps cover {90, 96, 128, 256}).")
     ap.add_argument("--cell-dist", default="exact",
                     help="cell_dist filter for the winner pick "
                          "('exact', 'uniform', or '' for none)")

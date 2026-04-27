@@ -378,8 +378,13 @@ inline void print_synthetic_locality(const char *dist_label,
 
 /* ------------------------------------------------------------------ */
 inline std::string icon_data_dir() {
+  /* ICON_DATA_PATH is set by run_{daint,beverin}.sh (defaults to
+   * ${EXP_DIR}/data_r02b05). Fall back to a sibling-relative
+   * "data_r02b05" so the binary still runs when invoked manually
+   * from the loopnest dir; refuse to bake a developer's $HOME path
+   * into the binary. */
   const char*env=std::getenv("ICON_DATA_PATH");
-  std::string dir=env?env:"/home/primrose/Work/icon-artifacts/velocity/data_r02b05";
+  std::string dir=env?env:"data_r02b05";
   while(!dir.empty()&&dir.back()=='/') dir.pop_back();
   return dir;
 }

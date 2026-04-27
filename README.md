@@ -1,7 +1,7 @@
 # SC26-Layout-AD
 
-Reproducibility artifact for the SC26 paper **"Layout Algebra and Cost
-Metrics for Memory-Hierarchy-Aware Array Rearrangement"**: everything
+Reproducibility artifact for the SC26 paper **"Why Schedule Transformations Are Not Enough:
+Layout Optimizations for Block-Granular I/O"**: everything
 needed to reproduce Figures 4 and 8–14 and the analytic cost-metric
 tables.
 
@@ -24,7 +24,7 @@ tables.
 
 ## Reviewer quick-start
 
-End-to-end reproduction; ~22 hr per cluster.
+End-to-end reproduction; ~36 hr per cluster (E8's full-module sweep is ~18 hr on Daint, ~24 hr on Beverin).
 
 1. `bash Experiments/common/setup.sh` (one-time per machine).
 2. Submit microbenchmarks E1–E6 in any order:

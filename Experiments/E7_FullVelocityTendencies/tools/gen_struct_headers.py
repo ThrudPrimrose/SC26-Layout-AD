@@ -201,8 +201,17 @@ def emit_header(sdfg_path: Path, *, strip: bool) -> Tuple[str, Dict[str, str]]:
     ]
     fwd = "\n".join(f"struct {tn};" for tn in order)
     body = "\n".join(blocks)
+    # Emit the source path RELATIVE to the experiment dir so the
+    # committed header is identity-independent (don't bake absolute
+    # /home/<user>/... paths into the AD).
+    try:
+        rel_source = sdfg_path.resolve().relative_to(
+            Path(__file__).resolve().parent.parent
+        )
+    except (ValueError, OSError):
+        rel_source = Path(sdfg_path.name)
     text = _HEADER_TEMPLATE.format(
-        source=sdfg_path,
+        source=rel_source,
         strip_mode="stripped (RenameStrippedSymbols rules applied)" if strip else "raw f2dace",
         forward_decls=fwd,
         body=body,

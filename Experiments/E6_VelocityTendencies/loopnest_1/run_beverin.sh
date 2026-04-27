@@ -22,7 +22,7 @@ source "${COMMON_DIR}/setup_beverin.sh"
 mkdir -p "${EXP_DIR}/results/beverin"
 cd "${EXP_DIR}"
 
-export ICON_DATA_PATH="${ICON_DATA_PATH:-/capstor/scratch/cscs/ybudanaz/beverin/icon-artifacts/velocity/data_r02b05}"
+export ICON_DATA_PATH="${ICON_DATA_PATH:-${EXP_DIR}/data_r02b05}"
 
 echo "[E6L1 beverin] host=$(hostname) threads=$OMP_NUM_THREADS data=$ICON_DATA_PATH"
 

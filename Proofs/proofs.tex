@@ -1,0 +1,134 @@
+\section{When Are Layout Transformations Necessary?}
+\label{sec:necessity}
+
+While previous work focuses on schedule transformations to improve locality, we show that this recovery is not always possible.  We establish the \textit{necessity} of layout transformations in four steps: we define the memory and computational models~(\S\ref{sec:memory_model}--\S\ref{sec:comp_model}); we construct blocked CDAGs on a concrete example to show how layout choices affect the I/O cost~(\S\ref{sec:blocked_cdag}); we then define a program model with layout mappings~(\S\ref{sec:program_model}); finally we connect layout mappings to blocked CDAGs~(\S\ref{sec:layout_bridge}).
+
+\subsection{Memory Model}\label{sec:memory_model}
+
+We adopt the external-memory model of Aggarwal and Vitter~\cite{IOComplexityModel}: a processor operates on data in a fast memory of capacity~$S$ words, backed by an unbounded slow memory.  Data moves between the two levels in \emph{blocks} of $B$~contiguous words.  We use \emph{block} throughout the formal model to refer to this unit of transfer; on current hardware, a block corresponds to a cache line.  The I/O cost of an execution is the total number of block transfers; the minimum over all valid executions defines the I/O complexity~$Q(G, S)$.
+
+\subsection{Computational Model}\label{sec:comp_model}
+
+\textbf{Computation DAG.}  A CDAG $G = (V, E)$ has vertices representing operations on data and directed edges representing dependencies: $(u, v) \in E$ means that the value at~$u$ is required to compute the value at~$v$.  Vertices with in-degree zero are \emph{inputs}; vertices with out-degree zero are \emph{outputs}.
+
+\textbf{Pebble games.}  The I/O cost of processing~$G$ is modeled by pebble games played on a CDAG~\cite{PebbleGame, ElangoWavefront1}.  Pebbles are placed on and removed from vertices according to four rules: a vertex may be \emph{loaded} from slow to fast memory, \emph{stored} back, \emph{computed} only when all its predecessors occupy fast memory, or \emph{deleted}; at most~$S$ vertices may occupy fast memory at any time.  A complete pebbling begins with all inputs in slow memory and ends with all outputs in slow memory.  In the \emph{red-blue} game of Hong and Kung~\cite{PebbleGame}, vertices may be recomputed arbitrarily; the \emph{red-blue-white} variant~\cite{ElangoWavefront1} adds permanent white pebbles that forbid recomputation.  The I/O cost is the number of load and store moves, and the minimum over all complete pebblings is~$Q(G, S)$.  The wavefront bounds used in this section are established in the recomputation-free (red-blue-white) model, which yields tighter lower bounds.
+
+\textbf{Quotient graph.} Given an equivalence relation on the vertices of a CDAG, contracting each equivalence class (the group of elements that are equivalent under the relation - hereafter simply \emph{class}) into a single node, yields a coarser graph that preserves only inter-class dependencies.  We use this construction to derive I/O lower bounds.
+
+
+Formally, let $\sim$ be an equivalence relation on~$V$ whose classes have size at most~$B$.  The \emph{quotient graph} $G/{\sim}\; = (V/{\sim},\; E/{\sim})$ contracts each equivalence class $[v]$ into a single node:
+%
+\begin{align}
+  V/{\sim} &= \bigl\{\,[v] : v \in V\,\bigr\}, \label{eq:quotient-V}\\
+  E/{\sim} &= \bigl\{\,([u],[v]) : (u,v) \in E,\; [u] \neq [v]\,\bigr\}.
+  \label{eq:quotient-E}
+\end{align}
+%
+The condition $[u] \neq [v]$ excludes self-edges.
+
+\textbf{Wavefront bound.}  During the execution of a pebble game on a DAG, the \emph{wavefront} at a given step is the set of vertices that must simultaneously reside in fast memory: vertices whose values have been computed but are still required by unprocessed successors~\cite{ElangoWavefront1, AutomatedDerivationIOAffine}.  Formally, the wavefront $W_{\mathcal{R}}(v)$ under pebbling~$\mathcal{R}$ is the set of vertices carrying a red pebble when $v$ is computed.  The width of the widest wavefront during execution lower-bounds the I/O cost: if there exist disjoint vertex sets $V_1, V_2 \subseteq V$ with $m$~vertex-disjoint paths from $V_1$ to~$V_2$, all paths must be simultaneously live at some point, giving $Q(G, S) \geq m - S$~\cite{ElangoWavefront1}.
+
+\textbf{Wavefront inflation.}  Let $\sim$ be an equivalence relation on~$V$ with classes of size~$B$, and let $V_1, V_2$ be disjoint vertex sets in~$G$ with $m$~vertex-disjoint paths from~$V_1$ to~$V_2$.  Let $V_2' \subseteq V/{\sim}$ be the set of classes that contain vertices from~$V_2$: a class $[v]_{\sim}$ belongs to~$V_2'$ if and only if $[v]_{\sim} \cap V_2 \neq \emptyset$.  Define $V_1'$ analogously.
+
+Two nodes in $G/{\sim}$ are connected by an edge whenever at least one vertex in the first class shares an edge in~$G$ with at least one vertex in the second.  A class in~$V_2'$ can therefore have up to $B$~times as many in-neighbors in $G/{\sim}$ as any one of its constituent vertices has in~$G$, since each of its $B$~vertices may contribute edges from different classes.  Each such in-neighbor---a class outside~$V_2'$ with an edge into~$V_2'$---can independently anchor its own path from~$V_1'$ to~$V_2'$.
+
+If $|V/{\sim}| \geq B \cdot m \cdot \ell$, where $\ell$ is the maximum path length in $G/{\sim}$ (enough classes to route $B \cdot m$ paths of length~$\ell$ without sharing any class), these paths can traverse mutually disjoint classes at every intermediate step, yielding $B \cdot m$~vertex-disjoint paths from~$V_1'$ to~$V_2'$ and inflating the wavefront by a factor of~$B$.  When the graph is too small for this condition to hold, the inflation factor is correspondingly less than~$B$.  We illustrate this inflation in~\S\ref{sec:blocked_cdag}.
+
+\todo{Proofs could move to the appendix if space is tight and we keep the high-level explanation in the text body.}
+
+
+\subsection{Blocked CDAG Construction}\label{sec:blocked_cdag}
+
+We illustrate the computational model and the wavefront inflation bound on the elementwise matrix addition of Listing~\ref{lst:elementwise-add} with $N = 2$ and block size $B = 2$.
+
+\begin{figure}[htbp!]
+  \centering
+  \begin{subfigure}[b]{\columnwidth}
+      \centering
+      \begin{minipage}[t]{0.85\linewidth}
+        \begin{minted}{python}
+    for i in range(N):
+        for j in range(N):
+            C[i, j] = A[i, j] + B[i, j]
+        \end{minted}
+      \end{minipage}
+      \caption{Elementwise matrix addition.}
+      \label{lst:elementwise-add}
+  \end{subfigure}
+  \vfill
+  \begin{subfigure}[b]{\columnwidth}
+    \centering
+    \includegraphics[width=0.9\linewidth]{figures/plot_a_unit_granular.pdf}
+    \vspace{-1.2em}
+    \caption{CDAG $G$ ($N{=}2$) corresponding to Listing~\ref{lst:elementwise-add}.  $A$: amber, $B$: green, $C$: lavender.}
+    \label{fig:cdag-original}
+  \end{subfigure}
+  \caption{Running example: elementwise addition $C = A + B$ and its CDAG.  Each output vertex has exactly two input predecessors.}
+  \label{fig:running-example}
+\end{figure}
+
+\textbf{Original CDAG.}  Figure~\ref{fig:cdag-original} shows the CDAG~$G$: each output vertex $C[i,j]$ has exactly two predecessors, one from~$A$ and one from~$B$.
+
+\textbf{Row-wise contraction.}  Contracting $A[i,0]$ with $A[i,1]$ (and likewise for $B$ and $C$) groups elements that are consecutive under row-major storage into shared blocks.  Each output-class node has exactly \emph{two} input-class predecessors, yielding $m = 2$ vertex-disjoint paths from the input classes~$V_1$ to the output classes~$V_2$ (Figure~\ref{fig:cdag-row-row}).
+
+\textbf{Column-wise contraction.}  Contracting $A[0,j]$ with $A[1,j]$ instead (grouping by column rather than row), while keeping the row-wise contraction for $C$, forces each output-class node to draw from \emph{four} input-class predecessors, yielding $m = 4$ (Figure~\ref{fig:cdag-col-col}).  This is exactly the wavefront inflation of~\S\ref{sec:comp_model}: the column-wise contraction fragments the optimal (row-wise) partition, doubling the number of vertex-disjoint paths and, by the wavefront bound, doubling the I/O lower bound.
+
+\begin{figure}[htbp!]
+  \centering
+  \begin{subfigure}[t]{0.49\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{figures/plot_b_row_major_blocked.pdf}
+    \caption{%
+      Quotient graph $G/{\sim}$ under row-wise contraction ($B{=}2$).
+      Each output-class node has \textbf{2~input-class predecessors};
+      $m{=}2$ vertex-disjoint paths.
+    }
+    \label{fig:cdag-row-row}
+  \end{subfigure}
+  \hfill
+  \begin{subfigure}[t]{0.49\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{figures/plot_c_conflicting_layout.pdf}
+    \caption{%
+      Quotient graph $G/{\sim}$ under column-wise contraction for $A$,
+      $B$ and row-wise for $C$ ($B{=}2$).  Each output-class node has
+      \textbf{4~input-class predecessors}; $m{=}4$ vertex-disjoint paths.
+    }
+    \label{fig:cdag-col-col}
+  \end{subfigure}
+  \caption{%
+    Quotient graphs for the running example ($B{=}2$).  Dashed regions
+    mark vertex sets $V_1$, $V_2$.  Row-wise contraction~(a) yields $m{=}2$;
+    column-wise contraction~(b) fragments the partition, doubling $m$ to~$4$
+    and the minimum I/O with it.
+  }
+  \label{fig:blocked-cdag}
+\end{figure}
+
+
+\subsection{Program Model}\label{sec:program_model}
+
+Following Kwasniewski et al.~\cite{GregSOAP}, we model a program as a collection of statements, each enclosed in a perfect loop nest (all statements reside at the innermost nesting level) of depth~$\ell$ over an iteration domain $\mathcal{D} \subseteq \mathbb{N}^\ell$.  Each statement accesses a set of arrays $\{A_0, \ldots, A_{M-1}\}$ through subscript functions $f_j \colon \mathbb{N}^\ell \to \mathbb{N}^{d_j}$ that map an iteration vector~$\boldsymbol{\psi}$ to a logical index of~$A_j$.  A \emph{schedule}~$\pi$ is a dependence-respecting total ordering of~$\mathcal{D}$.
+
+A \emph{layout mapping} for array~$A_j$ is an injective function $\Phi_j \colon \mathbb{N}^{d_j} \to \mathbb{N}$ that maps each $d_j$-dimensional logical index to a unique physical memory address.  Composing the subscript function with the layout mapping gives the physical address of a vertex~$v$: $\Phi(v) = \Phi_{\arr(v)}(f_{\arr(v)}(\boldsymbol{\psi}_v))$, where $\arr(v)$ denotes the array accessed by~$v$ and $\boldsymbol{\psi}_v$ its iteration vector.
+
+\subsection{From Layout Mapping to Blocked CDAG}\label{sec:layout_bridge}
+\lex{this is the best part of this section - but I wager you lost most readers by this point. Yakup: I agree, and the math part is a bit boring. I do not really know a good way to restructure this because I think we need to: 1) Introduce the math (graphs, wavefronts, etc.), and show the proof of the wavefront. 2) Show the program model. 3) Map computation to the math and the proof.}
+
+We now connect the program model to the computational model by showing that a layout mapping~$\Phi$ induces a vertex partition on the CDAG, and the resulting quotient graph is exactly the blocked CDAG whose wavefront properties were established in~\S\ref{sec:comp_model}.
+
+\textbf{Block address.}  The \emph{block address} of a memory-accessing vertex~$v$ under layout mapping~$\Phi$ is
+%
+\begin{equation}\label{eq:block-address}
+  \lambda_\Phi(v) = \bigl\lfloor \Phi(v) \,/\, B \bigr\rfloor.
+\end{equation}
+%
+The block address induces an equivalence relation on the vertices of~$G$: two vertices $u$ and $v$ are \emph{co-resident} if $\lambda_\Phi(u) = \lambda_\Phi(v)$, that is, they map to the same block under~$\Phi$.  The \emph{blocked CDAG}~$G_\Phi$ is the quotient graph $G/{\sim_\Phi}$, where $u \sim_\Phi v$ iff $\lambda_\Phi(u) = \lambda_\Phi(v)$.
+
+With this identification, the graph-theoretic results of~\S\ref{sec:comp_model} translate directly into statements about data layout.
+
+\textbf{Unit-granularity loads ($B = 1$).}  Every block contains a single element, so $\sim_\Phi$ places each vertex in its own class.  The quotient graph $G_\Phi \cong G$ for any layout~$\Phi$, and the I/O cost is layout-independent.
+
+\textbf{Worst-case layout ($B > 1$).}  A layout that scatters co-accessed elements across different $\sim$-classes inflates the wavefront by up to a factor of~$B$, yielding a proportional increase in the I/O lower bound that no schedule can eliminate.  In the running example, row-major storage of all arrays yields the row-wise contraction with $m = 2$ (Figure~\ref{fig:cdag-row-row}); storing $A$ in row-major and~$B$ in column-major order doubles the wavefront to $m = 4$ due to the conflicting layouts (Figure~\ref{fig:cdag-col-col}).
+
+\textbf{Compensation through fast memory.}  The factor-of-$B$ gap can be closed by increasing fast-memory capacity from $S$ to $B \cdot S$.  When this capacity is unavailable, the inflation is unavoidable.

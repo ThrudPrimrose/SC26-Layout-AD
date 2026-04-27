@@ -1,0 +1,145 @@
+% -----------------------------------------------------------------------
+\section{Notation Reference}\label{app:notation}
+% -----------------------------------------------------------------------
+
+For convenience, we collect all symbols introduced throughout the paper
+into three reference tables grouped by the section in which they first
+appear.
+
+Tables~\ref{tab:full-notation1} and~\ref{tab:full-notation2} cover the
+pebble-game framework and cost model of
+\S\ref{sec:necessity}--\S\ref{sec:model}, including the computation DAG,
+block-address bookkeeping, the metrics $\mu$ and~$\Delta$, and the
+wavefront-based I/O bounds.
+%
+Table~\ref{tab:layout-symbols} lists the primitives and auxiliary
+quantities introduced in the layout algebra of
+\S\ref{sec:layout_transformations}, together with the non-bijective
+extensions discussed at the end of that section.
+
+\begin{table}[htbp!]
+\centering
+\small
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{@{}lp{5.175cm}@{}}
+\toprule
+\textbf{Symbol / Term} & \textbf{Definition} \\
+\midrule
+
+\multicolumn{2}{@{}l}{\textit{$S$-Partitioning \& Best-Case Layout}} \\[2pt]
+$S$-partitioning                    & Partition of $V \setminus I$ into $h$ subsets satisfying (P1) disjoint and covering, (P2) no cyclic deps.\ between subsets, (P3) $|\mathrm{In}(V_i)| \leq S$, (P4) $|\mathrm{Out}(V_i)| \leq S$ \\
+$h$                                  & Number of subsets in the $S$-partition; gives $Q(G,S) \geq S(h-1)$ \\
+$\mathcal{P} = \{V_i\}_{i=1}^{h}$  & $S$-partition induced by optimal schedule $\mathcal{R}^*$ \\
+$\mathrm{In}(V_i)$                  & Input set of partition $V_i$: vertices outside $V_i$ with an edge into $V_i$ \\
+$\mathrm{Out}(V_i)$                 & Output set of partition $V_i$: vertices inside $V_i$ with an edge to outside $V_i$ \\
+$\mathrm{cut}_\mathcal{P}(\Phi)$    & Number of inter-partition block edges in $G_\Phi$; minimized by the optimal layout \\
+
+
+\multicolumn{2}{@{}l}{\textit{Loop Nest Setup (Cost Model)}} \\[2pt]
+$T$                                  & Total number of iterations in the loop nest \\
+$\pi$                                & Schedule: an ordering of the $T$ iteration points $i_1, i_2, \ldots, i_T$ \\
+$R$                                  & Number of static references in the loop nest \\
+$A_r$                                & Array accessed by reference $r$ \\
+$f_r : \mathcal{I}_r \to \mathbb{Z}^{d_{A_r}}$ & Subscript function of reference $r$: maps iteration points to logical array indices \\
+$\Phi_r : \mathbb{Z}^{d_{A_r}} \to \mathbb{N}$ & Layout mapping for the array of reference $r$ \\
+$\mathcal{I}_r$                     & Set of iterations that access reference $r$ \\
+$\lambda_{\Phi_r}(i_t)$             & Block address of reference $r$ at iteration $i_t$: $\lfloor \Phi_r(f_r(i_t)) / B \rfloor$ \\[6pt]
+
+\multicolumn{2}{@{}l}{\textit{Block-Address Sets \& Metrics}} \\[2pt]
+$\mathcal{B}_t$                     & Block-address set at step $t$: union of distinct block addresses touched across all references at iteration $i_t$ \\
+$\mathcal{N}_t = \mathcal{B}_t \setminus \mathcal{B}_{t-1}$ & New-block set at step $t$: blocks required at $t$ not present at $t{-}1$; $\mathcal{N}_1 = \mathcal{B}_1$ (cold misses) \\
+$\mu(\pi, \Phi)$                    & Average new-block count: $\frac{1}{T} \sum_{t=1}^{T} |\mathcal{N}_t|$ \\
+$\rho_t(b)$                         & Representative distance of new block $b$ at step $t$: $\min_{b' \in \mathcal{B}_{t-1}} |b - b'|$; by convention $\rho_1(b) = 1$ \\
+$\bar{\rho}_t$                      & Mean block distance at step $t$: $\frac{1}{|\mathcal{N}_t|} \sum_{b \in \mathcal{N}_t} \rho_t(b)$; defined as $0$ when $\mathcal{N}_t = \emptyset$ \\
+$\Delta(\pi, \Phi)$                 & Average block stride: $\frac{1}{T} \sum_{t=1}^{T} \bar{\rho}_t$; $\Delta = 1$ indicates perfect spatial locality \\
+
+\bottomrule
+\end{tabular}
+\caption{Symbols and definitions introduced in \S\ref{sec:necessity} and \S\ref{sec:model}: partitioning, loop nest setup, and cost metrics.}
+\label{tab:full-notation1}
+\end{table}
+
+\begin{table}[htbp!]
+\centering
+\small
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{@{}lp{5.175cm}@{}}
+\toprule
+\textbf{Symbol / Term} & \textbf{Definition} \\
+\midrule
+
+\multicolumn{2}{@{}l}{\textit{Pebble Games}} \\[2pt]
+$G = (V, E)$                        & Computation DAG (CDAG): vertices represent operations/data, edges represent data dependencies \\
+$I \subseteq V$                     & Source (input) vertices of the CDAG \\
+$O \subseteq V$                     & Sink (output) vertices of the CDAG \\
+$S$                                  & Fast memory capacity in words (number of red pebbles available) \\
+$B$                                  & Block size: number of contiguous elements transferred per memory operation \\
+$Q(G, S)$                           & Optimal I/O cost (minimum loads+stores) for pebbling $G$ with $S$ red pebbles \\[6pt]
+
+\multicolumn{2}{@{}l}{\textit{Array Identities \& Layout}} \\[2pt]
+$\mathrm{Arrays}$                   & Set of all arrays accessed by the CDAG \\
+$d_a \in \mathbb{Z}_{>0}$           & Dimensionality of array $a \in \mathrm{Arrays}$ \\
+$V_{\mathrm{mem}} \subseteq V$      & Memory-access vertices: those associated with an array access \\
+$\alpha(v) \in \mathrm{Arrays}$     & Array identity: the array accessed by vertex $v$ \\
+$\iota(v) \in \mathbb{Z}^{d_{\alpha(v)}}$ & Logical index: the multi-dimensional index of the element accessed by $v$ \\
+$\Phi = \{\Phi_A : \mathbb{Z}^{d_A} \to \mathbb{N}\}$ & Layout mapping: a family of injective maps (one per array) with pairwise-disjoint images \\
+$\Phi(v) = \Phi_{\alpha(v)}(\iota(v))$ & Physical (flat) memory address of vertex $v$ under layout $\Phi$ \\
+$\lambda_\Phi(v) = \lfloor \Phi(v)/B \rfloor$ & Block address of vertex $v$ under layout $\Phi$ \\
+$\mathcal{C}_\kappa = \{v \in V : \lambda_\Phi(v) = \kappa\}$ & Block group of block $\kappa$: the set of vertices residing in that memory block \\
+$u \prec_G v$                       & $v$ is reachable from $u$ in $G$ (partial order induced by the DAG) \\
+Topologically consistent            & Layout $\Phi$ s.t.\ $u \prec_G v \Rightarrow \lambda_\Phi(u) \leq \lambda_\Phi(v)$; ensures the blocked CDAG is acyclic \\
+$G_\Phi = (V_\Phi, E_\Phi)$         & Blocked CDAG: contraction of $G$ by block groups under layout $\Phi$ \\
+$[\kappa] \in V_\Phi$               & Node in the blocked CDAG representing block group $\mathcal{C}_\kappa$ \\[6pt]
+
+\multicolumn{2}{@{}l}{\textit{Wavefront \& I/O Bounds}} \\[2pt]
+$\mathcal{R}$                       & A red-white pebbling schedule on $G$ \\
+$W_\mathcal{R}(v)$                  & Wavefront for vertex $v$ under schedule $\mathcal{R}$ \\
+$w^{\min}_G$                        & Minimum wavefront over all valid schedules: $\min_\mathcal{R}(\max_{v \in V} |W_\mathcal{R}(v)|)$ \\
+$m$                                  & Number of vertex-disjoint paths from $V_1$ to $V_2$; gives $w^{\min}_G \geq m$ \\
+$(\Phi^*, \mathcal{R}^*)$           & Optimal layout-pebbling pair minimizing $B \cdot Q(G_{\Phi^*}, S/B)$ \\
+$\Phi^{\mathrm{worst}}$             & Worst-case layout: constructed from $\Phi^*$ by striding each vertex on every path by $\geq B$ addresses \\[6pt]
+\bottomrule
+\end{tabular}
+\caption{Symbols and definitions introduced in \S\ref{sec:necessity} and \S\ref{sec:model}: pebble games, layout mappings, and I/O bounds.}
+\label{tab:full-notation2}
+\end{table}
+
+
+\begin{table}[t]
+\centering
+\small
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{@{}lp{5.6cm}@{}}
+\toprule
+\textbf{Symbol} & \textbf{Definition} \\
+\midrule
+\multicolumn{2}{@{}l}{\textit{General}} \\[2pt]
+$d$                                        & Dimensionality of the array \\
+$(N_0, \ldots, N_{d-1})$                   & Logical shape of the array \\
+$\Phi_{\text{row}}$                        & Packed row-major canonical linearisation (\ref{eq:row-major}) \\[4pt]
+\multicolumn{2}{@{}l}{\textit{Padding}} \\[2pt]
+$\mathcal{K} \subseteq \{0,\ldots,d{-}1\}$ & Set of padded dimensions \\
+$p_k$                                       & Pad amount along dimension $k$ \\
+$\nu(k)$                                    & Physical extent: $N_k + p_k$ if $k \in \mathcal{K}$, else $N_k$ \\[4pt]
+\multicolumn{2}{@{}l}{\textit{Permutation}} \\[2pt]
+$\tau$                                      & Dimension bijection $\{0,\ldots,d{-}1\}\!\to\!\{0,\ldots,d{-}1\}$ \\[4pt]
+\multicolumn{2}{@{}l}{\textit{Blocking}} \\[2pt]
+$\mathcal{T} \subseteq \{0,\ldots,d{-}1\}$ & Set of blocked dimensions \\
+$b_k$                                       & Block (tile) size along dimension $k \in \mathcal{T}$ \\
+$\beta_{\mathcal{T}}$                       & Blocking map; splits each $k \in \mathcal{T}$ into outer $o_k$ and inner $r_k$ \\[4pt]
+\multicolumn{2}{@{}l}{\textit{Shuffling}} \\[2pt]
+$\mathcal{D} \subseteq \{0,\ldots,d{-}1\}$ & Set of shuffled dimensions \\
+$\sigma$                                     & Bijection on $\prod_{k \in \mathcal{D}} [N_k]$ \\
+$\zeta_{\sigma,\mathcal{D}}$                & Shuffling map \\[4pt]
+\multicolumn{2}{@{}l}{\textit{Packing}} \\[2pt]
+$F$                                          & Number of arrays fused by packing \\
+$\varphi$                                    & Packing map; appends field dimension of extent $F$ \\[4pt]
+\multicolumn{2}{@{}l}{\textit{Extensions (non-bijective)}} \\[2pt]
+$\xi$                                        & Duplication source map (surjective) \\
+$\mathcal{L} \subseteq \mathbb{Z}^d$        & Live set: the subset of stored indices under compression \\
+$\gamma$                                     & Compression map (injective on $\mathcal{L}$) \\
+\bottomrule
+\end{tabular}
+\caption{Symbols and definitions introduced in \S\ref{sec:layout_transformations}: layout primitives and non-bijective extensions.}
+\label{tab:layout-symbols}
+\end{table}
