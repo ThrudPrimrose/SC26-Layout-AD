@@ -45,10 +45,10 @@ Appendix: Artifact Description/Artifact Evaluation
 \item[$A_1$] \url{https://doi.org/10.5281/zenodo.19827100} (concept DOI; resolves to the latest archived version). Source repository: \url{https://github.com/ThrudPrimrose/SC26-Layout-AD}.
 \end{description}
 
-The artifact comprises one Git repository and the DaCe framework:
+The artifact comprises two Git repositories:
 \begin{itemize}
 \item \textbf{R1:} \url{https://github.com/ThrudPrimrose/SC26-Layout-AD} --- microbenchmarks, Quantum ESPRESSO case study, ICON single-loopnest benchmarks, and the full-module velocity-tendencies pipeline (E8, vendored under \texttt{E8\_LegacyVT/}).
-\item \textbf{R2:} \url{https://github.com/spcl/dace} (branches \texttt{yakup/dev}, \texttt{f2dace/staging}).
+\item \textbf{R2:} \url{https://github.com/spcl/dace} (the DaCe framework; branches \texttt{yakup/dev} and \texttt{f2dace/staging}).
 \end{itemize}
 
 \begin{center}
@@ -71,7 +71,7 @@ E8 & $C_3$, $C_4$         & Fig.~14, Tab.~V     & R1, R2 \\
 \paragraph{E8 is the AD's default full velocity-tendencies path.}
 \texttt{Experiments/E8\_LegacyVT/} drives the stage-8 codegen pipeline on DaCe \texttt{f2dace/staging} and reproduces Fig.~14 / Tab.~V from a single \texttt{sbatch run\_\{daint,beverin\}.sh}. The default \texttt{CONFIGS="winner\_v1,winner\_v2,winner\_v6"} selects the three V$_k$ winners: V1 (identity, Fig.~13 \emph{Original Layout}), V2 (connectivity-only intermediate), and V6 ($v_\textrm{first}$, Fig.~13 \emph{Optimized Layout}). \texttt{E7\_FullVelocityTendencies/} is an in-progress SDFG-driven refactor of the same pipeline (DaCe \texttt{yakup/dev}) and is not required for the AD's reproduction path.
 
-Quotient-graph figures (2--3) are pure matplotlib in \texttt{Figures/}. Runtime figures (4, 8--14) regenerate via \texttt{Figures/plot\_all.sh}, whose two drivers \texttt{plot\_paper\_snapshot.sh} and \texttt{plot\_results.sh} read frozen and freshly-collected CSVs respectively, into separate output directories. Throughout, results are reported on Daint.Alps and Beverin (specs in §Artifact Setup).
+Quotient-graph figures (Figures~2--3) are pure matplotlib in \texttt{Figures/}. Runtime figures (Figures~4 and 8--14) regenerate via \texttt{Figures/plot\_all.sh}, whose two drivers \texttt{plot\_paper\_snapshot.sh} and \texttt{plot\_results.sh} read frozen and freshly-collected CSVs respectively, into separate output directories. Throughout, results are reported on Daint.Alps and Beverin (specs in §Artifact Setup).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Artifact Identification}
@@ -85,7 +85,7 @@ Artifact~$A_1$ validates the layout algebra ($C_2$), the cost metrics ($C_3$), a
 
 \artexp
 
-Each experiment maps to one paper figure or table (see the table in §I.B). Reviewers should observe the following qualitative orderings on any hardware with comparable cache-line sizes; absolute speedups depend on the platform.
+Each experiment maps to one paper figure or table (see the experiments table above). Reviewers should observe the following qualitative orderings on any hardware with comparable cache-line sizes; absolute speedups depend on the platform.
 
 \begin{itemize}\itemsep1pt
 \item \textbf{E1 (Fig.~4):} permuted $>$ schedule-only on every backend; GPUs reach near STREAM peak.
@@ -155,7 +155,7 @@ Vendor xpose (E3) & HPTT          & HPTT              \\
 \bottomrule
 \end{tabular}
 \end{center}
-\noindent DaCe pins are shared: \texttt{yakup/dev} for E1--E6, \texttt{f2dace/staging} for E8.
+\noindent DaCe branch: \texttt{yakup/dev} for E1--E6, \texttt{f2dace/staging} for E8.
 
 \paragraph{CUDA pin.} \textbf{CUDA must be $<$~13} on Daint: CUDA~13 breaks E8's stage-8 codegen by removing \texttt{cudaDeviceProp} fields DaCe's runtime probes; CUDA~12.9 is verified.
 
@@ -201,7 +201,7 @@ Every experiment is driven by its \texttt{run\_<plat>.sh}, which compiles the be
   \item $T_{8.1}$ dataset resolution (existing E8 dir $\to$ E7 symlink $\to$ fresh fetch).
   \item $T_{8.2}$ regenerate \texttt{winners.json} / \texttt{layout\_candidates.json} if missing.
   \item $T_{8.3}$ per-config compile via \texttt{compile\_gpu\_stage8}.
-  \item $T_{8.4}$ run \texttt{run\_stage8\_permutations.py} for each \texttt{CONFIGS} entry (default \texttt{winner\_v\{1,2,6\}}); shuffled and unshuffled stdout land in \texttt{<plat>\_full\_permutations\_8/}.
+  \item $T_{8.4}$ run \texttt{run\_stage8\_permutations.py} for each \texttt{CONFIGS} entry (default \texttt{winner\_v\{1,2,6\}}); stdout per (config $\times$ shuffle $\times$ timestep) lands in \texttt{<plat>\_full\_permutations\_8/} as one TXT each.
   \item $T_{8.5}$ plot via \texttt{plot\_paper\_snapshot.sh} or \texttt{plot\_results.sh} (under \texttt{Figures/}).
   \end{itemize}
 \end{itemize}

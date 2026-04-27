@@ -28,7 +28,7 @@ echo "[E4 beverin] host=$(hostname) threads=$OMP_NUM_THREADS"
 
 # --- build (flags from common/setup_beverin.sh) --------------------------
 ${CPU_CXX} ${CPU_CXXFLAGS} -o zaxpy_cpu zaxpy.cpp     ${CPU_LDFLAGS}
-${GPU_CXX} ${GPU_CXXFLAGS} -o zaxpy_gpu zaxpy_hip.cpp ${GPU_LDFLAGS}
+${GPU_CXX} ${GPU_CXXFLAGS} -x hip -o zaxpy_gpu zaxpy_hip.cpp ${GPU_LDFLAGS}
 
 # --- run (binaries write CSV at the paths passed as argv[1] / argv[2]) ---
 ./zaxpy_cpu results/beverin/zaxpy_sweep_small_cpu.csv results/beverin/zaxpy_sweep_1gb_cpu.csv

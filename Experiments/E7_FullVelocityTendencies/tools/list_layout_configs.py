@@ -99,6 +99,10 @@ def main(argv=None):
         default=Path(__file__).resolve().parent / "submissions" / "layout_configs.json",
         help="path to write the JSON listing (default: %(default)s).",
     )
+    argp.add_argument(
+        "--print", dest="print_only", action="store_true",
+        help="print human-readable listing to stdout instead of writing JSON.",
+    )
     args = argp.parse_args(argv)
 
     if not args.candidates.is_file():
@@ -108,6 +112,23 @@ def main(argv=None):
     named = _named_entries(args.candidates)
     listed = _listed_entries(data)
     curated = _curated_entries()
+
+    if args.print_only:
+        print(f"[list_layout_configs] source: {args.candidates}")
+        print(f"[list_layout_configs] {len(named)} named + {len(listed)} listed + "
+              f"{len(curated)} curated configs")
+        for kind, rows in (("named", named), ("listed", listed), ("curated", curated)):
+            if not rows:
+                continue
+            print(f"\n  {kind} ({len(rows)}):")
+            for r in rows:
+                extra = ""
+                if "n_arrays" in r:
+                    extra = f"  ({r['n_arrays']} array perms)"
+                elif "shape" in r:
+                    extra = f"  shape={r['shape']}"
+                print(f"    {r['name']}{extra}")
+        return
 
     args.output.parent.mkdir(parents=True, exist_ok=True)
     payload = {

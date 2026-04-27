@@ -102,6 +102,7 @@ regex used in `icon-artifacts/sc26_layout/plot_stage8.py`.
 | Component | Source | Notes |
 |---|---|---|
 | DaCe | `f2dace/staging` | Required for E8's codegen pipeline. The run script switches to it automatically; revert to `yakup/dev` after the job (or use a separate clone). |
+| AMD backend | `setup_beverin.sh` | On Beverin, sourcing `../common/setup_beverin.sh` exports `HIP_PLATFORM=amd`, sets `--rocm-path` / `--hip-path` / `--offload-arch=gfx942` in `GPU_CXXFLAGS`, and warns via `hipconfig --platform` if hipcc is misresolved. Together they pin the AMD HIP backend even when the env propagation through subprocesses is flaky. |
 | CUDA | **< 13** (12.9 verified) | CUDA 13 removes `cudaDeviceProp` fields DaCe's runtime probes during initialization, breaking E8's stage-8 codegen. Use CUDA 12.x. |
 | ICON dataset | R02B05 / `nproma=20480` (~9 GB) | Auto-fetched / symlinked to `data_r02b05/`. Same dataset as E7. |
 | `layout_candidates.json` | `../E6_VelocityTendencies/access_analysis/select_loopnests.py` | Regenerated on first run if missing. |

@@ -46,6 +46,33 @@ def _gpu(s: str) -> str:
     return f"gpu_{s}"
 
 
+# Local Fortran aliases for connectivity arrays (the ``n`` group in
+# ``canonical_array_groups.json``) -> long DaCe SDFG names. Hand-coded
+# because LOKI's ``INDIRECT_ARRAYS`` filter strips the long names from
+# per-nest array lists, so the access-analysis JSON only carries the
+# aliases. Without this resolver, every v123 cell collapses on the IN
+# axis (every ``n`` array maps to nothing in the SDFG), so V_n choices
+# become invisible. Each alias expands to ONE long name -- if you add a
+# new alias, also extend this map.
+_CONN_ALIASES: Dict[str, str] = {
+    # cell -> edge connectivity (cell index lives on edges)
+    "icblk":  "gpu___CG_p_patch__CG_edges__m_cell_blk",
+    "icidx":  "gpu___CG_p_patch__CG_edges__m_cell_idx",
+    # edge -> cell (edge index lives on cells)
+    "ieblk":  "gpu___CG_p_patch__CG_cells__m_edge_blk",
+    "ieidx":  "gpu___CG_p_patch__CG_cells__m_edge_idx",
+    # cell -> neighbor cell
+    "incblk": "gpu___CG_p_patch__CG_cells__m_neighbor_blk",
+    "incidx": "gpu___CG_p_patch__CG_cells__m_neighbor_idx",
+    # quad-edge: edge -> 4 surrounding edges
+    "iqblk":  "gpu___CG_p_patch__CG_edges__m_quad_blk",
+    "iqidx":  "gpu___CG_p_patch__CG_edges__m_quad_idx",
+    # vertex on edge endpoints
+    "ivblk":  "gpu___CG_p_patch__CG_edges__m_vertex_blk",
+    "ividx":  "gpu___CG_p_patch__CG_edges__m_vertex_idx",
+}
+
+
 _NLEV_FIRST_BY_DIM = {2: [1, 0], 3: [1, 0, 2], 4: [1, 0, 2, 3]}
 _AOS_3D = [0, 2, 1]
 
@@ -66,7 +93,13 @@ def build_permute_map_for_cell(
         axis = group_axis.get(gid, "IC")
         proj = cell.get(f"{gid}_{axis}")
         for fortran_name in arrs:
-            sdfg_name = _gpu(fortran_to_sdfg_array_name(fortran_name))
+            # Resolve connectivity-group local aliases (icblk, icidx, ...)
+            # to their long DaCe names. For all other groups,
+            # ``_CONN_ALIASES.get`` returns None and we fall through to
+            # the generic Fortran -> SDFG translation.
+            sdfg_name = _CONN_ALIASES.get(fortran_name)
+            if sdfg_name is None:
+                sdfg_name = _gpu(fortran_to_sdfg_array_name(fortran_name))
             ndim = sdfg_array_dims.get(sdfg_name)
             if ndim is None:
                 continue

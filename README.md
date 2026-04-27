@@ -92,19 +92,21 @@ SC26-Layout-AD/
     ├── E6_VelocityTendencies/  Figures 12–13, Table IV (per-loopnest)
     │   ├── access_analysis/
     │   ├── loopnest_{1..6}/
-    │   └── conflict_resolution/
-    ├── E7_FullVelocityTendencies/  WIP. New SDFG-driven pipeline (DaCe
-    │                               yakup/dev + OffloadVelocityToGPU +
-    │                               PermuteDimensions). Kept in the tree
-    │                               for the next iteration; not the AD's
-    │                               default reproduction path -- E8 is.
-    └── E8_LegacyVT/                Figure 14, Table V (DEFAULT). Legacy
-                                    icon-artifacts/sc26_layout pipeline
-                                    on f2dace/staging. Drives
-                                    run_stage8_permutations.py with
-                                    --configs winner_v{1,2,6}; reads
-                                    E6/access_analysis/{layout_candidates,
-                                    winners}.json (auto-regenerated).
+    │   └── conflict_resolution/   # vestigial; superseded by generate_winners.py (T6.4)
+    ├── E8_LegacyVT/                Figure 14, Table V (DEFAULT). Legacy
+    │                               icon-artifacts/sc26_layout pipeline
+    │                               on f2dace/staging. Drives
+    │                               run_stage8_permutations.py with the
+    │                               curated default (nlev_first,
+    │                               index_only, winner_v1, + V123
+    │                               cross-product); reads
+    │                               E6/access_analysis/{layout_candidates,
+    │                               winners}.json (auto-regenerated).
+    └── E7_FullVelocityTendencies/  WIP. New SDFG-driven pipeline (DaCe
+                                    yakup/dev + OffloadVelocityToGPU +
+                                    PermuteDimensions). Kept in the tree
+                                    for the AE iteration; not the AD's
+                                    default reproduction path -- E8 is.
 ```
 
 STREAM peaks for bandwidth normalization live in

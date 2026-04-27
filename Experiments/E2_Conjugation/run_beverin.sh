@@ -27,8 +27,8 @@ echo "[E2 beverin] host=$(hostname) threads=$OMP_NUM_THREADS"
 # --- build (flags from common/setup_beverin.sh) --------------------------
 ${CPU_CXX} ${CPU_CXXFLAGS} -o conjugate_cpu_inplace conjugate_inplace.cpp     ${CPU_LDFLAGS}
 ${CPU_CXX} ${CPU_CXXFLAGS} -o conjugate_cpu_oop     conjugate.cpp             ${CPU_LDFLAGS}
-${GPU_CXX} ${GPU_CXXFLAGS} -o conjugate_gpu_inplace conjugate_inplace_hip.cpp ${GPU_LDFLAGS}
-${GPU_CXX} ${GPU_CXXFLAGS} -o conjugate_gpu_oop     conjugate_hip.cpp         ${GPU_LDFLAGS}
+${GPU_CXX} ${GPU_CXXFLAGS} -x hip -o conjugate_gpu_inplace conjugate_inplace_hip.cpp ${GPU_LDFLAGS}
+${GPU_CXX} ${GPU_CXXFLAGS} -x hip -o conjugate_gpu_oop     conjugate_hip.cpp         ${GPU_LDFLAGS}
 
 # --- run (binaries write CSV at the path passed as argv[1]) --------------
 ./conjugate_cpu_inplace results/beverin/results_cpu_inplace.csv
