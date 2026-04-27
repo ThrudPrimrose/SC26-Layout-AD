@@ -5,6 +5,12 @@ nests, 50 arrays): canonicalize → score with µ/Δ → per-class benchmark →
 collapse to per-access-group winners → emit the winners cross-product
 that drives E7.
 
+**Expected result.** Loopnest 1 (indirect stencil + complete vertical)
+gains ~1.85× on Zen4 under uniform-random indirection; under exact
+R02B05 connectivity GPUs are comparable across layouts. Tab. IV
+reports µ for both regimes at nlev=128 (the paper-canonical default;
+loopnest sweeps cover nlev ∈ {90, 96, 128, 256}).
+
 The full-module GPU permutation sweep that used to live under
 `full_velocity_tendencies/` has been promoted to its own experiment,
 **[E7](../E7_FullVelocityTendencies/)**. E7 reads

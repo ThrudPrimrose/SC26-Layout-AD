@@ -4,6 +4,10 @@
 variants vs. vendor libraries: HPTT (CPU), cuTENSOR (Daint GPU),
 hipTensor (Beverin GPU).
 
+**Expected result.** Blocking gains ~1.7× on Zen4 and ~3.2× on Grace
+over row-major. Blocked transpose reaches 61–81% of STREAM peak vs
+HPTT's ~44%. On GPUs shared-memory tiling absorbs the stride.
+
 ## Run
 
 ```bash

@@ -22,6 +22,13 @@ COMMON_DIR="$(cd "${EXP_DIR}/../common" && pwd)"
 source "${COMMON_DIR}/activate.sh"
 source "${COMMON_DIR}/setup_beverin.sh"
 
+# Stage 8 codegen pulls in dace.frontend.fortran, which on f2dace/staging
+# imports ``aenum`` -- not in DaCe's setup.py extras, so a clean
+# yakup-env may lack it. ``pip install`` is idempotent (no-op when the
+# wheel is already in the venv); run quietly so it doesn't pollute
+# the .out log.
+python -m pip install --quiet aenum 2>/dev/null || true
+
 mkdir -p "${EXP_DIR}/beverin_full_permutations_8"
 cd "${EXP_DIR}"
 

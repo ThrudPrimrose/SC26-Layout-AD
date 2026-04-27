@@ -3,6 +3,10 @@
 In-place conjugate of `P` complex arrays under **AoS**, **SoA**, and
 **AoSoA-16** layouts. Sweeps `P` to expose L1D set-conflict behaviour.
 
+**Expected result.** SoA bandwidth collapses on Zen4 at high `P` from
+L1D set-conflict misses; AoSoA-16 stays robust across all four
+backends (Zen4, Grace, Hopper, MI300A).
+
 ## Run
 
 ```bash

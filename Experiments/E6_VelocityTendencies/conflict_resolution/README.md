@@ -22,7 +22,8 @@ committed as `selected_layouts.json`.
 ## Files
 
 - `selected_layouts.json` --- frozen output, consumed directly by
-  `../full_velocity_tendencies/scripts/run_stage{4,8}_permutations.py`.
+  `../../E8_LegacyVT/run_stage8_permutations.py` (the AD's default
+  full-velocity-tendencies sweep driver).
 - `README.md` (this file) --- the recipe above; no runtime script is
   required to reproduce the reduction, the mapping is stable for the
   paper submission.

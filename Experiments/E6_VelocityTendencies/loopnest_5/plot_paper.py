@@ -48,7 +48,7 @@ SUBPLOT_H = 3.5   # inches per row
 N_e  = 122880   # valid edges (loop bound)
 N_c  = 81920    # cells (indirect target for w)
 N_v  = 81920    # vertices (indirect target for z_w_v)
-NLEVS = [90, 96, 128, 256]   # one figure per nlev present in the data
+NLEVS = [128, 90, 96, 256]   # one figure per nlev present in the data
 DISTS    = ["uniform", "normal_var1", "exact"]
 
 

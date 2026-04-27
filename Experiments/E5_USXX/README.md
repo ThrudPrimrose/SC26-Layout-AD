@@ -3,6 +3,9 @@
 Composed unzip + permute + shuffle applied to Quantum ESPRESSO's
 `addusxx_g` kernel on a 10-atom BaTiO₃ HSE06 SCF calculation.
 
+**Expected result.** Speedups: ~1.12× Zen4, ~1.11× Grace, ~1.18×
+Hopper, ~1.00× MI300A.
+
 ## Run
 
 ```bash

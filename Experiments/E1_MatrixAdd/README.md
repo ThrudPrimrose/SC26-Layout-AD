@@ -3,6 +3,10 @@
 Elementwise `C += A + B` with `B` column-major. Measures the gap
 between schedule-only tuning and full layout transformation.
 
+**Expected result.** GPU reaches ~99% of STREAM peak after layout
+permute on both Daint H200 and Beverin MI300A; CPU 68–88%.
+Schedule-only baselines: CPU 36–72%, GPU 78–95%.
+
 ## Run
 
 ```bash
