@@ -98,20 +98,14 @@ def compile_config(name: str) -> bool:
     builds come from ``_RELEASE=1`` exported in setup_{daint,beverin}.sh
     -- compile_action() in utils/stages/common.py reads that env.
 
-    On compile failure, run the post-codegen reductions patcher and
-    retry once. The patcher fixes the two known failure modes for
-    permuted SDFGs:
-      1. missing ``#include "reductions_kernel.cuh"``
-      2. out-of-scope ``__dace_current_stream`` (rewritten to nullptr)
+    The post-codegen reductions patcher (``tools/patch_codegen_reductions.py``)
+    is wired into ``compile_action`` via ``post_codegen_hook``, so it
+    runs inline between codegen and nvcc -- no retry-on-failure needed
+    at this layer.
     """
     cmd = f"{COMPILE_CMD} --optimize --compile --permutations {name}"
     print(f"[compile] {cmd}")
     ret = subprocess.run(cmd, shell=True)
-    if ret.returncode != 0:
-        patch_cmd = "python tools/patch_codegen_reductions.py"
-        print(f"[compile] retrying after {patch_cmd}", file=sys.stderr)
-        subprocess.run(patch_cmd, shell=True)
-        ret = subprocess.run(cmd, shell=True)
     if ret.returncode != 0:
         print(f"[compile] FAILED for {name} (rc={ret.returncode})", file=sys.stderr)
     return ret.returncode == 0
