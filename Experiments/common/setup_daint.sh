@@ -2,6 +2,7 @@
 # Daint.Alps (GH200) platform env. Sourced after common/activate.sh.
 # Loads GCC + CUDA + cuTENSOR via spack; Python comes from the spack-python
 # venv activated by ../common/activate.sh (manual VIRTUAL_ENV + PATH export).
+unset __HIP_PLATFORM_AMD__ HIP_PLATFORM_AMD BEVERIN
 
 spack load gcc/76jw6nu   # 14.3
 spack load cuda@12.9
