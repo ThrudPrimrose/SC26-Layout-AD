@@ -141,7 +141,7 @@ Two HPC clusters at the Swiss National Supercomputing Centre (CSCS), accessed vi
 
 Results should generalize to any system with comparable cache-line sizes (64\,B CPU, 128\,B GPU); absolute bandwidths will differ.
 
-\artinpart{Software stack}
+\artinpart{Software}
 
 Both platforms share Python (CPython 3.13 via Spack), DaCe, and the same canonical compile flags. Per-platform toolchain pins (Spack-managed):
 
@@ -195,21 +195,34 @@ One-time per cluster: \texttt{bash Experiments/common/setup.sh}; per experiment:
 
 \artcomp
 
-E1--E5 each follow a four-task workflow encapsulated in \texttt{run\_\{daint,beverin\}.sh}: $T_1$~setup (sources shared env; auto-fetch dataset for E4/E5/E6/E8), $T_2$~build and execute (100~reps after 5~warm-ups with cache flushes), $T_3$~compute cost metrics (E3 only; $\mu$ and $\Delta$), $T_4$~plot (\texttt{plot\_paper.py}). Dependencies: $T_1\to T_2$, $T_1\to T_3$, $\{T_2,T_3\}\to T_4$. The run script handles $T_1$--$T_3$; $T_4$ is invoked manually. E1--E5 are mutually independent.
+Every experiment is driven by a single SLURM script, \texttt{run\_<plat>.sh} (\texttt{<plat>} = \texttt{daint} or \texttt{beverin}), which sources \texttt{../common/activate.sh} (venv + DaCe pin) and \texttt{../common/setup\_<plat>.sh} (Spack loads, compile flags, OMP / NUMA pinning), then compiles, executes 100 reps after 5 warm-ups, and writes results next to the experiment. Plotting is invoked manually with \texttt{python plot\_paper.py} after the job completes. E1--E5 are mutually independent; E6 and E8 are fully automated by their run scripts (no per-stage manual invocation).
 
-\textbf{E6 workflow.} Multi-stage, mirroring §III-F:
+\paragraph{Per-experiment workflow.}
 \begin{itemize}
-\item $T_{6.1}$ data fetch (auto-invoked).
-\item $T_{6.2}$ LOKI access analysis $\to$ 25 nests $\to$ 6 representative nests, \texttt{layout\_candidates.json}.
-\item $T_{6.3}$ canonical 6-group taxonomy (\texttt{cv}, \texttt{ch}, \texttt{f}, \texttt{s}, \texttt{n}, \texttt{lm}) $\to$ \texttt{canonical\_array\_groups.json}.
-\item $T_{6.4}$ per-loopnest evaluation under \texttt{loopnest\_\{1..6\}/}; sweeps layout combinations (dimension orderings $\times$ blocked factors) over $nlev \in \{90, 96, 128, 256\}$, default $nlev=128$.
-\item $T_{6.5}$ winners cross-product: \texttt{generate\_winners.py}, \texttt{derive\_winners.py}, \texttt{generate\_layout\_groups.py} produce \texttt{winners.json} and the §IV-A 7-group spec \texttt{layout\_groups.json}.
-\item $T_{6.6}$ analysis: \texttt{plot\_paper.py} $\to$ Figs.~12--13, Tab.~IV.
+\item \textbf{E1} (Fig.~4) --- \texttt{E1\_MatrixAdd/run\_<plat>.sh} compiles \texttt{bench\_\{cpu,gpu\}}, runs the schedule-only vs.\ permuted sweep; \texttt{plot\_paper.py} emits Fig.~4.
+\item \textbf{E2} (Fig.~8) --- \texttt{E2\_Conjugation/run\_<plat>.sh} sweeps $P$ over AoS / SoA / AoSoA-16; \texttt{plot\_paper.py} emits Fig.~8.
+\item \textbf{E3} (Fig.~9, Tab.~III) --- \texttt{E3\_Transpose/run\_<plat>.sh} runs the transpose sweep against HPTT / cuTENSOR / hipTensor and a follow-up \texttt{cost\_metrics} pass for $\mu$ and $\Delta$; \texttt{plot\_paper.py} emits Fig.~9 and Tab.~III.
+\item \textbf{E4} (Fig.~10) --- \texttt{E4\_GAS/run\_<plat>.sh} auto-fetches BaTiO$_3$ if absent, runs uniform-random and index-sort gather--accumulate--scatter; \texttt{plot\_paper.py} emits Fig.~10.
+\item \textbf{E5} (Fig.~11) --- \texttt{E5\_USXX/run\_<plat>.sh} auto-fetches BaTiO$_3$ HSE06 state if absent, runs the composed unzip + permute + shuffle on \texttt{addusxx\_g}; \texttt{plot\_paper.py} emits Fig.~11.
+\item \textbf{E6} (Figs.~12--13, Tab.~IV) --- per-loopnest \texttt{run\_<plat>.sh} under \texttt{E6\_VelocityTendencies/loopnest\_\{1..6\}/} automates the full pipeline:
+  \begin{itemize}\itemsep1pt
+  \item $T_{6.1}$ data fetch (R02B05 ICON state).
+  \item $T_{6.2}$ LOKI access analysis $\to$ \texttt{layout\_candidates.json}.
+  \item $T_{6.3}$ 6-group taxonomy (\texttt{cv}, \texttt{ch}, \texttt{f}, \texttt{s}, \texttt{n}, \texttt{lm}) $\to$ \texttt{canonical\_array\_groups.json}.
+  \item $T_{6.4}$ layout sweep over $nlev \in \{90, 96, 128, 256\}$, default 128.
+  \item $T_{6.5}$ winners cross-product (\texttt{generate\_winners.py} / \texttt{derive\_winners.py} / \texttt{generate\_layout\_groups.py}) $\to$ \texttt{winners.json}, \texttt{layout\_groups.json}.
+  \item $T_{6.6}$ \texttt{plot\_paper.py} $\to$ Figs.~12--13, Tab.~IV.
+  \end{itemize}
+  \texttt{winners.json} feeds E8.
+\item \textbf{E8} (Fig.~14, Tab.~V) --- \texttt{E8\_LegacyVT/run\_<plat>.sh} automates:
+  \begin{itemize}\itemsep1pt
+  \item $T_{8.1}$ dataset resolution (existing E8 dir $\to$ E7 symlink $\to$ fresh fetch).
+  \item $T_{8.2}$ regenerate \texttt{winners.json} / \texttt{layout\_candidates.json} if missing.
+  \item $T_{8.3}$ per-config compile via \texttt{compile\_gpu\_stage8}.
+  \item $T_{8.4}$ run \texttt{run\_stage8\_permutations.py} for each \texttt{CONFIGS} entry (default \texttt{winner\_v\{1,2,6\}}); shuffled and unshuffled stdout land in \texttt{<plat>\_full\_permutations\_8/}.
+  \item $T_{8.5}$ plot via \texttt{plot\_paper\_snapshot.sh} or \texttt{plot\_results.sh} (under \texttt{Figures/}).
+  \end{itemize}
 \end{itemize}
-
-Dependencies $T_{6.1}\to\dots\to T_{6.6}$. \texttt{winners.json} and \texttt{layout\_groups.json} feed E8.
-
-\textbf{E8 workflow.} A single \texttt{sbatch run\_\{daint,beverin\}.sh} resolves the dataset (existing E8 dir $\to$ E7 symlink $\to$ fresh fetch), regenerates \texttt{winners.json} / \texttt{layout\_candidates.json} if missing, then dispatches \texttt{run\_stage8\_permutations.py} with the \texttt{CONFIGS} env (default \texttt{winner\_v1,winner\_v2,winner\_v6}). For each named config, \texttt{compile\_gpu\_stage8} produces shuffled (\texttt{\_ms}) and unshuffled (\texttt{\_mu}) binaries; stdout is captured under \texttt{<plat>\_full\_permutations\_8/} as one TXT per binary. Plotting via \texttt{Figures/plot\_paper\_snapshot.sh} or \texttt{plot\_results.sh}; both auto-detect E8's TXT layout.
 
 \textbf{Statistical methodology.} Following Hoefler and Belli, every configuration runs 100~reps after 5~warm-ups. An $8192^2$ Jacobi stencil (3~sweeps with buffer swap; \texttt{common/jacobi\_flush.h}) flushes all cache levels between reps. We report medians with 95\% bootstrap CIs of the median (BCa, $n=10{,}000$ resamples). Violin plots show all 100~samples (no outlier trimming); KDE uses Scott's rule and 200 eval points, identical across every figure. RNG seed: \texttt{SC26\_SEED=42}. Bandwidths are normalized to the measured STREAM Triad peak per platform.
 

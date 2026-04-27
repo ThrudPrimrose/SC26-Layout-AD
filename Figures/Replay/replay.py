@@ -8,7 +8,11 @@ B      = 8
 SIGMA  = np.sqrt(2.0)
 N_RUNS = 100
 
-np.random.seed(0)
+# Pinned to the SC26 global RNG seed (mirrors Experiments/common/prng.h's
+# SC26_SEED=42). Override via SC26_SEED env var for ablations; keeps every
+# illustrative figure deterministic across reruns.
+SC26_SEED = int(__import__("os").environ.get("SC26_SEED", "42"))
+np.random.seed(SC26_SEED)
 
 idx_exact = np.array([(i + 2) % N for i in range(N)])
 

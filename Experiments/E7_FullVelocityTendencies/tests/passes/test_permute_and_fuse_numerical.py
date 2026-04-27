@@ -27,8 +27,15 @@ This test is skipped when DaCe doesn't ship ``permute_dimensions``
 
 import copy
 import ctypes
+import os
 import numpy as np
 import pytest
+
+# SC26 global RNG seed (mirrors Experiments/common/prng.h's SC26_SEED=42).
+# Each test below derives a per-test offset off the base seed so test
+# inputs stay independent of one another while remaining deterministic
+# across reruns (and overridable for ablations via the env var).
+_SC26_SEED = int(os.environ.get("SC26_SEED", "42"))
 
 # DaCe's ``libdacestub_*.so`` is built without ``-lgomp`` even though
 # the emitted host code references ``omp_get_max_threads`` from the
@@ -131,7 +138,7 @@ def test_baseline_runs_and_matches_reference():
     function. Establishes the reference oracle."""
     N, ROWS = 5, 4
     sdfg = _build_baseline_sdfg(N=N, ROWS=ROWS, name="numerical_baseline")
-    np.random.seed(0)
+    np.random.seed(_SC26_SEED + 0)
     src_np = np.random.rand(ROWS, N).astype(np.float64)
     got = _compile_and_call(sdfg, src_np.copy(), ROWS, N)
     want = _expected_output(src_np, ROWS, N)
@@ -143,7 +150,7 @@ def test_permute_only_preserves_numerics():
     identical to the unpermuted baseline -- the transform only
     re-orders memory."""
     N, ROWS = 5, 4
-    np.random.seed(1)
+    np.random.seed(_SC26_SEED + 1)
     src_np = np.random.rand(ROWS, N).astype(np.float64)
 
     base_sdfg = _build_baseline_sdfg(N=N, ROWS=ROWS, name="numerical_perm_base")
