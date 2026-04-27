@@ -71,7 +71,7 @@ E8 & $C_3$, $C_4$         & Fig.~14, Tab.~V     & R1, R2 \\
 \paragraph{E8 is the AD's default full velocity-tendencies path.}
 \texttt{Experiments/E8\_LegacyVT/} drives the stage-8 codegen pipeline on DaCe \texttt{f2dace/staging} and reproduces Fig.~14 / Tab.~V from a single \texttt{sbatch run\_\{daint,beverin\}.sh}. The default \texttt{CONFIGS="winner\_v1,winner\_v2,winner\_v6"} selects the three V$_k$ winners: V1 (identity, Fig.~13 \emph{Original Layout}), V2 (connectivity-only intermediate), and V6 ($v_\textrm{first}$, Fig.~13 \emph{Optimized Layout}). \texttt{E7\_FullVelocityTendencies/} is an in-progress SDFG-driven refactor of the same pipeline (DaCe \texttt{yakup/dev}) and is not required for the AD's reproduction path.
 
-Quotient-graph figures (Figures~2--3) come from \texttt{Figures/}. Runtime figures (Figures~4, 8--14) regenerate via \texttt{Figures/plot\_all.sh}, which dispatches two sibling drivers: \texttt{plot\_paper\_snapshot.sh} reads frozen CSVs and reproduces the paper-canonical figures; \texttt{plot\_results.sh} reads the reviewer's CSVs and produces fresh figures. The two drivers write to separate output directories. Throughout, results are reported on two CSCS clusters --- Daint.Alps (Grace + H200) and Beverin (Zen4 + MI300A); full hardware specs are in §Artifact Setup.
+Quotient-graph figures (2--3) are pure matplotlib in \texttt{Figures/}. Runtime figures (4, 8--14) regenerate via \texttt{Figures/plot\_all.sh}, whose two drivers \texttt{plot\_paper\_snapshot.sh} and \texttt{plot\_results.sh} read frozen and freshly-collected CSVs respectively, into separate output directories. Throughout, results are reported on Daint.Alps and Beverin (specs in §Artifact Setup).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Artifact Identification}
@@ -85,21 +85,17 @@ Artifact~$A_1$ validates the layout algebra ($C_2$), the cost metrics ($C_3$), a
 
 \artexp
 
-\textbf{E1 (Matrix Addition, Fig.~4):} elementwise $C \mathrel{+}= A + B$ with $B$ in column-major. Schedule-only tuning leaves a substantial gap to STREAM peak; the layout transformation closes it, lifting the GPUs to near STREAM peak and the CPUs into the high 60s--80s of percent.
+Each experiment maps to one paper figure or table (see the table in §I.B). Reviewers should observe the following qualitative orderings on any hardware with comparable cache-line sizes; absolute speedups depend on the platform.
 
-\textbf{E2 (Complex Conjugation, Fig.~8):} in-place conjugation of $P$ complex arrays under AoS, SoA, and AoSoA-16. SoA collapses on the Zen4 CPU at high $P$ from L1D set conflicts; AoSoA-16 stays robust across all four backends.
-
-\textbf{E3 (Matrix Transpose, Fig.~9, Tab.~III):} $N \times N$ fp32 transpose comparing row-major and blocked layouts on CPUs (and against HPTT, cuTENSOR, hipTensor). Blocking outperforms both naive row-major and HPTT on the CPUs; on GPUs, shared-memory tiling absorbs the stride and the layouts converge.
-
-\textbf{E4 (Gather-Accumulate-Scatter, Fig.~10):} indirect $y[\sigma(i)] \mathrel{+}= x[i]$ with and without an index-sort shuffle. The shuffle yields a substantial GPU bandwidth improvement (roughly $1.5$--$2\times$) on both GPUs and a modest CPU improvement.
-
-\textbf{E5 (QE \texttt{addusxx\_g}, Fig.~11):} composed unzip + permute + shuffle on the Quantum ESPRESSO \texttt{addusxx\_g} kernel. The composed transform yields a small but consistent speedup on Zen4, Grace, and Hopper (largest on Hopper), and roughly breaks even on MI300A.
-
-\textbf{E6 (ICON velocity tendencies, Figs.~12--13, Tab.~IV):} the module's 25 loop nests and 50 arrays collapse into 6 pattern classes and 7 layout-equivalent groups. One representative loop nest per class is benchmarked under \texttt{loopnest\_\{1..6\}/} across different layout combinations. Loopnest~1 (indirect stencil, complete vertical) shows the largest CPU gain under uniform random indirection; under exact R02B05 connectivity, GPU performance is comparable across layouts. Tab.~IV reports the cost metric $\mu$ for both regimes.
-
-\textbf{E8 (Full velocity tendencies, Fig.~14, Tab.~V):} GPU layout-permutation sweep over the full module via \texttt{run\_stage8\_permutations.py} on the stage-8 SDFGs. The default \texttt{CONFIGS="winner\_v1,winner\_v2,winner\_v6"} runs the three V$_k$ winners; the 95-cell cross-product (\texttt{cv*\_ch*\_f*\_s*\_n*}) is opt-in. Vertical-first (V6) wins on Config~B (which accounts for 5 of every 6 calls), with the largest gain on MI300A; on Config~A the picture is mixed. Under the 5:1 weighting, the net per-timestep gain is several percent on Hopper and over ten on MI300A.
-
-\paragraph{Expected behaviour.} The qualitative orderings above --- permuted $>$ schedule-only; AoSoA-16 robust where SoA degrades; blocked $>$ HPTT $>$ naive row-major on CPUs; index-sort $>$ unsorted; V$_k$ winner $>$ ICON-default; V6 $\geq$ V1, V2, and unpermuted on Config~B --- should hold on any hardware with comparable cache-line sizes. Absolute speedups depend on the platform.
+\begin{itemize}\itemsep1pt
+\item \textbf{E1 (Fig.~4):} permuted $>$ schedule-only on every backend; GPUs reach near STREAM peak.
+\item \textbf{E2 (Fig.~8):} AoSoA-16 robust across all four backends; SoA degrades on Zen4 at high $P$ from L1D conflicts.
+\item \textbf{E3 (Fig.~9, Tab.~III):} blocked $>$ HPTT $>$ naive row-major on CPUs; GPU layouts converge.
+\item \textbf{E4 (Fig.~10):} index-sort $>$ unsorted on every backend; gap largest on GPUs.
+\item \textbf{E5 (Fig.~11):} composed unzip+permute+shuffle $\geq$ baseline; gain largest on Hopper.
+\item \textbf{E6 (Figs.~12--13, Tab.~IV):} a V$_k$ winner beats the ICON-default per loopnest; the indirect-stencil loopnest shows the largest gain under uniform random indirection.
+\item \textbf{E8 (Fig.~14, Tab.~V):} V6 (vertical-first) $\geq$ V1, V2, and unpermuted on Config~B; gain largest on MI300A.
+\end{itemize}
 
 \arttime
 \begin{center}
@@ -161,13 +157,9 @@ Vendor xpose (E3) & HPTT          & HPTT              \\
 \end{center}
 \noindent DaCe pins are shared: \texttt{yakup/dev} for E1--E6, \texttt{f2dace/staging} for E8.
 
-\paragraph{CUDA pin (Daint).} \textbf{CUDA must be \textless{}~13.} CUDA~13 removes \texttt{cudaDeviceProp::clockRate}, which DaCe's runtime probes during initialization, breaking codegen for E8's stage-8 binaries. CUDA~12.9 is the verified version.
+\paragraph{CUDA pin.} \textbf{CUDA must be $<$~13} on Daint: CUDA~13 breaks E8's stage-8 codegen by removing \texttt{cudaDeviceProp} fields DaCe's runtime probes; CUDA~12.9 is verified.
 
-\paragraph{OpenBLAS.} Daint pins 0.3.29, Beverin pins 0.3.30 (Spack availability). Used only by E3's CPU baseline; both setup scripts skip the \texttt{LD\_LIBRARY\_PATH} export gracefully if absent.
-
-\paragraph{Compile flags.} \texttt{CPU\_CXXFLAGS} and \texttt{GPU\_CXXFLAGS}, exported by the setup scripts, are applied uniformly across all \texttt{g++} / \texttt{nvcc} / \texttt{hipcc} invocations: \texttt{-O3} with \texttt{-march=native}, \texttt{-ffast-math}, \texttt{-fopenmp}, and \texttt{-std=c++17} on both platforms; \texttt{-arch=sm\_90 --use\_fast\_math} on Daint; \texttt{--offload-arch=gfx942} with HIP-specific atomics on Beverin. The exact lists live in each \texttt{setup\_<plat>.sh}.
-
-\paragraph{OpenMP and pinning.} \texttt{OMP\_SCHEDULE=static} is exported by both setup scripts; every \texttt{\#pragma omp parallel for} in our sources uses \texttt{schedule(static)}. CPU-to-core pinning via \texttt{SLURM\_CPU\_BIND=cores} (no \texttt{\#SBATCH --cpu-bind}).
+\paragraph{Compile flags and pinning.} \texttt{CPU\_CXXFLAGS} and \texttt{GPU\_CXXFLAGS} (exported by the setup scripts, applied uniformly across all \texttt{g++} / \texttt{nvcc} / \texttt{hipcc} invocations) carry \texttt{-O3 -march=native -ffast-math -fopenmp -std=c++17} on both platforms; \texttt{-arch=sm\_90 --use\_fast\_math} on Daint; \texttt{--offload-arch=gfx942} with HIP-specific atomics on Beverin. \texttt{OMP\_SCHEDULE=static} and \texttt{SLURM\_CPU\_BIND=cores} are exported alongside; every \texttt{\#pragma omp parallel for} uses \texttt{schedule(static)}. Exact lists in each \texttt{setup\_<plat>.sh}.
 
 \artinpart{Datasets / Inputs}
 

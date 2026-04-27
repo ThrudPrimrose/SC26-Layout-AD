@@ -16,6 +16,17 @@
 
 set -u
 
+# --dry-run: list configs that *would* run and exit. Skips the slow
+# setup (data download, aenum install) so it's safe to invoke as
+# ``bash run_beverin.sh --dry-run`` from a login node.
+DRY_RUN=0
+for arg in "$@"; do
+  case "${arg}" in
+    --dry-run) DRY_RUN=1 ;;
+    *) echo "[E8 beverin] unrecognised arg: ${arg}" >&2 ;;
+  esac
+done
+
 EXP_DIR="${SLURM_SUBMIT_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}"
 COMMON_DIR="$(cd "${EXP_DIR}/../common" && pwd)"
 
@@ -31,8 +42,10 @@ source "${COMMON_DIR}/setup_beverin.sh"
 # imports ``aenum`` -- not in DaCe's setup.py extras, so a clean
 # yakup-env may lack it. ``pip install`` is idempotent (no-op when the
 # wheel is already in the venv); run quietly so it doesn't pollute
-# the .out log.
-python -m pip install --quiet aenum 2>/dev/null || true
+# the .out log. Skip in dry-run -- listing configs doesn't need it.
+if (( DRY_RUN == 0 )); then
+  python -m pip install --quiet aenum 2>/dev/null || true
+fi
 
 mkdir -p "${EXP_DIR}/beverin_full_permutations_8"
 cd "${EXP_DIR}"
@@ -41,7 +54,9 @@ cd "${EXP_DIR}"
 # Order: existing E8 data > E7's data (symlink via LOCAL_DATA_DIR) > fresh download.
 DOWNLOAD_DATA_SH="${EXP_DIR}/../E7_FullVelocityTendencies/tools/download_data.sh"
 E7_DATA_DIR="${EXP_DIR}/../E7_FullVelocityTendencies/data_r02b05"
-if [[ -d "${EXP_DIR}/data_r02b05" ]] && [[ -n "$(ls -A "${EXP_DIR}/data_r02b05" 2>/dev/null)" ]]; then
+if (( DRY_RUN == 1 )); then
+    : # Skip dataset fetch -- not needed for a config listing.
+elif [[ -d "${EXP_DIR}/data_r02b05" ]] && [[ -n "$(ls -A "${EXP_DIR}/data_r02b05" 2>/dev/null)" ]]; then
     :
 elif [[ -d "${E7_DATA_DIR}" ]] && [[ -n "$(ls -A "${E7_DATA_DIR}" 2>/dev/null)" ]]; then
     echo "[E8 beverin] data_r02b05 already in E7 tree; symlinking via LOCAL_DATA_DIR mode"
@@ -68,10 +83,16 @@ CONFIGS="${CONFIGS:-winner_v1,winner_v2,winner_v6}"
 REPS="${REPS:-100}"
 
 echo "[E8 beverin] host=$(hostname) data=${ICON_DATA_PATH}"
-echo "[E8 beverin] configs=${CONFIGS}  reps=${REPS}"
+echo "[E8 beverin] configs=${CONFIGS}  reps=${REPS}  dry_run=${DRY_RUN}"
 
 # run_stage8_permutations.py needs BEVERIN=1 to pick the beverin
 # OUT_DIR (beverin_full_permutations_8 vs daint_full_permutations_8).
-BEVERIN=1 python run_stage8_permutations.py --configs "${CONFIGS}" --reps "${REPS}"
+DRY_FLAG=""
+(( DRY_RUN == 1 )) && DRY_FLAG="--dry-run"
+BEVERIN=1 python run_stage8_permutations.py --configs "${CONFIGS}" --reps "${REPS}" ${DRY_FLAG}
 
-echo "[E8 beverin] done. TXTs under beverin_full_permutations_8/"
+if (( DRY_RUN == 1 )); then
+  echo "[E8 beverin] dry-run complete -- no compile or execution."
+else
+  echo "[E8 beverin] done. TXTs under beverin_full_permutations_8/"
+fi

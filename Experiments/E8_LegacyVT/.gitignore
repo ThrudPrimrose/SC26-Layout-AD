@@ -3,7 +3,6 @@ __pycache__
 *.sdfg
 .dacecache
 _dacegraphs
-utils/config.py
 
 # DaCe codegen tree. We ship the FROZEN stage 1..9 SDFGs at the root
 # of codegen/ so reviewers can run stage 8 directly without rebuilding

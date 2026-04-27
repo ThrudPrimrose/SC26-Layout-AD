@@ -31,12 +31,17 @@ from pathlib import Path
 # (which eagerly imports legacy-DaCe-dependent modules like
 # ``utils.map_fissions``) doesn't fire and crash the import on a
 # yakup/dev checkout that lacks ``dace.frontend.fortran.ast_utils.singular``.
-import importlib.util as _ilu  # noqa: E402
-_branch_path = Path(__file__).resolve().parent / "utils" / "dace_branch.py"
-_spec = _ilu.spec_from_file_location("_e8_dace_branch", _branch_path)
-_dace_branch = _ilu.module_from_spec(_spec)
-_spec.loader.exec_module(_dace_branch)
-_dace_branch.ensure_branch(_dace_branch.F2DACE_BRANCH)
+# Skipped under --dry-run / --list -- enumerating configs from
+# PERMUTE_CONFIGS doesn't touch DaCe, so refusing to switch (e.g.
+# because the user has uncommitted DaCe edits) shouldn't block
+# previewing the sweep from a login node.
+if "--dry-run" not in sys.argv and "--list" not in sys.argv:
+    import importlib.util as _ilu  # noqa: E402
+    _branch_path = Path(__file__).resolve().parent / "utils" / "dace_branch.py"
+    _spec = _ilu.spec_from_file_location("_e8_dace_branch", _branch_path)
+    _dace_branch = _ilu.module_from_spec(_spec)
+    _spec.loader.exec_module(_dace_branch)
+    _dace_branch.ensure_branch(_dace_branch.F2DACE_BRANCH)
 
 from sc26_layout.permute_stage8 import PERMUTE_CONFIGS  # noqa: E402
 
@@ -226,23 +231,33 @@ def main():
 
 
     # Summary
+    banner = "[DRY RUN]  " if args.dry_run else ""
     print(f"{'=' * 60}")
-    print(f"Layout permutation sweep: {len(selected)} configs  "
+    print(f"{banner}Layout permutation sweep: {len(selected)} configs  "
           f"({len(selected) * 2} executables)")
     if args.unpermuted:
         print(f"  + unpermuted baseline")
     print(f"Output directory: {OUT_DIR}/")
     print(f"{'=' * 60}")
+    if args.dry_run:
+        # Concise "what would run" listing: one row per config.
+        for name in selected:
+            pm = PERMUTE_CONFIGS[name]["permute_map"]
+            print(f"  {name:40s}  ({len(pm):2d} arrays permuted)  "
+                  f"-> {_out_file(name, 'shuffled').name}, "
+                  f"{_out_file(name, 'unshuffled').name}")
+        print()
+        print(f"[DRY RUN] {len(selected)} configs * 2 (shuffled/unshuffled) "
+              f"= {len(selected) * 2} binaries. No compile or execution.")
+        return
+
+    # Full plan (non-dry): per-binary executable + output paths.
     for name in selected:
-        pm = PERMUTE_CONFIGS[name]["permute_map"]
         for suffix, label in _SHUFFLE_VARIANTS:
             exe      = _exe(name, suffix)
             out_file = _out_file(name, label)
             print(f"  {name:40s}  [{label:10s}]  exe={exe}  out={out_file}")
     print()
-
-    if args.dry_run:
-        return
 
     ensure_out_dir()
 

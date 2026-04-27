@@ -11,9 +11,12 @@ PDF    = $(TARGET).pdf
 
 all: $(PDF)
 
-$(PDF): $(TEX) proofs.tex figures/plot_a_unit_granular.pdf figures/plot_b_row_major_blocked.pdf figures/plot_c_conflicting_layout.pdf
+$(PDF): $(TEX) proofs.tex references.bib figures/plot_a_unit_granular.pdf figures/plot_b_row_major_blocked.pdf figures/plot_c_conflicting_layout.pdf
+	pdflatex -shell-escape -interaction=nonstopmode -halt-on-error $(TEX)
+	bibtex   $(TARGET)
 	pdflatex -shell-escape -interaction=nonstopmode -halt-on-error $(TEX)
 	pdflatex -shell-escape -interaction=nonstopmode -halt-on-error $(TEX)
 
 clean:
-	rm -f $(TARGET).aux $(TARGET).log $(TARGET).out $(TARGET).toc
+	rm -f $(TARGET).aux $(TARGET).log $(TARGET).out $(TARGET).toc \
+	      $(TARGET).bbl $(TARGET).blg
