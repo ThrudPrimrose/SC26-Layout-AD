@@ -193,6 +193,30 @@ import subprocess
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 
+def _gcc_libgomp_path() -> typing.Optional[str]:
+    """Absolute path to gcc's ``libgomp.so.1``, or None if gcc isn't on
+    PATH or the library can't be located. Used by the link step on AMD
+    to pin libgomp explicitly (mirror of what
+    ``setup_beverin.sh:GPU_CXXFLAGS`` does for E1-E6 via
+    ``-fopenmp=libgomp`` in a single hipcc command). Resolving via
+    ``gcc -print-file-name`` is the same source-of-truth E1-E6 use
+    transitively when their hipcc-run gcc preprocessor lookup picks
+    libgomp; doing it explicitly here keeps the propagated-SDFG link
+    line robust even when subprocess env propagation strips
+    ``LD_LIBRARY_PATH`` or the spack-loaded gcc's run-time deps.
+    """
+    try:
+        out = subprocess.check_output(
+            ["gcc", "-print-file-name=libgomp.so.1"],
+            text=True, stderr=subprocess.DEVNULL,
+        ).strip()
+        if out and os.path.isfile(out):
+            return out
+    except (subprocess.CalledProcessError, FileNotFoundError, OSError):
+        pass
+    return None
+
+
 def _compile_and_link(
     sources: typing.List[str],
     includes: str,
@@ -285,8 +309,40 @@ def _compile_and_link(
     if "nvcc" in link_cc:
         link_flags += " -Xcompiler=-fopenmp "
     elif AMD:
-        # Same libgomp pin as the compile step (see _get_flags above).
-        link_flags += " -fopenmp=libgomp "
+        # libgomp pin -- four layers of defense against the
+        # ``libomp.so: cannot open shared object file`` runtime error
+        # on Beverin (clang/hipcc's default OpenMP runtime is libomp,
+        # which isn't installed on the cluster):
+        #   1. ``-fopenmp=libgomp`` tells clang's driver to select
+        #      libgomp for OpenMP at compile + link time;
+        #   2. The absolute path to gcc's libgomp.so.1 is added as a
+        #      positional arg so the linker can't fall back to lib
+        #      search heuristics. DT_NEEDED ends up with the canonical
+        #      ``libgomp.so.1`` SONAME, never ``libomp.so``;
+        #   3. ``-Wl,-rpath=<dir>`` bakes that directory into the
+        #      binary's RUNPATH so the loader finds libgomp at run
+        #      time without LD_LIBRARY_PATH cooperation;
+        #   4. ``-Wl,--as-needed`` drops DT_NEEDED for any library
+        #      that hipcc's driver might still inject implicitly but
+        #      whose symbols never contribute (so even if ``-lomp``
+        #      sneaks onto the link line, libomp.so doesn't appear in
+        #      the binary's deps).
+        # Falls back to bare ``-lgomp`` if gcc isn't on PATH.
+        gomp_path = _gcc_libgomp_path()
+        if gomp_path:
+            # Order matters: ``-Wl,--as-needed`` and ``-Wl,-rpath`` must
+            # appear BEFORE any ``-l*`` / positional library path so the
+            # linker applies them to the libs that follow. The libgomp
+            # absolute path is placed last so it lands at the rightmost
+            # of the link line (after objects), satisfying the
+            # libraries-after-objects rule for symbol resolution.
+            link_flags += (
+                f" -fopenmp=libgomp "
+                f"-Wl,-rpath={os.path.dirname(gomp_path)} "
+                f"-Wl,--as-needed {gomp_path} "
+            )
+        else:
+            link_flags += " -fopenmp=libgomp -Wl,--as-needed -lgomp "
     else:
         link_flags += " -fopenmp "
 
