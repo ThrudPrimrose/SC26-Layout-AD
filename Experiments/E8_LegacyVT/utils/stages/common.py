@@ -10,6 +10,26 @@ from utils.compile_if_propagated_sdfgs import compile_if_propagated_sdfgs
 from utils.make_flattened_data_to_input import make_flattened_data_to_non_transient_cpu_input, make_flattened_data_to_non_transient_gpu_input
 import os
 
+# Post-codegen patcher for the upstream icon-artifacts reduction tasklets
+# (see ``tools/patch_codegen_reductions.py`` for the full rationale).
+# Wired into every ``compile_if_propagated_sdfgs`` call below via
+# ``post_codegen_hook``: between codegen and nvcc, walk each SDFG's
+# build_folder, inject ``#include "reductions_kernel.cuh"`` if missing,
+# and rewrite ``__dace_current_stream`` -> ``nullptr`` in any
+# reduce_*_gpu(...) call. Idempotent and a no-op for SDFGs that don't
+# emit reduction tasklets, so it's safe to attach unconditionally.
+import sys as _sys
+_E8_ROOT = Path(__file__).resolve().parent.parent.parent
+if str(_E8_ROOT) not in _sys.path:
+    _sys.path.insert(0, str(_E8_ROOT))
+# Required, not optional: every E8 compile path needs this hook -- without
+# it, ``reduce_scan_gpu`` / ``__dace_current_stream`` errors break nvcc
+# on permuted SDFGs (see tools/patch_codegen_reductions.py docstring).
+# If the import fails, surface it now rather than letting a stale build
+# tree mask the issue at compile time.
+from tools.patch_codegen_reductions import post_codegen_hook as _patch_hook
+assert _patch_hook is not None
+
 dace.config.Config.set('compiler', 'cuda', 'max_concurrent_streams', value="10")
 dace.config.Config.set('compiler', 'cuda', 'default_block_size', value="256,1,1")
 dace.config.Config.set('compiler', 'default_data_types', value='C')
@@ -94,6 +114,7 @@ def compile_action(stage: int, sdfgs: Dict[str, dace.SDFG], lib,
         debuginfo=False,
         allocation_names_to_comment_out=allocation_names_to_comment_out,
         use_openacc_stream=False,
+        post_codegen_hook=_patch_hook,
       )
   elif stage == 8:
     if _build_for_integration:
@@ -107,6 +128,7 @@ def compile_action(stage: int, sdfgs: Dict[str, dace.SDFG], lib,
         debuginfo=False,
         allocation_names_to_comment_out=allocation_names_to_comment_out,
         use_openacc_stream=False,
+        post_codegen_hook=_patch_hook,
       )
     else:
       compile_if_propagated_sdfgs(
@@ -119,6 +141,7 @@ def compile_action(stage: int, sdfgs: Dict[str, dace.SDFG], lib,
         debuginfo=False,
         allocation_names_to_comment_out=allocation_names_to_comment_out,
         use_openacc_stream=False,
+        post_codegen_hook=_patch_hook,
       )
   elif stage > 5:
     compile_if_propagated_sdfgs(
@@ -130,7 +153,8 @@ def compile_action(stage: int, sdfgs: Dict[str, dace.SDFG], lib,
         stage=stage,
         allocation_names_to_comment_out=None,
         use_openacc_stream=False,
-        debuginfo=True
+        debuginfo=True,
+        post_codegen_hook=_patch_hook,
       )
   elif stage > 1:
     compile_if_propagated_sdfgs(
@@ -143,6 +167,7 @@ def compile_action(stage: int, sdfgs: Dict[str, dace.SDFG], lib,
         debuginfo=True,
         allocation_names_to_comment_out=None,
         use_openacc_stream=False,
+        post_codegen_hook=_patch_hook,
       )
   else:
     assert stage == 1
@@ -157,6 +182,7 @@ def compile_action(stage: int, sdfgs: Dict[str, dace.SDFG], lib,
           debuginfo=True,
           allocation_names_to_comment_out=None,
           use_openacc_stream=False,
+          post_codegen_hook=_patch_hook,
         )
     else:
       for sdfg in sdfgs:
@@ -171,6 +197,7 @@ def compile_action(stage: int, sdfgs: Dict[str, dace.SDFG], lib,
           debuginfo=True,
           allocation_names_to_comment_out=None,
           use_openacc_stream=False,
+          post_codegen_hook=_patch_hook,
         )
 
   opt_suffix = '_release' if release else '_debug'

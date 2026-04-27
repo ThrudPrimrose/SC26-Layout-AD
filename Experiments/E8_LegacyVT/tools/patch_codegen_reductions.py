@@ -35,7 +35,7 @@ import argparse
 import re
 import sys
 from pathlib import Path
-from typing import Tuple
+from typing import Iterable, List, Tuple
 
 REDUCTIONS_INCLUDE = '#include "reductions_kernel.cuh"'
 DACE_INCLUDE_RE = re.compile(r'^#include\s*<dace/dace\.h>\s*$', re.MULTILINE)
@@ -74,6 +74,40 @@ def _patch_one(path: Path) -> Tuple[bool, bool]:
     if added_include or replaced_stream:
         path.write_text(text)
     return added_include, replaced_stream
+
+
+def patch_codegen_tree(roots: Iterable[Path], verbose: bool = True) -> int:
+    """Walk *roots* (one or more codegen / SDFG build_folder paths),
+    patch every ``src/cuda/*.cu`` under each. Returns total file count
+    patched. Programmatic entry point for ``post_codegen_hook``.
+    """
+    n_patched = 0
+    for root in roots:
+        root = Path(root)
+        if not root.exists():
+            continue
+        for cu in sorted(root.rglob("src/cuda/*.cu")):
+            inc, sub = _patch_one(cu)
+            if inc or sub:
+                n_patched += 1
+                if verbose:
+                    tags = []
+                    if inc: tags.append("+include")
+                    if sub: tags.append("+nullstream")
+                    print(f"  [patch_codegen_reductions] {cu}  [{','.join(tags)}]")
+    return n_patched
+
+
+def post_codegen_hook(sdfgs) -> None:
+    """``compile_if_propagated_sdfgs`` post-codegen hook signature.
+
+    Walks every SDFG's ``build_folder`` and patches its ``src/cuda/*.cu``
+    files in place. Idempotent. Safe to attach to any compile_action
+    invocation -- if no .cu files have reduction tasklets, the patcher
+    is a no-op.
+    """
+    roots = [Path(getattr(s, "build_folder", "")) for s in sdfgs]
+    patch_codegen_tree([r for r in roots if str(r)], verbose=True)
 
 
 def main():
