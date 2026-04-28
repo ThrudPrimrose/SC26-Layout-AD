@@ -141,3 +141,5 @@ Latex/*.auxlock
 .dacecache/
 *.sdfg.cache/
 *.err
+Experiments/**/*.pdf
+Experiments/**/*.png
