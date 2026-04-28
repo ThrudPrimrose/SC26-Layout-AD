@@ -58,13 +58,16 @@ cd EX_Name && sbatch run_{daint,beverin}.sh
 python plot_paper.py
 ```
 
-`setup.sh` spack-loads CPython 3.13 + sqlite (arch auto-detect:
-`python/asgm25z` on zen3, `python/6kewgi6` on neoverse_v2; override
-with `SC26_PYTHON_SPEC`), creates `common/venv` (`--without-pip`,
-bootstrapped via `get-pip.py` because spack's CPython lacks the
-bundled wheel), clones DaCe `yakup/dev`, installs deps. Override the
-DaCe branch with `DACE_BRANCH=...` when needed. **E8 (the default
-full-velocity-tendencies path) requires `f2dace/staging`** for its
+`setup.sh` uses the system `/usr/bin/python3.11` (verified working on
+both Daint and Beverin login nodes; override with
+`SC26_PYBIN=/path/to/python` if needed), creates `common/venv`
+(`--without-pip`, bootstrapped via `get-pip.py` because some host
+pythons lack the bundled wheel), clones DaCe `yakup/dev`, installs
+deps. Override the DaCe branch with `DACE_BRANCH=...` when needed.
+After activation (`source common/activate.sh`), the venv's `python`,
+`python3`, and `python3.11` all resolve to the system 3.11
+interpreter. **E8 (the default full-velocity-tendencies path)
+requires `f2dace/staging`** for its
 icon-artifacts/sc26_layout codegen pipeline; the run scripts switch
 to it via `DACE_BRANCH=f2dace/staging` automatically. E7 (WIP) uses
 `yakup/dev`; only relevant if you opt into the new pipeline.
@@ -109,9 +112,10 @@ Both need SLURM + exclusive single-node allocation.
 
 ## Software
 
-- Spack CPython 3.13.8 (`python/asgm25z` zen3 / `python/6kewgi6`
-  neoverse_v2); spack `sqlite` (the rest of stdlib's C-ext prereqs
-  are RPATH-baked into the spack python).
+- System `/usr/bin/python3.11` on both clusters (overridable via
+  `SC26_PYBIN`). The earlier spack-CPython path was dropped after the
+  zen3-built python failed on Beverin's login nodes with
+  `LookupError: no codec search functions registered`.
 - DaCe `yakup/dev` for E1–E6 and E7; `f2dace/staging` for E8 (its
   `run_{daint,beverin}.sh` exports `DACE_BRANCH=f2dace/staging` before
   sourcing `activate.sh`, which switches the DaCe checkout
@@ -136,8 +140,8 @@ Likely overrides:
 - [`../../setup.sh`](../../setup.sh) — `SPACK_*` short hashes;
   `spack find -L <pkg> target=zen3` to refresh.
 - [`common/setup.sh`](common/setup.sh) /
-  [`activate.sh`](common/activate.sh) — `SC26_PYTHON_SPEC`,
-  `sqlite/<hash>`, `DACE_BRANCH`. All env-overridable.
+  [`activate.sh`](common/activate.sh) — `SC26_PYBIN` (default
+  `/usr/bin/python3.11`), `DACE_BRANCH`. All env-overridable.
 - [`common/setup_{daint,beverin}.sh`](common/) — GCC / ROCm / CUDA /
   OpenBLAS specs.
 - `EX_*/download_data.sh` — `DATA_URL` if upstream moves.

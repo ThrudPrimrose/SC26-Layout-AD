@@ -76,10 +76,30 @@ PY
 # produces a working interpreter tree but no `bin/activate` and no pip.
 # We work around both: create with --without-pip, bootstrap pip via
 # get-pip.py, and activate by exporting VIRTUAL_ENV + PATH manually.
-if [[ ! -x "${VENV_DIR}/bin/python" ]]; then
-  log "creating venv at ${VENV_DIR}"
-  "${PYBIN}" -m venv --without-pip "${VENV_DIR}"
+# Detect a stale venv (e.g. one created with an older interpreter that
+# no longer exists / fails to start) and rebuild it from scratch. The
+# canonical signal: venv/bin/python should start successfully AND its
+# sys._base_executable should resolve to the same realpath as PYBIN.
+# If either check fails, blow away the venv directory.
+_venv_ok=0
+if [[ -x "${VENV_DIR}/bin/python" ]]; then
+    if "${VENV_DIR}/bin/python" -c "
+import sys, os
+want = os.path.realpath('${PYBIN}')
+got  = os.path.realpath(sys._base_executable)
+sys.exit(0 if want == got else 1)
+" >/dev/null 2>&1; then
+        _venv_ok=1
+    else
+        log "venv at ${VENV_DIR} is stale or broken (different base interpreter); rebuilding"
+        rm -rf "${VENV_DIR}"
+    fi
 fi
+if (( _venv_ok == 0 )); then
+    log "creating venv at ${VENV_DIR}"
+    "${PYBIN}" -m venv --without-pip "${VENV_DIR}"
+fi
+unset _venv_ok
 
 # Manual activation (no bin/activate exists on this spack python).
 export VIRTUAL_ENV="${VENV_DIR}"

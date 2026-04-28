@@ -138,7 +138,7 @@ Results should generalize to any system with comparable cache-line sizes (64\,B 
 
 \artinpart{Software}
 
-Both platforms share Python (CPython 3.13 via Spack), DaCe, and the same canonical compile flags. Per-platform toolchain pins (Spack-managed):
+Both platforms share Python (system \texttt{/usr/bin/python3.11}), DaCe, and the same canonical compile flags. Per-platform toolchain pins (Spack-managed):
 
 \begin{center}
 \small
@@ -174,7 +174,7 @@ E1--E4 generate input data synthetically. Production-code experiments (E5, E6, E
 
 \artinpart{Installation and Deployment}
 
-One-time per cluster: \texttt{bash Experiments/common/setup.sh} bootstraps a Python 3.13 venv, the DaCe checkout, and the per-platform compile flags. Per experiment: \texttt{cd Experiments/EX\_\textit{name} \&\& sbatch run\_<plat>.sh}, then plot with \texttt{python plot\_paper.py} (or \texttt{bash Figures/plot\_all.sh Runtime} to regenerate the full runtime sweep). Each \texttt{run\_<plat>.sh} sources \texttt{../common/activate.sh} (venv + DaCe pin) and \texttt{../common/setup\_<plat>.sh} (Spack loads, compile flags, OMP and NUMA pinning) before invoking the benchmark; \texttt{<plat>} is \texttt{daint} or \texttt{beverin}.
+One-time per cluster: \texttt{bash Experiments/common/setup.sh} bootstraps a Python 3.11 venv (system \texttt{/usr/bin/python3.11}), the DaCe checkout, and the per-platform compile flags. Per experiment: \texttt{cd Experiments/EX\_\textit{name} \&\& sbatch run\_<plat>.sh}, then plot with \texttt{python plot\_paper.py} (or \texttt{bash Figures/plot\_all.sh Runtime} to regenerate the full runtime sweep). Each \texttt{run\_<plat>.sh} sources \texttt{../common/activate.sh} (venv + DaCe pin) and \texttt{../common/setup\_<plat>.sh} (Spack loads, compile flags, OMP and NUMA pinning) before invoking the benchmark; \texttt{<plat>} is \texttt{daint} or \texttt{beverin}.
 
 \artcomp
 

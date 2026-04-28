@@ -188,12 +188,12 @@ Places to check first:
 
 - `../setup.sh` — `SPACK_*` short hashes.
 - [`Experiments/common/setup.sh`](Experiments/common/setup.sh) +
-  [`activate.sh`](Experiments/common/activate.sh) — `SC26_PYTHON_SPEC`
-  (zen3 → `python/asgm25z`, neoverse_v2 → `python/6kewgi6`),
-  `sqlite/<hash>`, `DACE_BRANCH=yakup/dev`.
+  [`activate.sh`](Experiments/common/activate.sh) — `SC26_PYBIN`
+  (default `/usr/bin/python3.11` on both clusters), `DACE_BRANCH`
+  (default `yakup/dev`; E8 sets `f2dace/staging`).
 - [`Experiments/common/setup_{daint,beverin}.sh`](Experiments/common/) —
   GCC / ROCm / CUDA / OpenBLAS specs.
 - `Experiments/E{4,5,6}_*/download_data.sh` — upstream dataset URLs.
 
-All scripts respect env-var overrides (`SC26_PYTHON_SPEC=...`,
+All scripts respect env-var overrides (`SC26_PYBIN=...`,
 `DACE_BRANCH=...`, `DATA_URL=...`).
