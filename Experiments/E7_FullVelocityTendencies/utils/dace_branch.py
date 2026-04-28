@@ -7,6 +7,11 @@ branch:
   - ``generate_baselines.py`` -> ``f2dace/staging`` (StructToContainerGroups)
   - ``utils.stages.stage{1..6}`` -> ``yakup/dev``  (the day-to-day branch)
 
+E1..E6 do not import dace at all and never trigger a branch switch.
+E8 pins ``f2dace/staging`` end-to-end. E7 (this experiment) pins
+``yakup/dev`` for stages 1..6; do not run E7 concurrently with E8
+against the same DaCe clone -- they would fight over HEAD.
+
 Manual checkout switching is brittle (forget once and you spend an hour
 chasing an opaque ``ImportError``), so each script calls
 :func:`ensure_branch` *before* importing ``dace``. The helper:

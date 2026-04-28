@@ -1,11 +1,11 @@
 """Auto-switch the DaCe git checkout to the branch a script expects.
 
-Each top-level driver in this experiment runs against a specific DaCe
-branch:
-
-  - ``f90_to_sdfg.py``        -> ``f2dace/staging`` (Fortran frontend)
-  - ``generate_baselines.py`` -> ``f2dace/staging`` (StructToContainerGroups)
-  - ``utils.stages.stage{1..6}`` -> ``yakup/dev``  (the day-to-day branch)
+Every driver in this experiment runs on ``f2dace/staging`` (E8's
+codegen pipeline depends on the f2dace Fortran frontend and on
+``StructToContainerGroups``, both shipped by that branch only).
+E1..E6 do not import dace at all. E7 (sibling experiment, WIP) pins
+``yakup/dev`` -- do not run E7 and E8 concurrently against the same
+DaCe clone.
 
 Manual checkout switching is brittle (forget once and you spend an hour
 chasing an opaque ``ImportError``), so each script calls
@@ -175,9 +175,6 @@ def ensure_branch(
 
 # Pinned f2dace/staging tip the experiment was developed against. Re-pin
 # only after re-running the full pipeline (f90_to_sdfg + generate_baselines
-# + stages 1-6) end-to-end.
+# + stages 1-6) end-to-end. This is the only branch the artifact uses.
 F2DACE_BRANCH = "f2dace/staging"
 F2DACE_COMMIT = "8d1654b41fd854addb171f354b944ea373954eb3"
-
-# Day-to-day branch that stages 1-6 expect.
-YAKUP_DEV_BRANCH = "yakup/dev"

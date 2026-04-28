@@ -8,7 +8,10 @@
 #      baked into the spack python via RPATH, so only sqlite needs to
 #      be on the loader path.
 #   2. Creates a venv at common/venv using that spack python.
-#   3. Clones DaCe into common/dace on branch yakup/dev.
+#   3. Clones DaCe into common/dace on branch yakup/dev. E1..E6 don't
+#      import dace at all; E7 stays on yakup/dev; E8 swaps to
+#      f2dace/staging at run time via DACE_BRANCH (run_*.sh exports it
+#      before sourcing activate.sh, which is opt-in on that variable).
 #   4. pip-installs DaCe (editable) + numpy / scipy / matplotlib / pandas.
 #
 # WHAT THIS SCRIPT ASSUMES
@@ -23,7 +26,7 @@
 # Env overrides:
 #   SC26_PYTHON_SPEC   auto-selected by arch (see below); override to force
 #   DACE_URL       default https://github.com/spcl/dace.git
-#   DACE_BRANCH    default yakup/dev
+#   DACE_BRANCH    default yakup/dev (E8 switches to f2dace/staging at run time)
 #   DACE_DIR       default <common>/dace
 #   VENV_DIR       default <common>/venv
 #

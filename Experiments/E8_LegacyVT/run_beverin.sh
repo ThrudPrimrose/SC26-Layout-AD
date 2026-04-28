@@ -31,8 +31,9 @@ EXP_DIR="${SLURM_SUBMIT_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}"
 COMMON_DIR="$(cd "${EXP_DIR}/../common" && pwd)"
 
 # E8 (legacy stage-8 pipeline) requires DaCe on f2dace/staging.
-# Pin before sourcing activate.sh so its DACE_BRANCH-driven checkout
-# switch goes the right way (default is yakup/dev, correct for E1-E7).
+# ``activate.sh`` only switches branches when ``DACE_BRANCH`` is set;
+# E1..E6 leave it unset (no dace), E7 sets yakup/dev (do not run E7
+# concurrently with E8 against the same clone -- they fight over HEAD).
 export DACE_BRANCH="f2dace/staging"
 
 source "${COMMON_DIR}/activate.sh"

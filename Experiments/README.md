@@ -62,15 +62,15 @@ python plot_paper.py
 both Daint and Beverin login nodes; override with
 `SC26_PYBIN=/path/to/python` if needed), creates `common/venv`
 (`--without-pip`, bootstrapped via `get-pip.py` because some host
-pythons lack the bundled wheel), clones DaCe `yakup/dev`, installs
-deps. Override the DaCe branch with `DACE_BRANCH=...` when needed.
-After activation (`source common/activate.sh`), the venv's `python`,
-`python3`, and `python3.11` all resolve to the system 3.11
-interpreter. **E8 (the default full-velocity-tendencies path)
-requires `f2dace/staging`** for its
-icon-artifacts/sc26_layout codegen pipeline; the run scripts switch
-to it via `DACE_BRANCH=f2dace/staging` automatically. E7 (WIP) uses
-`yakup/dev`; only relevant if you opt into the new pipeline.
+pythons lack the bundled wheel), clones DaCe on `yakup/dev`, installs
+deps. After activation (`source common/activate.sh`), the venv's
+`python`, `python3`, and `python3.11` all resolve to the system 3.11
+interpreter. **E1..E6 do not import dace** -- they are pure
+C++/CUDA/HIP microbenchmarks, so `activate.sh` skips the DaCe-branch
+checkout when `DACE_BRANCH` is unset. **E7** pins `yakup/dev`. **E8**
+exports `DACE_BRANCH=f2dace/staging` before sourcing `activate.sh` for
+its codegen pipeline. Do not run E7 and E8 concurrently against the
+same DaCe clone -- the two branches will fight over HEAD.
 
 Each `run_*.sh` sources `../common/activate.sh` (manual venv
 activation; `bin/activate` doesn't exist on spack venvs) and
@@ -116,10 +116,11 @@ Both need SLURM + exclusive single-node allocation.
   `SC26_PYBIN`). The earlier spack-CPython path was dropped after the
   zen3-built python failed on Beverin's login nodes with
   `LookupError: no codec search functions registered`.
-- DaCe `yakup/dev` for E1–E6 and E7; `f2dace/staging` for E8 (its
-  `run_{daint,beverin}.sh` exports `DACE_BRANCH=f2dace/staging` before
-  sourcing `activate.sh`, which switches the DaCe checkout
-  automatically).
+- DaCe branches: E1–E6 do not import dace at all (pure C++/CUDA/HIP
+  microbenchmarks); `activate.sh`'s DaCe-branch checkout is opt-in on
+  `DACE_BRANCH` being exported. E7 (WIP) pins `yakup/dev`. E8 pins
+  `f2dace/staging` for its codegen pipeline. Do not run E7 and E8
+  concurrently against the same DaCe clone.
 - Spack GCC 14, CUDA 12.9 (Daint; **must be < 13** — CUDA 13 removes
   fields DaCe's runtime probes and breaks E8 codegen) / ROCm 6.4.1 (Beverin), OpenBLAS
   0.3.29 / 0.3.30, cuTENSOR / hipTensor and HPTT (E3 only).
