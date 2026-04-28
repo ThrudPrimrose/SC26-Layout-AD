@@ -22,7 +22,10 @@ prerequisite for E8 is the per-loopnest sweep (`T6.3`). E7
 (`../E7_FullVelocityTendencies/`) is the in-progress SDFG-driven
 refactor and is not on the AD path.
 
-E6 runs entirely on DaCe `yakup/dev`.
+E6 does not import dace. The per-loopnest sweeps are pure
+C++/CUDA/HIP microbenchmarks; the access-analysis / winners crunching
+is plain Python over JSON. `activate.sh`'s DaCe-branch checkout is
+opt-in on `DACE_BRANCH`, and E6 leaves it unset.
 
 ## Pipeline
 

@@ -14,8 +14,10 @@
 #   DRY_RUN=1  print the commands instead of running them.
 #
 # Notes:
-#   - FVT (full_velocity_tendencies) sets its own DACE_BRANCH=f2dace/staging;
-#     the other six use the default yakup/dev. No special env needed here.
+#   - L1..L6 are pure C++/CUDA microbenchmarks; they don't import dace and
+#     don't trigger any branch switch (activate.sh's DaCe-branch logic is
+#     opt-in on DACE_BRANCH being explicitly exported). E7 pins yakup/dev;
+#     E8 pins f2dace/staging. No env needed here.
 
 set -euo pipefail
 

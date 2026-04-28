@@ -294,9 +294,16 @@ def none_or_str(v):
 
 parser = argparse.ArgumentParser(
     description="1×2 violin (cap+annotation): stage-8 GPU.",
+    formatter_class=argparse.ArgumentDefaultsHelpFormatter,
 )
-parser.add_argument("--gpu",        default="beverin_full_permutations_8", metavar="DIR", type=none_or_str)
-parser.add_argument("--gpu2",       default="daint_full_permutations_8",   metavar="DIR", type=none_or_str)
+parser.add_argument("--gpu",        default="ps_beverin_full_permutations_8", metavar="DIR", type=none_or_str,
+                    help="Beverin (MI300A) data folder. Defaults to the tracked paper-snapshot "
+                         "copy; pass beverin_full_permutations_8 to plot a fresh sbatch run, "
+                         "or `none` to skip the left panel.")
+parser.add_argument("--gpu2",       default="ps_daint_full_permutations_8",   metavar="DIR", type=none_or_str,
+                    help="Daint (GH200) data folder. Defaults to the tracked paper-snapshot "
+                         "copy; pass daint_full_permutations_8 to plot a fresh sbatch run, "
+                         "or `none` to skip the right panel.")
 parser.add_argument("--gpu-title",  default="MI300A GPU",                  metavar="STR")
 parser.add_argument("--gpu2-title", default="GH200 Hopper GPU",                metavar="STR")
 parser.add_argument("--out",        default="violin_stage8_gpu_cap.png", metavar="FILE",

@@ -5,6 +5,10 @@
 > lives in [`../E8_LegacyVT/`](../E8_LegacyVT/). E7 rebuilds the same
 > module on DaCe `yakup/dev` with `OffloadVelocityToGPU` +
 > `PermuteDimensions`. Skip for the AD.
+>
+> **Do not run E7 and E8 concurrently against the same DaCe clone.**
+> E7 pins `yakup/dev`, E8 pins `f2dace/staging`; they will fight over
+> HEAD. Use a separate `$DACE_DIR` if you need both at once.
 
 GPU layout-permutation sweep on the full ICON velocity-tendencies
 module. E7 is a frozen snapshot of the

@@ -1,3 +1,19 @@
+# Switch the dace clone to f2dace/staging before the eager re-exports
+# below trigger ``import dace`` -- E8's util chain pulls in f2dace-only
+# symbols (e.g. ``ast_utils.singular``) that don't exist on yakup/dev,
+# and a concurrent E1..E6 sbatch can have flipped the clone underneath
+# us. Imported via importlib so it works before sys.path is set up.
+import importlib.util as _ilu
+import os as _os
+_spec = _ilu.spec_from_file_location(
+    "_e8_dace_branch_init",
+    _os.path.join(_os.path.dirname(__file__), "dace_branch.py"),
+)
+_dace_branch = _ilu.module_from_spec(_spec)
+_spec.loader.exec_module(_dace_branch)
+_dace_branch.ensure_branch(_dace_branch.F2DACE_BRANCH)
+del _ilu, _os, _spec, _dace_branch
+
 from utils.find import find_node_by_name, find_node_by_guid
 from utils.loop_locality import make_array_loop_local, apply_loop_locality_pass
 from utils.reductions import (

@@ -189,7 +189,8 @@ Places to check first:
 - [`Experiments/common/setup.sh`](Experiments/common/setup.sh) +
   [`activate.sh`](Experiments/common/activate.sh) — `SC26_PYBIN`
   (default `/usr/bin/python3.11` on both clusters), `DACE_BRANCH`
-  (default `yakup/dev`; E8 sets `f2dace/staging`).
+  (E1..E6 don't import dace and don't trigger any branch switch;
+  E7 pins `yakup/dev`; E8 pins `f2dace/staging`).
 - [`Experiments/common/setup_{daint,beverin}.sh`](Experiments/common/) —
   GCC / ROCm / CUDA / OpenBLAS specs.
 - `Experiments/E{4,5,6}_*/download_data.sh` — upstream dataset URLs.

@@ -40,8 +40,10 @@ EXP_DIR="${SLURM_SUBMIT_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}"
 COMMON_DIR="$(cd "${EXP_DIR}/../common" && pwd)"
 
 # E7 (WIP SDFG-driven pipeline) requires DaCe on yakup/dev. Pin
-# explicitly so a shell that previously sourced E8 (which exports
-# DACE_BRANCH=f2dace/staging) doesn't carry the wrong branch in.
+# explicitly: activate.sh's DaCe checkout is opt-in on DACE_BRANCH.
+# DO NOT run E7 and E8 concurrently against the same DaCe clone --
+# E8 pins f2dace/staging, E7 pins yakup/dev, the two branches do not
+# share submodule SHAs and will fight over the working tree.
 export DACE_BRANCH="yakup/dev"
 
 source "${COMMON_DIR}/activate.sh"

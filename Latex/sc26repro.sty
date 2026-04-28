@@ -10,7 +10,7 @@
 
 \newcommand{\newartifact}{%
     \stepcounter{artifactCounter}%
-    \subsection{Computational Artifact $A_{\theartifactCounter}$}%
+    \subsection{Computational Artifact \texorpdfstring{$A_{\theartifactCounter}$}{A\_\theartifactCounter}}%
 }
 
 \newcommand{\artrel}{%
@@ -30,7 +30,7 @@
 }
 
 \newcommand{\artinpart}[1]{%
-\subsubsection*{#1}}
+\paragraph{#1.}}
 
 \newcommand{\artcomp}{%
     \subsection*{Artifact Execution}

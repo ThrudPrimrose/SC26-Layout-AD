@@ -7,13 +7,21 @@
 # WHAT THIS SCRIPT DOES
 #   1. Activates the venv at common/venv (manual: no bin/activate exists
 #      because spack's CPython ships without venv script templates).
-#   2. Ensures the DaCe clone is on the requested branch.
+#   2. (DaCe-using experiments only) If ``DACE_BRANCH`` is explicitly
+#      exported by the caller, ensures the DaCe clone is on that branch.
+#      No default — E1..E6 never set ``DACE_BRANCH`` and therefore never
+#      trigger a branch switch. E7 pins ``yakup/dev`` and E8 pins
+#      ``f2dace/staging`` before sourcing this script. Do NOT run E7 and
+#      E8 concurrently against the same DaCe clone -- they would fight
+#      over HEAD; use a separate ``$DACE_DIR`` per experiment if needed.
 #
 # WHAT THIS SCRIPT ASSUMES
-#   * `common/setup.sh` has already been run (venv + DaCe clone exist).
+#   * `common/setup.sh` has already been run (venv exists; the DaCe
+#     clone exists too if any experiment in the run needs it).
 #
 # Env overrides:
-#   DACE_BRANCH        default yakup/dev  (E8 sets f2dace/staging before sourcing)
+#   DACE_BRANCH        unset by default; export = explicit pin
+#                      (E7 -> yakup/dev, E8 -> f2dace/staging)
 #   DACE_DIR           default <common>/dace
 #   VENV_DIR           default <common>/venv
 #
@@ -24,7 +32,9 @@
 _COMMON_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 VENV_DIR="${VENV_DIR:-${_COMMON_DIR}/venv}"
 DACE_DIR="${DACE_DIR:-${_COMMON_DIR}/dace}"
-DACE_BRANCH="${DACE_BRANCH:-yakup/dev}"
+# DACE_BRANCH is OPT-IN: no default. E1..E6 never set it, so no branch
+# switch ever happens for them. E7 sets ``yakup/dev``; E8 sets
+# ``f2dace/staging``. Both pin before sourcing this script.
 
 # Python source: system /usr/bin/python3.11 on both clusters. The spack
 # python (python/asgm25z, 3.13.8 zen3) on Beverin starts up with
@@ -44,24 +54,26 @@ export PATH="${VENV_DIR}/bin:${PATH}"
 unset PYTHONHOME
 hash -r 2>/dev/null
 
-if [[ -d "${DACE_DIR}/.git" ]]; then
-  pushd "${DACE_DIR}" >/dev/null
-  CURRENT_BRANCH="$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo '')"
-  if [[ "${CURRENT_BRANCH}" != "${DACE_BRANCH}" ]]; then
-    echo "[activate] switching DaCe ${CURRENT_BRANCH:-<detached>} -> ${DACE_BRANCH}"
-    git fetch origin --quiet
-    git checkout "${DACE_BRANCH}"
+if [[ -n "${DACE_BRANCH:-}" ]]; then
+  if [[ -d "${DACE_DIR}/.git" ]]; then
+    pushd "${DACE_DIR}" >/dev/null
+    CURRENT_BRANCH="$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo '')"
+    if [[ "${CURRENT_BRANCH}" != "${DACE_BRANCH}" ]]; then
+      echo "[activate] switching DaCe ${CURRENT_BRANCH:-<detached>} -> ${DACE_BRANCH}"
+      git fetch origin --quiet
+      git checkout "${DACE_BRANCH}"
+    fi
+    # Sync submodules: a hand-checkout outside this script may leave
+    # the recorded submodule SHAs stale.
+    git submodule update --init --recursive --quiet
+    popd >/dev/null
+  else
+    echo "[activate] WARNING: DACE_BRANCH=${DACE_BRANCH} requested but ${DACE_DIR} is not a git clone. Run setup.sh." >&2
   fi
-  # Sync submodules unconditionally: yakup/dev and f2dace/staging
-  # may pin different submodule SHAs, and a hand-checkout outside
-  # this script may leave them stale.
-  git submodule update --init --recursive --quiet
-  popd >/dev/null
-else
-  echo "[activate] WARNING: ${DACE_DIR} is not a git clone. Run setup.sh." >&2
+  export DACE_BRANCH
 fi
 
-export DACE_DIR VENV_DIR DACE_BRANCH
+export DACE_DIR VENV_DIR
 
 # Make ``python`` resolve to the venv interpreter for the caller's
 # shell. PATH already starts with ``${VENV_DIR}/bin``, but pyenv shims
