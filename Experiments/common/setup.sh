@@ -44,40 +44,58 @@ DACE_DIR="${DACE_DIR:-${SCRIPT_DIR}/dace}"
 DACE_URL="${DACE_URL:-https://github.com/spcl/dace.git}"
 DACE_BRANCH="${DACE_BRANCH:-yakup/dev}"
 
-# Python source: spack on beverin (zen3), system python3.11 on daint
-# (aarch64) — spack scratch installs there get purged by the Capstor
-# atime-based cleanup, so /usr/bin/python3.11 is more durable. Override
-# with SC26_PYBIN=/path/to/python to force a specific interpreter.
+# Python source: system /usr/bin/python3.11 on both clusters.
+#  * On Daint (aarch64) — historical default; spack scratch installs there
+#    get purged by the Capstor atime-based cleanup, so the system python
+#    is more durable.
+#  * On Beverin (x86_64) — the spack python (python/asgm25z, 3.13.8 zen3)
+#    fails to start with ``LookupError: no codec search functions
+#    registered`` because its compiled stdlib path doesn't match the
+#    Beverin login-node filesystem layout (probably a cross-build leak
+#    via spack's binary-cache fetch). System python3.11 is verified
+#    working: ``$ python3.11 -V → Python 3.11.11``.
+# Override with SC26_PYBIN=/path/to/python to force a specific interpreter.
 log() { printf '[setup] %s\n' "$*"; }
 
-case "$(uname -m)" in
-  x86_64)
-    : "${SC26_PYTHON_SPEC:=python/asgm25z}"   # python@3.13.8, zen3
-    SPACK_DEPS=(
-        sqlite/atf6liaa     # sqlite@3.50.4
-    )
-    if ! command -v spack >/dev/null 2>&1; then
-      log "ERROR: spack not found on PATH."
-      exit 1
+# Resolve a python3.11 interpreter in priority order:
+#   1. ``${SC26_PYBIN}`` if explicitly set
+#   2. ``/usr/bin/python3.11`` (system; the canonical AD path)
+#   3. any ``python3.11`` on PATH (e.g. pyenv-shimmed)
+#   4. install via pyenv if available, else error
+PYBIN="${SC26_PYBIN:-}"
+if [[ -z "${PYBIN}" || ! -x "${PYBIN}" ]]; then
+    if [[ -x /usr/bin/python3.11 ]]; then
+        PYBIN=/usr/bin/python3.11
+    elif command -v python3.11 >/dev/null 2>&1; then
+        PYBIN="$(command -v python3.11)"
+    elif command -v pyenv >/dev/null 2>&1; then
+        log "python3.11 not found; installing via pyenv (this may take a few minutes)"
+        # ``pyenv install --skip-existing`` is idempotent. Pick the
+        # newest 3.11.x pyenv knows about.
+        _PY311_VER="$(pyenv install --list 2>/dev/null | awk '/^ *3\.11\.[0-9]+$/{print $1}' | tail -1)"
+        if [[ -z "${_PY311_VER}" ]]; then
+            log "ERROR: pyenv has no 3.11.x available; run \`pyenv update\` first"
+            exit 1
+        fi
+        pyenv install --skip-existing "${_PY311_VER}"
+        PYBIN="$(pyenv root)/versions/${_PY311_VER}/bin/python3.11"
+        unset _PY311_VER
+        if [[ ! -x "${PYBIN}" ]]; then
+            log "ERROR: pyenv install completed but ${PYBIN} is not executable"
+            exit 1
+        fi
+    else
+        log "ERROR: no python3.11 found. Install one of:"
+        log "         (a) system /usr/bin/python3.11 (apt install python3.11 / equivalent)"
+        log "         (b) pyenv (https://github.com/pyenv/pyenv) — setup.sh will then \`pyenv install\`"
+        log "         (c) override with SC26_PYBIN=/path/to/python3.11"
+        exit 1
     fi
-    log "loading spack prereqs (${SPACK_DEPS[*]})"
-    spack load "${SPACK_DEPS[@]}"
-    log "loading spack python (${SC26_PYTHON_SPEC})"
-    spack load "${SC26_PYTHON_SPEC}"
-    PYBIN="${SC26_PYBIN:-$(command -v python3)}"
-    ;;
-  aarch64)
-    PYBIN="${SC26_PYBIN:-/usr/bin/python3.11}"
-    if [[ ! -x "${PYBIN}" ]]; then
-      log "ERROR: ${PYBIN} not found. Install python3.11 or override SC26_PYBIN."
-      exit 1
-    fi
-    ;;
-  *)
-    echo "[setup] ERROR: unsupported arch $(uname -m); set SC26_PYBIN manually." >&2
+fi
+if [[ ! -x "${PYBIN}" ]]; then
+    log "ERROR: resolved interpreter ${PYBIN} is not executable"
     exit 1
-    ;;
-esac
+fi
 
 log "using $("${PYBIN}" --version) at ${PYBIN}"
 
@@ -92,10 +110,30 @@ PY
 # produces a working interpreter tree but no `bin/activate` and no pip.
 # We work around both: create with --without-pip, bootstrap pip via
 # get-pip.py, and activate by exporting VIRTUAL_ENV + PATH manually.
-if [[ ! -x "${VENV_DIR}/bin/python" ]]; then
-  log "creating venv at ${VENV_DIR}"
-  "${PYBIN}" -m venv --without-pip "${VENV_DIR}"
+# Detect a stale venv (e.g. one created with an older interpreter that
+# no longer exists / fails to start) and rebuild it from scratch. The
+# canonical signal: venv/bin/python should start successfully AND its
+# sys._base_executable should resolve to the same realpath as PYBIN.
+# If either check fails, blow away the venv directory.
+_venv_ok=0
+if [[ -x "${VENV_DIR}/bin/python" ]]; then
+    if "${VENV_DIR}/bin/python" -c "
+import sys, os
+want = os.path.realpath('${PYBIN}')
+got  = os.path.realpath(sys._base_executable)
+sys.exit(0 if want == got else 1)
+" >/dev/null 2>&1; then
+        _venv_ok=1
+    else
+        log "venv at ${VENV_DIR} is stale or broken (different base interpreter); rebuilding"
+        rm -rf "${VENV_DIR}"
+    fi
 fi
+if (( _venv_ok == 0 )); then
+    log "creating venv at ${VENV_DIR}"
+    "${PYBIN}" -m venv --without-pip "${VENV_DIR}"
+fi
+unset _venv_ok
 
 # Manual activation (no bin/activate exists on this spack python).
 export VIRTUAL_ENV="${VENV_DIR}"
@@ -127,5 +165,15 @@ cd "${SCRIPT_DIR}"
 # --- plotting / analysis deps -------------------------------------------
 "${VENV_DIR}/bin/python" -m pip install numpy scipy matplotlib pandas
 
+# Make ``python`` resolve to the venv interpreter for the caller's
+# shell, bypassing pyenv shims that might intercept on PATH. Aliases
+# set inside a sourced script propagate to the caller. ``shopt -s
+# expand_aliases`` lets the alias also expand in subshells that source
+# this script non-interactively (e.g. some sbatch wrappers).
+shopt -s expand_aliases 2>/dev/null || true
+alias python="${VENV_DIR}/bin/python"
+alias python3="${VENV_DIR}/bin/python"
+
 log "done."
 log "activate later with:  source ${SCRIPT_DIR}/activate.sh"
+log "  (\`python\` is aliased to ${VENV_DIR}/bin/python in this shell)"

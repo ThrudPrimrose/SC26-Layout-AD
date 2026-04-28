@@ -115,7 +115,7 @@ E6 Loopnests 2--6              & 300 & 300 \\
 E8 Full-module sweep           & 1080 & 1440 \\
 Analysis                       &  10 &  10 \\
 \midrule
-\textbf{Total}                 & \multicolumn{2}{c}{\textbf{$\sim$36~hr / cluster}} \\
+\textbf{Total}                 & \textbf{$\sim$36~hr} & \textbf{$\sim$42~hr} \\
 \bottomrule
 \end{tabular}
 \end{center}
@@ -130,15 +130,15 @@ Analysis                       &  10 &  10 \\
 Two HPC clusters at the Swiss National Supercomputing Centre (CSCS), accessed via SLURM with exclusive single-node allocations:
 
 \begin{itemize}
-\item \textbf{Daint.Alps:} Quad-GH200 nodes, 72-core Arm Neoverse~V2 Grace (512\,GB/s LPDDR5X) + NVIDIA H200 (4\,TB/s HBM3). Measured STREAM Triad peaks: CPU 1.81\,TB/s, GPU 3.78\,TB/s.
-\item \textbf{Beverin:} Quad-MI300A APU nodes, 24 AMD Zen\,4 cores sharing 128\,GB unified HBM3. Measured STREAM Triad peaks: CPU 1.16\,TB/s, GPU 3.55\,TB/s.
+\item \textbf{Daint.Alps:} Quad-GH200 nodes, 72-core Arm Neoverse~V2 Grace (512\,GB/s LPDDR5X) + NVIDIA H200 (4\,TB/s HBM3). Measured STREAM Triad peaks: CPU 1.61\,TB/s, GPU 3.78\,TB/s.
+\item \textbf{Beverin:} Quad-MI300A APU nodes, 24 AMD Zen\,4 cores sharing 128\,GB unified HBM3. Measured STREAM Triad peaks: CPU 0.97\,TB/s, GPU 3.55\,TB/s.
 \end{itemize}
 
 Results should generalize to any system with comparable cache-line sizes (64\,B CPU, 128\,B GPU); absolute bandwidths will differ.
 
 \artinpart{Software}
 
-Both platforms share Python (CPython 3.13 via Spack), DaCe, and the same canonical compile flags. Per-platform toolchain pins (Spack-managed):
+Both platforms share Python (system \texttt{/usr/bin/python3.11}), DaCe, and the same canonical compile flags. Per-platform toolchain pins (Spack-managed):
 
 \begin{center}
 \small
@@ -157,7 +157,8 @@ Vendor xpose (E3) & HPTT          & HPTT              \\
 \end{center}
 \noindent DaCe branch: \texttt{yakup/dev} for E1--E6, \texttt{f2dace/staging} for E8.
 
-\paragraph{CUDA pin.} \textbf{CUDA must be $<$~13} on Daint: CUDA~13 breaks E8's stage-8 codegen by removing \texttt{cudaDeviceProp} fields DaCe's runtime probes; CUDA~12.9 is verified.
+\paragraph{CUDA pin.} \textbf{CUDA must be 12.x} on Daint: CUDA~13 removes or relocates symbols DaCe depends on (\texttt{CTA\_SYNC}, \texttt{cub::CountingInputIterator}, \texttt{cub::TransformInputIterator}, plus \texttt{cudaDeviceProp} field renames). The cluster pin via \texttt{Experiments/common/setup\_daint.sh} (\texttt{cuda@12.9}) avoids them; CUDA~12.9 is verified end-to-end.\par
+E8's \texttt{tools/patch\_codegen\_reductions.py} is wired into \texttt{compile\_action()} as a post-codegen hook: between codegen and \texttt{nvcc}/\texttt{hipcc} it restores \texttt{reductions\_device.cuh} into every device-scope file (the permute pass drops it from \texttt{sdfg.global\_code}) so reduction tasklets inlined into \texttt{\_\_device\_\_} helpers compile cleanly. Idempotent.
 
 \paragraph{Compile flags and pinning.} \texttt{CPU\_CXXFLAGS} and \texttt{GPU\_CXXFLAGS} (exported by the setup scripts, applied uniformly across all \texttt{g++} / \texttt{nvcc} / \texttt{hipcc} invocations) carry \texttt{-O3 -march=native -ffast-math -fopenmp -std=c++17} on both platforms; \texttt{-arch=sm\_90 --use\_fast\_math} on Daint; \texttt{--offload-arch=gfx942} with HIP-specific atomics on Beverin. \texttt{OMP\_SCHEDULE=static} and \texttt{SLURM\_CPU\_BIND=cores} are exported alongside; every \texttt{\#pragma omp parallel for} uses \texttt{schedule(static)}. Exact lists in each \texttt{setup\_<plat>.sh}.
 
@@ -173,7 +174,7 @@ E1--E4 generate input data synthetically. Production-code experiments (E5, E6, E
 
 \artinpart{Installation and Deployment}
 
-One-time per cluster: \texttt{bash Experiments/common/setup.sh} bootstraps a Python 3.13 venv, the DaCe checkout, and the per-platform compile flags. Per experiment: \texttt{cd Experiments/EX\_\textit{name} \&\& sbatch run\_<plat>.sh}, then plot with \texttt{python plot\_paper.py} (or \texttt{bash Figures/plot\_all.sh Runtime} to regenerate the full runtime sweep). Each \texttt{run\_<plat>.sh} sources \texttt{../common/activate.sh} (venv + DaCe pin) and \texttt{../common/setup\_<plat>.sh} (Spack loads, compile flags, OMP and NUMA pinning) before invoking the benchmark; \texttt{<plat>} is \texttt{daint} or \texttt{beverin}.
+One-time per cluster: \texttt{bash Experiments/common/setup.sh} bootstraps a Python 3.11 venv (system \texttt{/usr/bin/python3.11}), the DaCe checkout, and the per-platform compile flags. Per experiment: \texttt{cd Experiments/EX\_\textit{name} \&\& sbatch run\_<plat>.sh}, then plot with \texttt{python plot\_paper.py} (or \texttt{bash Figures/plot\_all.sh Runtime} to regenerate the full runtime sweep). Each \texttt{run\_<plat>.sh} sources \texttt{../common/activate.sh} (venv + DaCe pin) and \texttt{../common/setup\_<plat>.sh} (Spack loads, compile flags, OMP and NUMA pinning) before invoking the benchmark; \texttt{<plat>} is \texttt{daint} or \texttt{beverin}.
 
 \artcomp
 

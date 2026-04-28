@@ -88,8 +88,8 @@ those timing lines.
 | Component | Source | Notes |
 |---|---|---|
 | DaCe | `f2dace/staging` | Required for E8's codegen pipeline. The run script switches to it automatically; revert to `yakup/dev` after the job (or use a separate clone). |
-| AMD backend | `setup_beverin.sh` | On Beverin, sourcing `../common/setup_beverin.sh` exports `HIP_PLATFORM=amd`, sets `--rocm-path` / `--hip-path` / `--offload-arch=gfx942` in `GPU_CXXFLAGS`, and warns via `hipconfig --platform` if hipcc is misresolved. Together they pin the AMD HIP backend even when the env propagation through subprocesses is flaky. |
-| CUDA | **< 13** (12.9 verified) | CUDA 13 removes `cudaDeviceProp` fields DaCe's runtime probes during initialization, breaking E8's stage-8 codegen. Use CUDA 12.x. |
+| AMD backend | `setup_beverin.sh` + `utils/compile_if_propagated_sdfgs.py` | On Beverin, sourcing `../common/setup_beverin.sh` exports `HIP_PLATFORM=amd`, mirrors `ROCM_HOME`/`ROCM_PATH`/`HIP_PATH`, pins `--rocm-path` / `--hip-path` / `--offload-arch=gfx942` / `-fopenmp` into `GPU_CXXFLAGS`, and adds ROCm's bundled `libomp.so` directory (e.g. `${ROCM_HOME}/lib/llvm/lib/`) to `LD_LIBRARY_PATH` at sourcing time so binaries can find the LLVM OpenMP runtime. The propagated-SDFG compile path mirrors the same flag set. `hipconfig --platform` is checked at sourcing time and warns if hipcc is misresolved. |
+| CUDA | **12.x** (12.9 verified) | CUDA 13 removes/relocates several CUB and runtime symbols DaCe relies on: `CTA_SYNC` (was a CUB macro for `__syncthreads()`), `cub::CountingInputIterator`, `cub::TransformInputIterator`, plus `cudaDeviceProp` field renames probed during init. The cluster pin (CUDA 12.9 via `Experiments/common/setup_daint.sh`) avoids all of them. A 6-line patch in DaCe's `runtime/include/dace/{cuda/multidim_gbar.cuh,reduction.h}` makes the build CUDA-13-clean if you need to upgrade later. |
 | ICON dataset | R02B05 / `nproma=20480` (~9 GB) | Auto-fetched / symlinked to `data_r02b05/`. Same dataset as E7. |
 | `layout_candidates.json` | `../E6_VelocityTendencies/access_analysis/select_loopnests.py` | Regenerated on first run if missing. |
 | `winners.json` | `../E6_VelocityTendencies/access_analysis/derive_winners.py` | Empirical V$_k$ winners per loopnest, from E6's loopnest CSVs. Regenerated on first run if missing. |
@@ -112,10 +112,29 @@ those timing lines.
   (shuffled / unshuffled).
 - [`tools/patch_codegen_reductions.py`](tools/patch_codegen_reductions.py)
   — post-codegen hook wired into `compile_action()` via
-  `post_codegen_hook`. Injects `#include "reductions_kernel.cuh"` and
-  rewrites `__dace_current_stream` → `nullptr` in the generated
-  `*_cuda.cu` of every permuted SDFG (otherwise the inlined reduction
-  tasklets fail to compile). Idempotent.
+  `post_codegen_hook`. Patches every `src/cuda/*.cu` (NVIDIA),
+  `src/cuda/hip/*.cpp` (AMD), and `src/cpu/*.cpp` (host glue) with:
+  (1) `#include "reductions_device.cuh"` on device-scope files —
+  defines `__REDUCE_DEVICE__`, which makes the reduction tasklet's
+  `#ifdef` chain pick the `__device__`-callable branch
+  (`reduce_*_device`) ahead of the host-side `reduce_*_gpu`. Required
+  because the permute pass inlines reduction tasklets into `__device__
+  loop_body_*` helpers; without it nvcc errors with "calling a
+  __host__ function from a __device__ function". (2) `#include
+  "reductions_kernel.cuh"` (host-side declarations) and, on CPU host
+  glue, `#include "reductions_cpu.h"` (CPU-side `reduce_*_cpu`).
+  (3) Every value-use of `__dace_current_stream` rewritten to
+  `nullptr` (declarations and LHS-of-assignment kept intact). The
+  upstream icon-artifacts contract is "consumer defines
+  `__REDUCE_DEVICE__` via a global include"; DaCe's permute pass
+  drops the include from `sdfg.global_code`, so the patcher restores
+  it post-codegen. Idempotent.
+- [`src/reductions_kernel.{cu,cpp}`](src/reductions_kernel.cu) — the
+  host-side `reduce_*_gpu` impls. `.cu` is single-source
+  CUDA + HIP via `#if __HIP_PLATFORM_AMD__`; `.cpp` is the HIP-only
+  trim. Linked automatically by `compile_if_propagated_sdfgs` —
+  `.cu` on NVIDIA, `.cpp` on AMD — alongside `src/reductions.cpp`
+  (CPU `reduce_*_cpu`).
 - [`utils/stages/compile_gpu_stage8.py`](utils/stages/compile_gpu_stage8.py)
   — produces the per-config
   `velocity_gpu.stage8_standalone_release_permuted_<cfg>_<ms|mu>`
@@ -145,6 +164,23 @@ trimming, Scott-rule violin KDE with 200 eval points.
 - **`layout_candidates.json` regeneration fails (LOKI not installed)**:
   ship the JSON manually — the file is committed under
   `../E6_VelocityTendencies/access_analysis/`.
+- **`error while loading shared libraries: libomp.so` (Beverin only)**:
+  hipcc/clang on ROCm emits LLVM OpenMP ABI (binary DT_NEEDs
+  `libomp.so`). `setup_beverin.sh` adds ROCm's bundled libomp dir
+  (`${ROCM_HOME}/lib/llvm/lib/` or similar) to `LD_LIBRARY_PATH` at
+  sourcing time. If this error still appears, the libomp resolver
+  failed to find a `libomp.so` under any of the candidate paths;
+  source `setup_beverin.sh` again and check the
+  `[setup_beverin] libomp.so resolved at <path>` log line, or run
+  `find ${ROCM_HOME} -name 'libomp.so*'` to locate the shipped copy.
+- **`reduce_*_gpu undefined` / `__dace_current_stream undefined` /
+  "calling a __host__ function from a __device__ function"**: these are
+  all symptoms of a missing post-codegen reductions patch. The
+  `post_codegen_hook` wired in `utils/stages/common.py` should fix
+  them inline; if you see them, check that
+  `tools/patch_codegen_reductions.py` is on disk + executable and that
+  `compile_action()` is calling it. Re-run the patcher manually with
+  `python tools/patch_codegen_reductions.py codegen` (idempotent).
 
 ## See also
 

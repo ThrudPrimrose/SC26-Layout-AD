@@ -44,6 +44,44 @@ export BEVERIN=1
 # Stage 8 / propagated-SDFG compile honors _RELEASE (see setup_daint.sh).
 export _RELEASE="${_RELEASE:-1}"
 
+# --- libomp resolution at runtime ---------------------------------------
+# hipcc/ROCm clang emits LLVM OpenMP ABI (``__kmpc_*`` symbols against
+# ``libomp.so``) regardless of any ``-fopenmp=libgomp`` we pass at
+# compile time. The build (E8 host glue) therefore DT_NEEDs ``libomp.so``
+# and the loader needs to find it at runtime. Add ROCm's bundled libomp
+# directory to LD_LIBRARY_PATH; falls through to a clear error if no
+# ROCm/system libomp is found.
+_libomp_dir=""
+for _cand in \
+    "${ROCM_HOME:-/opt/rocm}/lib/llvm/lib/libomp.so" \
+    "${ROCM_HOME:-/opt/rocm}/llvm/lib/libomp.so" \
+    "${ROCM_HOME:-/opt/rocm}/lib/libomp.so" \
+    /usr/lib/llvm/lib/libomp.so \
+    /usr/lib/x86_64-linux-gnu/libomp.so \
+    /usr/lib64/libomp.so; do
+    if [[ -f "${_cand}" ]]; then
+        _libomp_dir="$(dirname "${_cand}")"
+        break
+    fi
+done
+
+if [[ -n "${_libomp_dir}" ]]; then
+    export LD_LIBRARY_PATH="${_libomp_dir}:${LD_LIBRARY_PATH:-}"
+    echo "[setup_beverin] libomp.so resolved at ${_libomp_dir}/libomp.so"
+else
+    echo "[setup_beverin] ERROR: no libomp.so found in any of:" >&2
+    printf '  - %s\n' \
+        "${ROCM_HOME:-/opt/rocm}/lib/llvm/lib/libomp.so" \
+        "${ROCM_HOME:-/opt/rocm}/llvm/lib/libomp.so" \
+        "${ROCM_HOME:-/opt/rocm}/lib/libomp.so" \
+        /usr/lib/llvm/lib/libomp.so \
+        /usr/lib/x86_64-linux-gnu/libomp.so \
+        /usr/lib64/libomp.so >&2
+    echo "[setup_beverin]   E8 host-side OpenMP needs libomp at runtime; install ROCm's llvm/lib component" >&2
+    echo "[setup_beverin]   or point ROCM_HOME at a ROCm tree that ships libomp." >&2
+fi
+unset _libomp_dir _cand
+
 # --- OpenMP / SLURM pinning (Zen4: 4 NUMA × 24 cores) --------------------
 export OMP_NUM_THREADS=96
 export OMP_PROC_BIND=close
@@ -58,7 +96,7 @@ export CPU_CXXFLAGS="${CPU_CXXFLAGS:--O3 -march=native -mtune=native -fopenmp -f
 export CPU_LDFLAGS="${CPU_LDFLAGS:--lnuma}"
 
 export GPU_CXX="${GPU_CXX:-hipcc}"
-export GPU_CXXFLAGS="${GPU_CXXFLAGS:--O3 -std=c++17 --offload-arch=${ARCH} --rocm-path=${ROCM_HOME} --hip-path=${ROCM_HOME} -march=native -mtune=native -ffast-math -fno-trapping-math -fno-math-errno -munsafe-fp-atomics -mllvm -amdgpu-early-inline-all=true -mllvm -amdgpu-function-calls=false -fgpu-flush-denormals-to-zero -D__HIP_PLATFORM_AMD__=1 -DHIP_PLATFORM_AMD=1 -fopenmp=libgomp}"
+export GPU_CXXFLAGS="${GPU_CXXFLAGS:--O3 -std=c++17 --offload-arch=${ARCH} --rocm-path=${ROCM_HOME} --hip-path=${ROCM_HOME} -march=native -mtune=native -ffast-math -fno-trapping-math -fno-math-errno -munsafe-fp-atomics -mllvm -amdgpu-early-inline-all=true -mllvm -amdgpu-function-calls=false -fgpu-flush-denormals-to-zero -D__HIP_PLATFORM_AMD__=1 -DHIP_PLATFORM_AMD=1 -fopenmp}"
 export GPU_LDFLAGS="${GPU_LDFLAGS:--lnuma}"
 
 # Optional: OpenBLAS for CPU baselines (E3 transpose uses this).

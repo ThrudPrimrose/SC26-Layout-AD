@@ -87,7 +87,10 @@ def _get_link_compiler(gpu: bool) -> str:
 
 def _get_flags(gpu: bool, release: bool, lib: bool, debuginfo: bool) -> str:
     if gpu and AMD:
-        omp_flag = "-fopenmp"
+        # Match setup_beverin.sh's GPU_CXXFLAGS: pin libgomp explicitly,
+        # otherwise the binary links LLVM's libomp.so (absent on the
+        # cluster) and ld.so fails at run time.
+        omp_flag = "-fopenmp=libgomp"
     elif gpu:
         omp_flag = "-Xcompiler=-fopenmp"
     else:
@@ -317,6 +320,9 @@ def _compile_and_link(
 
     if "nvcc" in link_cc:
         link_flags += " -Xcompiler=-fopenmp "
+    elif AMD:
+        # Same libgomp pin as the compile step (see _get_flags above).
+        link_flags += " -fopenmp=libgomp "
     else:
         link_flags += " -fopenmp "
 

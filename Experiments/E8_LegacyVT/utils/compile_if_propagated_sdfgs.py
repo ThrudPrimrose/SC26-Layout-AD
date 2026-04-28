@@ -73,6 +73,15 @@ def _get_link_compiler(gpu: bool) -> str:
 
 def _get_flags(gpu: bool, release: bool, lib: bool, debuginfo: bool) -> str:
     if gpu and AMD:
+        # Bare ``-fopenmp`` matches what clang/hipcc on ROCm emits
+        # natively (LLVM OpenMP ABI -- ``__kmpc_*`` symbols against
+        # ``libomp.so``). ``-fopenmp=libgomp`` was tried earlier but
+        # ROCm clang emits LLVM ABI regardless of the flag, so the
+        # link succeeded against libgomp but the binary still needed
+        # libomp at runtime ("version 'VERSION' not found"). Bare
+        # ``-fopenmp`` makes the build consistent with what the
+        # binary asks for; ``setup_beverin.sh`` surfaces ROCm's
+        # bundled libomp.so on LD_LIBRARY_PATH at runtime.
         omp_flag = "-fopenmp"
     elif gpu:
         omp_flag = "-Xcompiler=-fopenmp"
@@ -279,6 +288,10 @@ def _compile_and_link(
     if "nvcc" in link_cc:
         link_flags += " -Xcompiler=-fopenmp "
     else:
+        # AMD (hipcc) and CPU (g++) both take bare ``-fopenmp``; clang
+        # selects libomp, gcc selects libgomp. The runtime side is
+        # handled by ``setup_beverin.sh`` (surfaces ROCm's libomp.so
+        # on LD_LIBRARY_PATH).
         link_flags += " -fopenmp "
 
     link_cmd = f"{link_cc} {' '.join(objects)} {arch_flag} {link_flags} -o {output}"

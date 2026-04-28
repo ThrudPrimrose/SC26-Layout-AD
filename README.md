@@ -149,7 +149,13 @@ as `CPU_CXXFLAGS` / `GPU_CXXFLAGS`.
 - **hipcc (Beverin GPU)**: same set as GCC except no
   `-fno-vect-cost-model` (Clang does not implement it — accepted
   exception), plus HIP-specific `-munsafe-fp-atomics` /
-  `-mllvm -amdgpu-early-inline-all=true`.
+  `-mllvm -amdgpu-early-inline-all=true`, the AMD-backend pins
+  `--rocm-path=$ROCM_HOME --hip-path=$HIP_PATH --offload-arch=gfx942`,
+  and bare `-fopenmp` (clang/hipcc emits LLVM OpenMP ABI natively;
+  `setup_beverin.sh` adds ROCm's bundled `libomp.so` directory to
+  `LD_LIBRARY_PATH` at sourcing time). The same set is mirrored into
+  `E8 utils/compile_if_propagated_sdfgs.py` for the propagated-SDFG
+  compile path.
 
 `-fno-trapping-math` and `-fno-math-errno` are already implied by
 `-ffast-math`; they are listed explicitly so intent survives any
@@ -181,12 +187,12 @@ Places to check first:
 
 - `../setup.sh` — `SPACK_*` short hashes.
 - [`Experiments/common/setup.sh`](Experiments/common/setup.sh) +
-  [`activate.sh`](Experiments/common/activate.sh) — `SC26_PYTHON_SPEC`
-  (zen3 → `python/asgm25z`, neoverse_v2 → `python/6kewgi6`),
-  `sqlite/<hash>`, `DACE_BRANCH=yakup/dev`.
+  [`activate.sh`](Experiments/common/activate.sh) — `SC26_PYBIN`
+  (default `/usr/bin/python3.11` on both clusters), `DACE_BRANCH`
+  (default `yakup/dev`; E8 sets `f2dace/staging`).
 - [`Experiments/common/setup_{daint,beverin}.sh`](Experiments/common/) —
   GCC / ROCm / CUDA / OpenBLAS specs.
 - `Experiments/E{4,5,6}_*/download_data.sh` — upstream dataset URLs.
 
-All scripts respect env-var overrides (`SC26_PYTHON_SPEC=...`,
+All scripts respect env-var overrides (`SC26_PYBIN=...`,
 `DACE_BRANCH=...`, `DATA_URL=...`).
