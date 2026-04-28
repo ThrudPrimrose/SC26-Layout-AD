@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
 # refresh_tracked_results.sh -- prune stale slurm logs and force-track results
 #
-# For every `<stem>_<jobid>.{err,out}` under Experiments/, keep only the
-# file with the largest <jobid> per (directory, stem, extension); remove
-# (`git rm` if tracked, plain `rm` otherwise) the older ones. Then force-add
-# the surviving log, every `*.csv` under Experiments/<E>*/results/, and
-# every E8 stage-8 per-config `*.txt` under
+# Drops every `*.err` under Experiments/ (they can be hundreds of MB and
+# break GitHub's 100 MB push limit). For every `<stem>_<jobid>.out`,
+# keeps only the file with the largest <jobid> per (dir, stem); removes
+# (`git rm` if tracked, plain `rm` otherwise) older ones. Then force-adds
+# the surviving `.out`, every `*.csv` under Experiments/<E>*/results/,
+# and every E8 stage-8 per-config `*.txt` under
 # Experiments/E8_LegacyVT/*_full_permutations_8/ so they land in the
 # index even when root-level .gitignore would normally hide them
 # (`*.out`, `Experiments/*/results/`, etc.).
@@ -43,7 +44,18 @@ is_tracked_and_clean() {
   git diff --quiet HEAD -- "$1" 2>/dev/null
 }
 
-# --- Step 1: group .err/.out files by (dir, stem, ext); keep largest jobid ---
+# --- Step 1a: drop every .err file (can exceed GitHub's 100 MB limit) ---
+err_removed=0
+while IFS= read -r f; do
+  if git ls-files --error-unmatch -- "$f" >/dev/null 2>&1; then
+    run git rm -f -q -- "$f"
+  else
+    run rm -f -- "$f"
+  fi
+  : $((err_removed++))
+done < <(find Experiments -type f -name '*.err' 2>/dev/null)
+
+# --- Step 1b: group .out files by (dir, stem); keep largest jobid ---
 declare -A KEEP_FILE   # key -> path of current best
 declare -A KEEP_ID     # key -> largest jobid seen
 
@@ -52,12 +64,11 @@ kept=0
 
 while IFS= read -r f; do
   base="${f##*/}"
-  if [[ "$base" =~ ^(.+)_([0-9]+)\.(err|out)$ ]]; then
+  if [[ "$base" =~ ^(.+)_([0-9]+)\.out$ ]]; then
     stem_dir="$(dirname "$f")"
     stem_name="${BASH_REMATCH[1]}"
     jobid="${BASH_REMATCH[2]}"
-    ext="${BASH_REMATCH[3]}"
-    key="${stem_dir}|${stem_name}|${ext}"
+    key="${stem_dir}|${stem_name}"
     cur_id="${KEEP_ID[$key]:-0}"
     if (( jobid > cur_id )); then
       # Demote previous winner.
@@ -81,7 +92,7 @@ while IFS= read -r f; do
       : $((removed_old++))
     fi
   fi
-done < <(find Experiments -type f \( -name '*.err' -o -name '*.out' \) 2>/dev/null)
+done < <(find Experiments -type f -name '*.out' 2>/dev/null)
 
 # --- Step 2: force-add the surviving slurm logs (skip already-clean) ---
 kept_skipped=0
@@ -124,8 +135,9 @@ done < <(find Experiments/E8_LegacyVT -type f -name '*.txt' -path '*_full_permut
 
 echo
 echo "summary:"
-echo "  older slurm logs removed         : ${removed_old}"
-echo "  latest slurm logs force-added    : ${kept}  (already-clean skipped: ${kept_skipped})"
+echo "  .err files removed               : ${err_removed}"
+echo "  older .out files removed         : ${removed_old}"
+echo "  latest .out files force-added    : ${kept}  (already-clean skipped: ${kept_skipped})"
 echo "  CSVs force-added                 : ${csv_added}  (already-clean skipped: ${csv_skipped})"
 echo "  E8 stage-8 TXTs force-added      : ${e8_txt_added}  (already-clean skipped: ${e8_txt_skipped})"
 if (( ! APPLY )); then
