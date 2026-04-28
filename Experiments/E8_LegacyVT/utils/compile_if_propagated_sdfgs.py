@@ -73,13 +73,16 @@ def _get_link_compiler(gpu: bool) -> str:
 
 def _get_flags(gpu: bool, release: bool, lib: bool, debuginfo: bool) -> str:
     if gpu and AMD:
-        # Match setup_beverin.sh's GPU_CXXFLAGS: pin libgomp explicitly so
-        # the binary links against /usr/lib/.../libgomp.so (which the
-        # cluster has) instead of LLVM's libomp.so (which it does not),
-        # otherwise the runtime fails with
-        # ``error while loading shared libraries: libomp.so: cannot
-        # open shared object file: No such file or directory``.
-        omp_flag = "-fopenmp=libgomp"
+        # Bare ``-fopenmp`` matches what clang/hipcc on ROCm emits
+        # natively (LLVM OpenMP ABI -- ``__kmpc_*`` symbols against
+        # ``libomp.so``). ``-fopenmp=libgomp`` was tried earlier but
+        # ROCm clang emits LLVM ABI regardless of the flag, so the
+        # link succeeded against libgomp but the binary still needed
+        # libomp at runtime ("version 'VERSION' not found"). Bare
+        # ``-fopenmp`` makes the build consistent with what the
+        # binary asks for; ``setup_beverin.sh`` surfaces ROCm's
+        # bundled libomp.so on LD_LIBRARY_PATH at runtime.
+        omp_flag = "-fopenmp"
     elif gpu:
         omp_flag = "-Xcompiler=-fopenmp"
     else:
@@ -193,48 +196,6 @@ import subprocess
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 
-def _gcc_libgomp_path() -> typing.Optional[str]:
-    """Absolute path to the spack-loaded gcc's ``libgomp.so.1``, or
-    None if no usable gcc is found.
-
-    On Beverin ``which gcc`` resolves to ``/usr/bin/gcc`` (system
-    gcc, often older than what setup_beverin.sh's spack-loaded gcc
-    actually uses for host compile). The libgomp ABI we link against
-    needs to match the host-compile gcc, so resolve via
-    ``spack location -i gcc/...`` first and fall back to PATH only if
-    spack isn't available. Same source-of-truth as the
-    ``setup_beverin.sh`` runtime shim.
-    """
-    candidates = []
-    # 1. spack-resolved gcc (matches setup_beverin.sh: ``spack load gcc/ktd4slj``)
-    for spec in ("gcc/ktd4slj", "gcc@14", "gcc"):
-        try:
-            prefix = subprocess.check_output(
-                ["spack", "location", "-i", spec],
-                text=True, stderr=subprocess.DEVNULL,
-            ).strip()
-            cand = os.path.join(prefix, "bin", "gcc")
-            if prefix and os.path.isfile(cand) and os.access(cand, os.X_OK):
-                candidates.append(cand)
-                break  # prefer the first match (gcc/ktd4slj wins over gcc@14)
-        except (subprocess.CalledProcessError, FileNotFoundError, OSError):
-            continue
-    # 2. PATH gcc as fallback
-    candidates.append("gcc")
-
-    for cc in candidates:
-        try:
-            out = subprocess.check_output(
-                [cc, "-print-file-name=libgomp.so.1"],
-                text=True, stderr=subprocess.DEVNULL,
-            ).strip()
-            if out and os.path.isfile(out):
-                return out
-        except (subprocess.CalledProcessError, FileNotFoundError, OSError):
-            continue
-    return None
-
-
 def _compile_and_link(
     sources: typing.List[str],
     includes: str,
@@ -326,42 +287,11 @@ def _compile_and_link(
 
     if "nvcc" in link_cc:
         link_flags += " -Xcompiler=-fopenmp "
-    elif AMD:
-        # libgomp pin -- four layers of defense against the
-        # ``libomp.so: cannot open shared object file`` runtime error
-        # on Beverin (clang/hipcc's default OpenMP runtime is libomp,
-        # which isn't installed on the cluster):
-        #   1. ``-fopenmp=libgomp`` tells clang's driver to select
-        #      libgomp for OpenMP at compile + link time;
-        #   2. The absolute path to gcc's libgomp.so.1 is added as a
-        #      positional arg so the linker can't fall back to lib
-        #      search heuristics. DT_NEEDED ends up with the canonical
-        #      ``libgomp.so.1`` SONAME, never ``libomp.so``;
-        #   3. ``-Wl,-rpath=<dir>`` bakes that directory into the
-        #      binary's RUNPATH so the loader finds libgomp at run
-        #      time without LD_LIBRARY_PATH cooperation;
-        #   4. ``-Wl,--as-needed`` drops DT_NEEDED for any library
-        #      that hipcc's driver might still inject implicitly but
-        #      whose symbols never contribute (so even if ``-lomp``
-        #      sneaks onto the link line, libomp.so doesn't appear in
-        #      the binary's deps).
-        # Falls back to bare ``-lgomp`` if gcc isn't on PATH.
-        gomp_path = _gcc_libgomp_path()
-        if gomp_path:
-            # Order matters: ``-Wl,--as-needed`` and ``-Wl,-rpath`` must
-            # appear BEFORE any ``-l*`` / positional library path so the
-            # linker applies them to the libs that follow. The libgomp
-            # absolute path is placed last so it lands at the rightmost
-            # of the link line (after objects), satisfying the
-            # libraries-after-objects rule for symbol resolution.
-            link_flags += (
-                f" -fopenmp=libgomp "
-                f"-Wl,-rpath={os.path.dirname(gomp_path)} "
-                f"-Wl,--as-needed {gomp_path} "
-            )
-        else:
-            link_flags += " -fopenmp=libgomp -Wl,--as-needed -lgomp "
     else:
+        # AMD (hipcc) and CPU (g++) both take bare ``-fopenmp``; clang
+        # selects libomp, gcc selects libgomp. The runtime side is
+        # handled by ``setup_beverin.sh`` (surfaces ROCm's libomp.so
+        # on LD_LIBRARY_PATH).
         link_flags += " -fopenmp "
 
     link_cmd = f"{link_cc} {' '.join(objects)} {arch_flag} {link_flags} -o {output}"
