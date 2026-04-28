@@ -1,0 +1,97 @@
+[E6FVT beverin] host=nid002986 reps=100 stages='4 8' configs='nlev_first index_only unpermuted'
+[E6FVT beverin] DACE_BRANCH=yakup/dev PYTHONPATH=/capstor/scratch/cscs/ybudanaz/beverin/SC26-Layout-AD/Experiments/E6_VelocityTendencies/full_velocity_tendencies/scripts:/capstor/scratch/cscs/ybudanaz/beverin/SC26-Layout-AD/Experiments/E6_VelocityTendencies/full_velocity_tendencies:
+============================================================
+Layout permutation sweep: 1 configs  (4 executables)
+Output directory: beverin_full_permutations_4/
+============================================================
+  nlev_first                                [shuffled   wnuma ]  exe=./velocity_gpu.stage4_standalone_release_permuted_nlev_first_ms_wnuma
+  nlev_first                                [shuffled   wonuma]  exe=./velocity_gpu.stage4_standalone_release_permuted_nlev_first_ms_wonuma
+  nlev_first                                [unshuffled wnuma ]  exe=./velocity_gpu.stage4_standalone_release_permuted_nlev_first_mu_wnuma
+  nlev_first                                [unshuffled wonuma]  exe=./velocity_gpu.stage4_standalone_release_permuted_nlev_first_mu_wonuma
+
+
+============================================================
+Config: nlev_first
+============================================================
+[compile] python -m utils.stages.compile_gpu_stage4_v2 --compile --optimize --permutations nlev_first
+[skip] nlev_first: compile failed, skipping run
+
+============================================================
+Done. Results in beverin_full_permutations_4/
+============================================================
+Layout permutation sweep: 1 configs  (4 executables)
+Output directory: beverin_full_permutations_4/
+============================================================
+  index_only                                [shuffled   wnuma ]  exe=./velocity_gpu.stage4_standalone_release_permuted_index_only_ms_wnuma
+  index_only                                [shuffled   wonuma]  exe=./velocity_gpu.stage4_standalone_release_permuted_index_only_ms_wonuma
+  index_only                                [unshuffled wnuma ]  exe=./velocity_gpu.stage4_standalone_release_permuted_index_only_mu_wnuma
+  index_only                                [unshuffled wonuma]  exe=./velocity_gpu.stage4_standalone_release_permuted_index_only_mu_wonuma
+
+
+============================================================
+Config: index_only
+============================================================
+[compile] python -m utils.stages.compile_gpu_stage4_v2 --compile --optimize --permutations index_only
+[skip] index_only: compile failed, skipping run
+
+============================================================
+Done. Results in beverin_full_permutations_4/
+============================================================
+Layout permutation sweep: 0 configs  (0 executables)
+  + unpermuted baseline (2 variants)
+Output directory: beverin_full_permutations_4/
+============================================================
+
+
+============================================================
+Unpermuted baseline
+============================================================
+[compile] python -m utils.stages.compile_gpu_stage4_v2 --compile --optimize --unpermuted
+
+============================================================
+Done. Results in beverin_full_permutations_4/
+============================================================
+Layout permutation sweep: 1 configs  (2 executables)
+Output directory: beverin_full_permutations_8/
+============================================================
+  nlev_first                                [shuffled  ]  exe=./velocity_gpu.stage8_standalone_release_permuted_nlev_first_ms  out=beverin_full_permutations_8/nlev_first_shuffled.txt
+  nlev_first                                [unshuffled]  exe=./velocity_gpu.stage8_standalone_release_permuted_nlev_first_mu  out=beverin_full_permutations_8/nlev_first_unshuffled.txt
+
+
+============================================================
+Config: nlev_first
+============================================================
+[compile] python -m utils.stages.compile_gpu_stage8 --compile --permutations nlev_first
+[skip] nlev_first: compile failed, skipping run
+
+============================================================
+Done. Results in beverin_full_permutations_8/
+============================================================
+Layout permutation sweep: 1 configs  (2 executables)
+Output directory: beverin_full_permutations_8/
+============================================================
+  index_only                                [shuffled  ]  exe=./velocity_gpu.stage8_standalone_release_permuted_index_only_ms  out=beverin_full_permutations_8/index_only_shuffled.txt
+  index_only                                [unshuffled]  exe=./velocity_gpu.stage8_standalone_release_permuted_index_only_mu  out=beverin_full_permutations_8/index_only_unshuffled.txt
+
+
+============================================================
+Config: index_only
+============================================================
+[compile] python -m utils.stages.compile_gpu_stage8 --compile --permutations index_only
+[skip] index_only: compile failed, skipping run
+
+============================================================
+Done. Results in beverin_full_permutations_8/
+============================================================
+Layout permutation sweep: 0 configs  (0 executables)
+  + unpermuted baseline
+Output directory: beverin_full_permutations_8/
+============================================================
+
+
+============================================================
+Unpermuted baseline
+============================================================
+[compile] python -m utils.stages.compile_gpu_stage8 --compile --unpermuted
+[run] ./velocity_gpu.stage8_standalone_release_unpermuted step=7 -> beverin_full_permutations_8/unpermuted_step7.txt
+[E6FVT beverin] done. Outputs under results/beverin/stage{4,8}/

@@ -1,0 +1,31 @@
+[setup_beverin] libomp.so resolved at /opt/rocm/lib/llvm/lib/libomp.so
+[E6 download_data] symlinking /capstor/scratch/cscs/ybudanaz/beverin/SC26-Layout-AD/Experiments/E6_VelocityTendencies/loopnest_5/data_r02b05 -> /capstor/scratch/cscs/ybudanaz/beverin/SC26-Layout-AD/Experiments/E8_LegacyVT/data_r02b05
+[E6L5 beverin] host=nid002960 threads=96 data=/capstor/scratch/cscs/ybudanaz/beverin/SC26-Layout-AD/Experiments/E6_VelocityTendencies/loopnest_5/data_r02b05
+OK   V=1 dist=uniform max_rel=0.000e+00
+OK   V=2 dist=uniform max_rel=0.000e+00
+OK   V=3 dist=uniform max_rel=0.000e+00
+OK   V=4 dist=uniform max_rel=0.000e+00
+OK   V=1 dist=normal_var1 max_rel=0.000e+00
+OK   V=2 dist=normal_var1 max_rel=0.000e+00
+OK   V=3 dist=normal_var1 max_rel=0.000e+00
+OK   V=4 dist=normal_var1 max_rel=0.000e+00
+OK   V=1 dist=exact max_rel=0.000e+00
+OK   V=2 dist=exact max_rel=0.000e+00
+OK   V=3 dist=exact max_rel=0.000e+00
+OK   V=4 dist=exact max_rel=0.000e+00
+OK   B=8 dist=uniform max_rel=0.000e+00
+OK   B=16 dist=uniform max_rel=0.000e+00
+OK   B=32 dist=uniform max_rel=0.000e+00
+OK   B=8 dist=normal_var1 max_rel=0.000e+00
+OK   B=16 dist=normal_var1 max_rel=0.000e+00
+OK   B=32 dist=normal_var1 max_rel=0.000e+00
+OK   B=8 dist=exact max_rel=0.000e+00
+OK   B=16 dist=exact max_rel=0.000e+00
+OK   B=32 dist=exact max_rel=0.000e+00
+
+  [ln5] N=81920 nlevp1=91 (horiz-only boundary) beta=1.0000 alpha=0.0120 gamma=1.800 P=4
+
+
+  [ln5] N=81920 nlevp1=91 (horiz-only boundary) beta=1.0000 alpha=0.0120 gamma=1.800 P=4
+
+[E6L5 beverin] done. CSVs under results/beverin/

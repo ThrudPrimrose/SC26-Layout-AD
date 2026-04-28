@@ -1,0 +1,572 @@
+[activate] switching DaCe f2dace/staging -> yakup/dev
+Your branch is up to date with 'origin/yakup/dev'.
+[setup_beverin] libomp.so resolved at /opt/rocm/lib/llvm/lib/libomp.so
+[setup_beverin] data check via download_data.sh
+[E5 download] bin/ already populated -- skip.
+[E5 beverin] host=nid002960 threads=96
+Loading data...
+Threads: 96 
+
+=== nthreads=96 ===
+
+--- blocksize=1 ---
+  baseline_aos PASSED
+  eigts_t_aos PASSED
+  sorted_aos PASSED
+  baseline_soa PASSED
+  eigts_t_soa PASSED
+  sorted_soa PASSED
+
+--- blocksize=2 ---
+  baseline_aos PASSED
+  eigts_t_aos PASSED
+  sorted_aos PASSED
+  baseline_soa PASSED
+  eigts_t_soa PASSED
+  sorted_soa PASSED
+
+--- blocksize=4 ---
+  baseline_aos PASSED
+  eigts_t_aos PASSED
+  sorted_aos PASSED
+  baseline_soa PASSED
+  eigts_t_soa PASSED
+  sorted_soa PASSED
+
+--- blocksize=8 ---
+  baseline_aos PASSED
+  eigts_t_aos PASSED
+  sorted_aos PASSED
+  baseline_soa PASSED
+  eigts_t_soa PASSED
+  sorted_soa PASSED
+
+--- blocksize=16 ---
+  baseline_aos PASSED
+  eigts_t_aos PASSED
+  sorted_aos PASSED
+  baseline_soa PASSED
+  eigts_t_soa PASSED
+  sorted_soa PASSED
+
+--- blocksize=32 ---
+  baseline_aos PASSED
+  eigts_t_aos PASSED
+  sorted_aos PASSED
+  baseline_soa PASSED
+  eigts_t_soa PASSED
+  sorted_soa PASSED
+
+--- blocksize=64 ---
+  baseline_aos PASSED
+  eigts_t_aos PASSED
+  sorted_aos PASSED
+  baseline_soa PASSED
+  eigts_t_soa PASSED
+  sorted_soa PASSED
+
+--- blocksize=128 ---
+  baseline_aos PASSED
+  eigts_t_aos PASSED
+  sorted_aos PASSED
+  baseline_soa PASSED
+  eigts_t_soa PASSED
+  sorted_soa PASSED
+
+--- blocksize=256 ---
+  baseline_aos PASSED
+  eigts_t_aos PASSED
+  sorted_aos PASSED
+  baseline_soa PASSED
+  eigts_t_soa PASSED
+  sorted_soa PASSED
+
+Done. CSV: addusxx_cpu_sweep.csv
+Loading data...
+
+=== GPU SWEEP: variant x tblock x coarsen x unroll ===
+variant                            tblock   cf  median_ms ok
+------------------------------------------------------------
+gpu_baseline_aos                       32    1     0.6932 PASS
+gpu_baseline_aos_u                     32    1     0.6913 PASS
+gpu_eigts_t_aos                        32    1     0.6818 PASS
+gpu_eigts_t_aos_u                      32    1     0.6820 PASS
+gpu_shared_bec_aos                     32    1     0.6972 PASS
+gpu_shared_bec_aos_u                   32    1     0.6984 PASS
+gpu_optimized_aos                      32    1     2.8791 PASS
+gpu_optimized_aos_u                    32    1     2.8748 PASS
+gpu_baseline_soa                       32    1     0.7563 PASS
+gpu_baseline_soa_u                     32    1     0.7562 PASS
+gpu_eigts_t_soa                        32    1     0.7448 PASS
+gpu_eigts_t_soa_u                      32    1     0.7449 PASS
+gpu_shared_bec_soa                     32    1     0.7421 PASS
+gpu_shared_bec_soa_u                   32    1     0.7439 PASS
+gpu_optimized_soa                      32    1     6.7872 PASS
+gpu_optimized_soa_u                    32    1     6.7932 PASS
+gpu_baseline_aos                       32    2     1.2251 PASS
+gpu_baseline_aos_u                     32    2     1.2250 PASS
+gpu_eigts_t_aos                        32    2     1.2187 PASS
+gpu_eigts_t_aos_u                      32    2     1.2187 PASS
+gpu_shared_bec_aos                     32    2     1.2527 PASS
+gpu_shared_bec_aos_u                   32    2     1.2525 PASS
+gpu_optimized_aos                      32    2     2.3294 PASS
+gpu_optimized_aos_u                    32    2     2.3281 PASS
+gpu_baseline_soa                       32    2     1.3123 PASS
+gpu_baseline_soa_u                     32    2     1.3119 PASS
+gpu_eigts_t_soa                        32    2     1.2927 PASS
+gpu_eigts_t_soa_u                      32    2     1.2922 PASS
+gpu_shared_bec_soa                     32    2     1.2839 PASS
+gpu_shared_bec_soa_u                   32    2     1.2841 PASS
+gpu_optimized_soa                      32    2     5.5143 PASS
+gpu_optimized_soa_u                    32    2     5.5059 PASS
+gpu_baseline_aos                       32    4     2.3894 PASS
+gpu_baseline_aos_u                     32    4     2.3811 PASS
+gpu_eigts_t_aos                        32    4     2.3997 PASS
+gpu_eigts_t_aos_u                      32    4     2.3724 PASS
+gpu_shared_bec_aos                     32    4     2.4403 PASS
+gpu_shared_bec_aos_u                   32    4     2.4410 PASS
+gpu_optimized_aos                      32    4     3.4511 PASS
+gpu_optimized_aos_u                    32    4     3.4485 PASS
+gpu_baseline_soa                       32    4     2.5002 PASS
+gpu_baseline_soa_u                     32    4     2.4717 PASS
+gpu_eigts_t_soa                        32    4     2.4577 PASS
+gpu_eigts_t_soa_u                      32    4     2.4646 PASS
+gpu_shared_bec_soa                     32    4     2.4226 PASS
+gpu_shared_bec_soa_u                   32    4     2.4234 PASS
+gpu_optimized_soa                      32    4     6.3052 PASS
+gpu_optimized_soa_u                    32    4     6.3094 PASS
+gpu_baseline_aos                       32    8     4.9057 PASS
+gpu_baseline_aos_u                     32    8     4.8896 PASS
+gpu_eigts_t_aos                        32    8     4.9347 PASS
+gpu_eigts_t_aos_u                      32    8     4.8799 PASS
+gpu_shared_bec_aos                     32    8     5.0102 PASS
+gpu_shared_bec_aos_u                   32    8     5.0099 PASS
+gpu_optimized_aos                      32    8     3.5324 PASS
+gpu_optimized_aos_u                    32    8     3.5524 PASS
+gpu_baseline_soa                       32    8     4.9740 PASS
+gpu_baseline_soa_u                     32    8     4.9220 PASS
+gpu_eigts_t_soa                        32    8     4.8983 PASS
+gpu_eigts_t_soa_u                      32    8     4.9160 PASS
+gpu_shared_bec_soa                     32    8     4.9137 PASS
+gpu_shared_bec_soa_u                   32    8     4.8683 PASS
+gpu_optimized_soa                      32    8     8.7560 PASS
+gpu_optimized_soa_u                    32    8     8.7916 PASS
+gpu_baseline_aos                       32   16     9.1004 PASS
+gpu_baseline_aos_u                     32   16     9.0704 PASS
+gpu_eigts_t_aos                        32   16     9.1537 PASS
+gpu_eigts_t_aos_u                      32   16     9.0443 PASS
+gpu_shared_bec_aos                     32   16     9.5429 PASS
+gpu_shared_bec_aos_u                   32   16     9.5455 PASS
+gpu_optimized_aos                      32   16     6.5184 PASS
+gpu_optimized_aos_u                    32   16     6.5592 PASS
+gpu_baseline_soa                       32   16    10.5937 PASS
+gpu_baseline_soa_u                     32   16    10.4988 PASS
+gpu_eigts_t_soa                        32   16    10.4540 PASS
+gpu_eigts_t_soa_u                      32   16    10.4895 PASS
+gpu_shared_bec_soa                     32   16    10.4851 PASS
+gpu_shared_bec_soa_u                   32   16    10.6139 PASS
+gpu_optimized_soa                      32   16    17.2251 PASS
+gpu_optimized_soa_u                    32   16    17.2753 PASS
+gpu_baseline_aos                       64    1     0.6731 PASS
+gpu_baseline_aos_u                     64    1     0.6726 PASS
+gpu_eigts_t_aos                        64    1     0.6614 PASS
+gpu_eigts_t_aos_u                      64    1     0.6616 PASS
+gpu_shared_bec_aos                     64    1     0.6802 PASS
+gpu_shared_bec_aos_u                   64    1     0.6800 PASS
+gpu_optimized_aos                      64    1     2.7310 PASS
+gpu_optimized_aos_u                    64    1     2.7444 PASS
+gpu_baseline_soa                       64    1     0.7134 PASS
+gpu_baseline_soa_u                     64    1     0.7132 PASS
+gpu_eigts_t_soa                        64    1     0.7052 PASS
+gpu_eigts_t_soa_u                      64    1     0.7049 PASS
+gpu_shared_bec_soa                     64    1     0.6907 PASS
+gpu_shared_bec_soa_u                   64    1     0.6912 PASS
+gpu_optimized_soa                      64    1     5.6528 PASS
+gpu_optimized_soa_u                    64    1     5.6526 PASS
+gpu_baseline_aos                       64    2     1.2326 PASS
+gpu_baseline_aos_u                     64    2     1.2316 PASS
+gpu_eigts_t_aos                        64    2     1.2236 PASS
+gpu_eigts_t_aos_u                      64    2     1.2232 PASS
+gpu_shared_bec_aos                     64    2     1.2604 PASS
+gpu_shared_bec_aos_u                   64    2     1.2602 PASS
+gpu_optimized_aos                      64    2     2.5977 PASS
+gpu_optimized_aos_u                    64    2     2.5996 PASS
+gpu_baseline_soa                       64    2     1.3029 PASS
+gpu_baseline_soa_u                     64    2     1.3018 PASS
+gpu_eigts_t_soa                        64    2     1.2795 PASS
+gpu_eigts_t_soa_u                      64    2     1.2790 PASS
+gpu_shared_bec_soa                     64    2     1.2721 PASS
+gpu_shared_bec_soa_u                   64    2     1.2724 PASS
+gpu_optimized_soa                      64    2     5.4389 PASS
+gpu_optimized_soa_u                    64    2     5.4529 PASS
+gpu_baseline_aos                       64    4     2.4953 PASS
+gpu_baseline_aos_u                     64    4     2.4866 PASS
+gpu_eigts_t_aos                        64    4     2.5045 PASS
+gpu_eigts_t_aos_u                      64    4     2.4779 PASS
+gpu_shared_bec_aos                     64    4     2.5450 PASS
+gpu_shared_bec_aos_u                   64    4     2.5446 PASS
+gpu_optimized_aos                      64    4     4.6761 PASS
+gpu_optimized_aos_u                    64    4     4.6677 PASS
+gpu_baseline_soa                       64    4     2.5183 PASS
+gpu_baseline_soa_u                     64    4     2.4908 PASS
+gpu_eigts_t_soa                        64    4     2.4748 PASS
+gpu_eigts_t_soa_u                      64    4     2.4796 PASS
+gpu_shared_bec_soa                     64    4     2.4488 PASS
+gpu_shared_bec_soa_u                   64    4     2.4493 PASS
+gpu_optimized_soa                      64    4     7.9505 PASS
+gpu_optimized_soa_u                    64    4     7.9680 PASS
+gpu_baseline_aos                       64    8     5.3387 PASS
+gpu_baseline_aos_u                     64    8     5.3227 PASS
+gpu_eigts_t_aos                        64    8     5.3638 PASS
+gpu_eigts_t_aos_u                      64    8     5.3101 PASS
+gpu_shared_bec_aos                     64    8     5.4372 PASS
+gpu_shared_bec_aos_u                   64    8     5.4375 PASS
+gpu_optimized_aos                      64    8     7.7468 PASS
+gpu_optimized_aos_u                    64    8     7.7631 PASS
+gpu_baseline_soa                       64    8     5.3333 PASS
+gpu_baseline_soa_u                     64    8     5.2812 PASS
+gpu_eigts_t_soa                        64    8     5.2553 PASS
+gpu_eigts_t_soa_u                      64    8     5.2719 PASS
+gpu_shared_bec_soa                     64    8     5.2741 PASS
+gpu_shared_bec_soa_u                   64    8     5.2297 PASS
+gpu_optimized_soa                      64    8    13.3794 PASS
+gpu_optimized_soa_u                    64    8    13.4033 PASS
+gpu_baseline_aos                       64   16     9.8893 PASS
+gpu_baseline_aos_u                     64   16     9.8598 PASS
+gpu_eigts_t_aos                        64   16     9.9369 PASS
+gpu_eigts_t_aos_u                      64   16     9.8276 PASS
+gpu_shared_bec_aos                     64   16    10.3263 PASS
+gpu_shared_bec_aos_u                   64   16    10.3242 PASS
+gpu_optimized_aos                      64   16    14.7842 PASS
+gpu_optimized_aos_u                    64   16    14.8277 PASS
+gpu_baseline_soa                       64   16    11.7881 PASS
+gpu_baseline_soa_u                     64   16    11.7015 PASS
+gpu_eigts_t_soa                        64   16    11.6561 PASS
+gpu_eigts_t_soa_u                      64   16    11.6907 PASS
+gpu_shared_bec_soa                     64   16    11.6904 PASS
+gpu_shared_bec_soa_u                   64   16    11.8479 PASS
+gpu_optimized_soa                      64   16    25.4249 PASS
+gpu_optimized_soa_u                    64   16    25.5293 PASS
+gpu_baseline_aos                      128    1     0.6784 PASS
+gpu_baseline_aos_u                    128    1     0.6775 PASS
+gpu_eigts_t_aos                       128    1     0.6682 PASS
+gpu_eigts_t_aos_u                     128    1     0.6676 PASS
+gpu_shared_bec_aos                    128    1     0.6865 PASS
+gpu_shared_bec_aos_u                  128    1     0.6862 PASS
+gpu_optimized_aos                     128    1     2.7409 PASS
+gpu_optimized_aos_u                   128    1     2.7408 PASS
+gpu_baseline_soa                      128    1     0.7103 PASS
+gpu_baseline_soa_u                    128    1     0.7102 PASS
+gpu_eigts_t_soa                       128    1     0.7011 PASS
+gpu_eigts_t_soa_u                     128    1     0.7020 PASS
+gpu_shared_bec_soa                    128    1     0.6849 PASS
+gpu_shared_bec_soa_u                  128    1     0.6849 PASS
+gpu_optimized_soa                     128    1     5.7949 PASS
+gpu_optimized_soa_u                   128    1     5.7898 PASS
+gpu_baseline_aos                      128    2     1.2267 PASS
+gpu_baseline_aos_u                    128    2     1.2267 PASS
+gpu_eigts_t_aos                       128    2     1.2183 PASS
+gpu_eigts_t_aos_u                     128    2     1.2176 PASS
+gpu_shared_bec_aos                    128    2     1.2540 PASS
+gpu_shared_bec_aos_u                  128    2     1.2535 PASS
+gpu_optimized_aos                     128    2     2.5512 PASS
+gpu_optimized_aos_u                   128    2     2.5475 PASS
+gpu_baseline_soa                      128    2     1.2795 PASS
+gpu_baseline_soa_u                    128    2     1.2787 PASS
+gpu_eigts_t_soa                       128    2     1.2545 PASS
+gpu_eigts_t_soa_u                     128    2     1.2548 PASS
+gpu_shared_bec_soa                    128    2     1.2417 PASS
+gpu_shared_bec_soa_u                  128    2     1.2412 PASS
+gpu_optimized_soa                     128    2     5.1921 PASS
+gpu_optimized_soa_u                   128    2     5.1979 PASS
+gpu_baseline_aos                      128    4     2.5165 PASS
+gpu_baseline_aos_u                    128    4     2.5074 PASS
+gpu_eigts_t_aos                       128    4     2.5240 PASS
+gpu_eigts_t_aos_u                     128    4     2.4972 PASS
+gpu_shared_bec_aos                    128    4     2.5622 PASS
+gpu_shared_bec_aos_u                  128    4     2.5614 PASS
+gpu_optimized_aos                     128    4     5.0279 PASS
+gpu_optimized_aos_u                   128    4     5.0280 PASS
+gpu_baseline_soa                      128    4     2.5357 PASS
+gpu_baseline_soa_u                    128    4     2.5067 PASS
+gpu_eigts_t_soa                       128    4     2.4888 PASS
+gpu_eigts_t_soa_u                     128    4     2.4955 PASS
+gpu_shared_bec_soa                    128    4     2.4531 PASS
+gpu_shared_bec_soa_u                  128    4     2.4518 PASS
+gpu_optimized_soa                     128    4    10.8477 PASS
+gpu_optimized_soa_u                   128    4    10.8431 PASS
+gpu_baseline_aos                      128    8     5.3883 PASS
+gpu_baseline_aos_u                    128    8     5.3680 PASS
+gpu_eigts_t_aos                       128    8     5.4129 PASS
+gpu_eigts_t_aos_u                     128    8     5.3579 PASS
+gpu_shared_bec_aos                    128    8     5.4566 PASS
+gpu_shared_bec_aos_u                  128    8     5.4571 PASS
+gpu_optimized_aos                     128    8     8.7870 PASS
+gpu_optimized_aos_u                   128    8     8.7889 PASS
+gpu_baseline_soa                      128    8     5.3736 PASS
+gpu_baseline_soa_u                    128    8     5.3213 PASS
+gpu_eigts_t_soa                       128    8     5.2862 PASS
+gpu_eigts_t_soa_u                     128    8     5.3041 PASS
+gpu_shared_bec_soa                    128    8     5.3222 PASS
+gpu_shared_bec_soa_u                  128    8     5.2701 PASS
+gpu_optimized_soa                     128    8    18.6437 PASS
+gpu_optimized_soa_u                   128    8    18.6311 PASS
+gpu_baseline_aos                      128   16     9.9851 PASS
+gpu_baseline_aos_u                    128   16     9.9566 PASS
+gpu_eigts_t_aos                       128   16    10.0147 PASS
+gpu_eigts_t_aos_u                     128   16     9.9071 PASS
+gpu_shared_bec_aos                    128   16    10.4119 PASS
+gpu_shared_bec_aos_u                  128   16    10.4108 PASS
+gpu_optimized_aos                     128   16    17.3906 PASS
+gpu_optimized_aos_u                   128   16    17.3963 PASS
+gpu_baseline_soa                      128   16    11.9591 PASS
+gpu_baseline_soa_u                    128   16    11.9467 PASS
+gpu_eigts_t_soa                       128   16    11.9835 PASS
+gpu_eigts_t_soa_u                     128   16    11.9063 PASS
+gpu_shared_bec_soa                    128   16    11.9225 PASS
+gpu_shared_bec_soa_u                  128   16    12.0476 PASS
+gpu_optimized_soa                     128   16    36.6054 PASS
+gpu_optimized_soa_u                   128   16    36.4148 PASS
+gpu_baseline_aos                      256    1     0.6641 PASS
+gpu_baseline_aos_u                    256    1     0.6626 PASS
+gpu_eigts_t_aos                       256    1     0.6497 PASS
+gpu_eigts_t_aos_u                     256    1     0.6498 PASS
+gpu_shared_bec_aos                    256    1     0.6657 PASS
+gpu_shared_bec_aos_u                  256    1     0.6654 PASS
+gpu_optimized_aos                     256    1     2.6410 PASS
+gpu_optimized_aos_u                   256    1     2.6440 PASS
+gpu_baseline_soa                      256    1     0.6947 PASS
+gpu_baseline_soa_u                    256    1     0.6948 PASS
+gpu_eigts_t_soa                       256    1     0.6853 PASS
+gpu_eigts_t_soa_u                     256    1     0.6860 PASS
+gpu_shared_bec_soa                    256    1     0.6553 PASS
+gpu_shared_bec_soa_u                  256    1     0.6556 PASS
+gpu_optimized_soa                     256    1     5.8555 PASS
+gpu_optimized_soa_u                   256    1     5.8604 PASS
+gpu_baseline_aos                      256    2     1.2518 PASS
+gpu_baseline_aos_u                    256    2     1.2516 PASS
+gpu_eigts_t_aos                       256    2     1.2424 PASS
+gpu_eigts_t_aos_u                     256    2     1.2427 PASS
+gpu_shared_bec_aos                    256    2     1.2734 PASS
+gpu_shared_bec_aos_u                  256    2     1.2737 PASS
+gpu_optimized_aos                     256    2     4.2273 PASS
+gpu_optimized_aos_u                   256    2     4.2236 PASS
+gpu_baseline_soa                      256    2     1.3113 PASS
+gpu_baseline_soa_u                    256    2     1.3102 PASS
+gpu_eigts_t_soa                       256    2     1.2872 PASS
+gpu_eigts_t_soa_u                     256    2     1.2874 PASS
+gpu_shared_bec_soa                    256    2     1.2618 PASS
+gpu_shared_bec_soa_u                  256    2     1.2626 PASS
+gpu_optimized_soa                     256    2     9.6511 PASS
+gpu_optimized_soa_u                   256    2     9.6533 PASS
+gpu_baseline_aos                      256    4     2.5558 PASS
+gpu_baseline_aos_u                    256    4     2.5476 PASS
+gpu_eigts_t_aos                       256    4     2.5639 PASS
+gpu_eigts_t_aos_u                     256    4     2.5399 PASS
+gpu_shared_bec_aos                    256    4     2.5882 PASS
+gpu_shared_bec_aos_u                  256    4     2.5888 PASS
+gpu_optimized_aos                     256    4     8.8631 PASS
+gpu_optimized_aos_u                   256    4     8.8739 PASS
+gpu_baseline_soa                      256    4     2.5989 PASS
+gpu_baseline_soa_u                    256    4     2.5709 PASS
+gpu_eigts_t_soa                       256    4     2.5531 PASS
+gpu_eigts_t_soa_u                     256    4     2.5574 PASS
+gpu_shared_bec_soa                    256    4     2.5032 PASS
+gpu_shared_bec_soa_u                  256    4     2.5041 PASS
+gpu_optimized_soa                     256    4    19.9155 PASS
+gpu_optimized_soa_u                   256    4    19.9196 PASS
+gpu_baseline_aos                      256    8     5.4695 PASS
+gpu_baseline_aos_u                    256    8     5.4626 PASS
+gpu_eigts_t_aos                       256    8     5.4977 PASS
+gpu_eigts_t_aos_u                     256    8     5.4444 PASS
+gpu_shared_bec_aos                    256    8     5.5676 PASS
+gpu_shared_bec_aos_u                  256    8     5.5690 PASS
+gpu_optimized_aos                     256    8    15.5430 PASS
+gpu_optimized_aos_u                   256    8    15.5318 PASS
+gpu_baseline_soa                      256    8     5.5515 PASS
+gpu_baseline_soa_u                    256    8     5.5087 PASS
+gpu_eigts_t_soa                       256    8     5.4736 PASS
+gpu_eigts_t_soa_u                     256    8     5.4838 PASS
+gpu_shared_bec_soa                    256    8     5.5012 PASS
+gpu_shared_bec_soa_u                  256    8     5.4510 PASS
+gpu_optimized_soa                     256    8    35.1759 PASS
+gpu_optimized_soa_u                   256    8    35.1840 PASS
+gpu_baseline_aos                      256   16    10.7500 PASS
+gpu_baseline_aos_u                    256   16    10.7469 PASS
+gpu_eigts_t_aos                       256   16    10.6891 PASS
+gpu_eigts_t_aos_u                     256   16    10.5960 PASS
+gpu_shared_bec_aos                    256   16    11.1192 PASS
+gpu_shared_bec_aos_u                  256   16    11.1348 PASS
+gpu_optimized_aos                     256   16    31.1133 PASS
+gpu_optimized_aos_u                   256   16    31.1124 PASS
+gpu_baseline_soa                      256   16    13.0909 PASS
+gpu_baseline_soa_u                    256   16    13.2502 PASS
+gpu_eigts_t_soa                       256   16    13.2291 PASS
+gpu_eigts_t_soa_u                     256   16    13.2066 PASS
+gpu_shared_bec_soa                    256   16    13.2775 PASS
+gpu_shared_bec_soa_u                  256   16    13.2251 PASS
+gpu_optimized_soa                     256   16    70.7239 PASS
+gpu_optimized_soa_u                   256   16    70.2302 PASS
+gpu_baseline_aos                      512    1     0.7014 PASS
+gpu_baseline_aos_u                    512    1     0.7007 PASS
+gpu_eigts_t_aos                       512    1     0.6912 PASS
+gpu_eigts_t_aos_u                     512    1     0.6912 PASS
+gpu_shared_bec_aos                    512    1     0.6935 PASS
+gpu_shared_bec_aos_u                  512    1     0.6930 PASS
+gpu_optimized_aos                     512    1     4.9748 PASS
+gpu_optimized_aos_u                   512    1     4.9672 PASS
+gpu_baseline_soa                      512    1     0.7292 PASS
+gpu_baseline_soa_u                    512    1     0.7289 PASS
+gpu_eigts_t_soa                       512    1     0.7192 PASS
+gpu_eigts_t_soa_u                     512    1     0.7195 PASS
+gpu_shared_bec_soa                    512    1     0.6886 PASS
+gpu_shared_bec_soa_u                  512    1     0.6883 PASS
+gpu_optimized_soa                     512    1    11.0486 PASS
+gpu_optimized_soa_u                   512    1    11.0450 PASS
+gpu_baseline_aos                      512    2     1.3108 PASS
+gpu_baseline_aos_u                    512    2     1.3116 PASS
+gpu_eigts_t_aos                       512    2     1.3022 PASS
+gpu_eigts_t_aos_u                     512    2     1.3017 PASS
+gpu_shared_bec_aos                    512    2     1.3245 PASS
+gpu_shared_bec_aos_u                  512    2     1.3242 PASS
+gpu_optimized_aos                     512    2     8.0517 PASS
+gpu_optimized_aos_u                   512    2     8.0725 PASS
+gpu_baseline_soa                      512    2     1.3722 PASS
+gpu_baseline_soa_u                    512    2     1.3701 PASS
+gpu_eigts_t_soa                       512    2     1.3428 PASS
+gpu_eigts_t_soa_u                     512    2     1.3423 PASS
+gpu_shared_bec_soa                    512    2     1.3240 PASS
+gpu_shared_bec_soa_u                  512    2     1.3244 PASS
+gpu_optimized_soa                     512    2    18.2073 PASS
+gpu_optimized_soa_u                   512    2    18.1586 PASS
+gpu_baseline_aos                      512    4     2.6595 PASS
+gpu_baseline_aos_u                    512    4     2.6533 PASS
+gpu_eigts_t_aos                       512    4     2.6654 PASS
+gpu_eigts_t_aos_u                     512    4     2.6438 PASS
+gpu_shared_bec_aos                    512    4     2.6975 PASS
+gpu_shared_bec_aos_u                  512    4     2.6982 PASS
+gpu_optimized_aos                     512    4    16.8625 PASS
+gpu_optimized_aos_u                   512    4    16.8918 PASS
+gpu_baseline_soa                      512    4     2.7488 PASS
+gpu_baseline_soa_u                    512    4     2.7295 PASS
+gpu_eigts_t_soa                       512    4     2.6910 PASS
+gpu_eigts_t_soa_u                     512    4     2.6945 PASS
+gpu_shared_bec_soa                    512    4     2.6579 PASS
+gpu_shared_bec_soa_u                  512    4     2.6578 PASS
+gpu_optimized_soa                     512    4    37.9052 PASS
+gpu_optimized_soa_u                   512    4    37.8924 PASS
+gpu_baseline_aos                      512    8     6.7017 PASS
+gpu_baseline_aos_u                    512    8     6.7117 PASS
+gpu_eigts_t_aos                       512    8     6.6718 PASS
+gpu_eigts_t_aos_u                     512    8     6.6663 PASS
+gpu_shared_bec_aos                    512    8     6.6912 PASS
+gpu_shared_bec_aos_u                  512    8     6.6932 PASS
+gpu_optimized_aos                     512    8    30.7289 PASS
+gpu_optimized_aos_u                   512    8    30.7154 PASS
+gpu_baseline_soa                      512    8     7.1734 PASS
+gpu_baseline_soa_u                    512    8     7.1729 PASS
+gpu_eigts_t_soa                       512    8     7.0915 PASS
+gpu_eigts_t_soa_u                     512    8     7.0845 PASS
+gpu_shared_bec_soa                    512    8     7.1133 PASS
+gpu_shared_bec_soa_u                  512    8     7.1030 PASS
+gpu_optimized_soa                     512    8    68.5862 PASS
+gpu_optimized_soa_u                   512    8    68.5709 PASS
+gpu_baseline_aos                      512   16    17.0256 PASS
+gpu_baseline_aos_u                    512   16    17.0284 PASS
+gpu_eigts_t_aos                       512   16    16.7798 PASS
+gpu_eigts_t_aos_u                     512   16    16.7630 PASS
+gpu_shared_bec_aos                    512   16    17.8599 PASS
+gpu_shared_bec_aos_u                  512   16    17.8905 PASS
+gpu_optimized_aos                     512   16    59.9956 PASS
+gpu_optimized_aos_u                   512   16    59.7910 PASS
+gpu_baseline_soa                      512   16    25.3943 PASS
+gpu_baseline_soa_u                    512   16    25.4297 PASS
+gpu_eigts_t_soa                       512   16    25.1794 PASS
+gpu_eigts_t_soa_u                     512   16    25.1369 PASS
+gpu_shared_bec_soa                    512   16    25.1641 PASS
+gpu_shared_bec_soa_u                  512   16    24.7309 PASS
+gpu_optimized_soa                     512   16   136.8414 PASS
+gpu_optimized_soa_u                   512   16   136.6887 PASS
+gpu_baseline_aos                     1024    1     0.7572 PASS
+gpu_baseline_aos_u                   1024    1     0.7558 PASS
+gpu_eigts_t_aos                      1024    1     0.7438 PASS
+gpu_eigts_t_aos_u                    1024    1     0.7435 PASS
+gpu_shared_bec_aos                   1024    1     0.7384 PASS
+gpu_shared_bec_aos_u                 1024    1     0.7374 PASS
+gpu_optimized_aos                    1024    1     9.2204 PASS
+gpu_optimized_aos_u                  1024    1     9.2029 PASS
+gpu_baseline_soa                     1024    1     0.8036 PASS
+gpu_baseline_soa_u                   1024    1     0.8034 PASS
+gpu_eigts_t_soa                      1024    1     0.7804 PASS
+gpu_eigts_t_soa_u                    1024    1     0.7804 PASS
+gpu_shared_bec_soa                   1024    1     0.7517 PASS
+gpu_shared_bec_soa_u                 1024    1     0.7523 PASS
+gpu_optimized_soa                    1024    1    20.1676 PASS
+gpu_optimized_soa_u                  1024    1    20.2780 PASS
+gpu_baseline_aos                     1024    2     1.4171 PASS
+gpu_baseline_aos_u                   1024    2     1.4175 PASS
+gpu_eigts_t_aos                      1024    2     1.4008 PASS
+gpu_eigts_t_aos_u                    1024    2     1.4011 PASS
+gpu_shared_bec_aos                   1024    2     1.4151 PASS
+gpu_shared_bec_aos_u                 1024    2     1.4158 PASS
+gpu_optimized_aos                    1024    2    15.4064 PASS
+gpu_optimized_aos_u                  1024    2    15.4202 PASS
+gpu_baseline_soa                     1024    2     1.5275 PASS
+gpu_baseline_soa_u                   1024    2     1.5266 PASS
+gpu_eigts_t_soa                      1024    2     1.4646 PASS
+gpu_eigts_t_soa_u                    1024    2     1.4648 PASS
+gpu_shared_bec_soa                   1024    2     1.4457 PASS
+gpu_shared_bec_soa_u                 1024    2     1.4458 PASS
+gpu_optimized_soa                    1024    2    33.8572 PASS
+gpu_optimized_soa_u                  1024    2    33.8531 PASS
+gpu_baseline_aos                     1024    4     3.6906 PASS
+gpu_baseline_aos_u                   1024    4     3.6938 PASS
+gpu_eigts_t_aos                      1024    4     3.6472 PASS
+gpu_eigts_t_aos_u                    1024    4     3.6477 PASS
+gpu_shared_bec_aos                   1024    4     3.6431 PASS
+gpu_shared_bec_aos_u                 1024    4     3.6412 PASS
+gpu_optimized_aos                    1024    4    33.4068 PASS
+gpu_optimized_aos_u                  1024    4    33.4063 PASS
+gpu_baseline_soa                     1024    4     3.9769 PASS
+gpu_baseline_soa_u                   1024    4     3.9810 PASS
+gpu_eigts_t_soa                      1024    4     3.8705 PASS
+gpu_eigts_t_soa_u                    1024    4     3.8697 PASS
+gpu_shared_bec_soa                   1024    4     3.8636 PASS
+gpu_shared_bec_soa_u                 1024    4     3.8651 PASS
+gpu_optimized_soa                    1024    4    72.6654 PASS
+gpu_optimized_soa_u                  1024    4    72.8356 PASS
+gpu_baseline_aos                     1024    8    12.9965 PASS
+gpu_baseline_aos_u                   1024    8    12.9984 PASS
+gpu_eigts_t_aos                      1024    8    12.8886 PASS
+gpu_eigts_t_aos_u                    1024    8    12.8934 PASS
+gpu_shared_bec_aos                   1024    8    12.8481 PASS
+gpu_shared_bec_aos_u                 1024    8    12.8472 PASS
+gpu_optimized_aos                    1024    8    60.0545 PASS
+gpu_optimized_aos_u                  1024    8    60.2125 PASS
+gpu_baseline_soa                     1024    8    14.0969 PASS
+gpu_baseline_soa_u                   1024    8    14.1188 PASS
+gpu_eigts_t_soa                      1024    8    13.8494 PASS
+gpu_eigts_t_soa_u                    1024    8    13.8323 PASS
+gpu_shared_bec_soa                   1024    8    13.7873 PASS
+gpu_shared_bec_soa_u                 1024    8    13.9174 PASS
+gpu_optimized_soa                    1024    8   130.3827 PASS
+gpu_optimized_soa_u                  1024    8   130.2182 PASS
+gpu_baseline_aos                     1024   16    35.6586 PASS
+gpu_baseline_aos_u                   1024   16    35.6040 PASS
+gpu_eigts_t_aos                      1024   16    35.2642 PASS
+gpu_eigts_t_aos_u                    1024   16    35.2865 PASS
+gpu_shared_bec_aos                   1024   16    40.8923 PASS
+gpu_shared_bec_aos_u                 1024   16    40.9121 PASS
+gpu_optimized_aos                    1024   16   116.0460 PASS
+gpu_optimized_aos_u                  1024   16   116.0434 PASS
+gpu_baseline_soa                     1024   16    51.3069 PASS
+gpu_baseline_soa_u                   1024   16    51.2687 PASS
+gpu_eigts_t_soa                      1024   16    50.9679 PASS
+gpu_eigts_t_soa_u                    1024   16    50.9534 PASS
+gpu_shared_bec_soa                   1024   16    50.8574 PASS
+gpu_shared_bec_soa_u                 1024   16    50.9408 PASS
+gpu_optimized_soa                    1024   16   254.5299 PASS
+gpu_optimized_soa_u                  1024   16   255.8393 PASS
+
+Done. CSV: results/beverin/addusxx_gpu_sweep.csv
+[E5 beverin] done. CSVs under results/beverin/

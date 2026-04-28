@@ -1,0 +1,343 @@
+[activate] switching DaCe f2dace/staging -> yakup/dev
+[setup_beverin] libomp.so resolved at /opt/rocm/lib/llvm/lib/libomp.so
+[E2 beverin] host=nid002954 threads=96
+conjugate IN-PLACE (CPU): TOTAL_DOUBLES=1024M  runs=100  threads=96
+BW = 2·P·N_base·8  (read P im + write P im)
+Mode: persistent parallel region (no thread wake-up jitter)
+  thread spread: N0=24 N1=24 N2=24 N3=24  (4 NUMA nodes)
+
+── P=3 complex pairs  (3 im streams IP)  N_base=178956800  total=8.6 GB ──
+  AoS             19.2178 ms    447.0 GB/s
+  SoA              9.5112 ms    903.1 GB/s
+  AoSoA-2         19.2055 ms    447.3 GB/s
+  AoSoA-4         19.2729 ms    445.7 GB/s
+  AoSoA-8         16.6452 ms    516.1 GB/s
+  AoSoA-16        15.6702 ms    548.2 GB/s
+  AoSoA-32        12.6033 ms    681.6 GB/s
+  AoSoA-64        10.6135 ms    809.3 GB/s
+  AoSoA-128       11.9770 ms    717.2 GB/s
+  AoSoA-256       14.6796 ms    585.2 GB/s
+  AoSoA-512       11.3977 ms    753.7 GB/s
+
+── P=6 complex pairs  (6 im streams IP)  N_base=89478144  total=8.6 GB ──
+  AoS             19.2116 ms    447.1 GB/s
+  SoA              9.5184 ms    902.4 GB/s
+  AoSoA-2         19.2089 ms    447.2 GB/s
+  AoSoA-4         19.2525 ms    446.2 GB/s
+  AoSoA-8         16.7029 ms    514.3 GB/s
+  AoSoA-16        15.5080 ms    553.9 GB/s
+  AoSoA-32        12.1767 ms    705.4 GB/s
+  AoSoA-64        11.6599 ms    736.7 GB/s
+  AoSoA-128       10.6753 ms    804.7 GB/s
+  AoSoA-256       14.7040 ms    584.2 GB/s
+  AoSoA-512       11.3654 ms    755.8 GB/s
+
+── P=9 complex pairs  (9 im streams IP)  N_base=59652096  total=8.6 GB ──
+  AoS             19.2178 ms    447.0 GB/s
+  SoA              9.5019 ms    904.0 GB/s
+  AoSoA-2         19.1975 ms    447.4 GB/s
+  AoSoA-4         19.1962 ms    447.5 GB/s
+  AoSoA-8         16.5342 ms    519.5 GB/s
+  AoSoA-16        15.2343 ms    563.9 GB/s
+  AoSoA-32        14.1059 ms    609.0 GB/s
+  AoSoA-64        11.5587 ms    743.2 GB/s
+  AoSoA-128       10.7258 ms    800.9 GB/s
+  AoSoA-256       14.7699 ms    581.6 GB/s
+  AoSoA-512       11.3752 ms    755.1 GB/s
+
+── P=12 complex pairs  (12 im streams IP)  N_base=44739072  total=8.6 GB ──
+  AoS             19.2098 ms    447.2 GB/s
+  SoA              9.5691 ms    897.7 GB/s
+  AoSoA-2         19.2008 ms    447.4 GB/s
+  AoSoA-4         19.2209 ms    446.9 GB/s
+  AoSoA-8         16.5632 ms    518.6 GB/s
+  AoSoA-16        15.1841 ms    565.7 GB/s
+  AoSoA-32        15.4307 ms    556.7 GB/s
+  AoSoA-64        10.5624 ms    813.3 GB/s
+  AoSoA-128       12.1012 ms    709.8 GB/s
+  AoSoA-256       14.7660 ms    581.7 GB/s
+  AoSoA-512       11.3849 ms    754.5 GB/s
+
+── P=15 complex pairs  (15 im streams IP)  N_base=35791360  total=8.6 GB ──
+  AoS             19.1813 ms    447.8 GB/s
+  SoA              9.5468 ms    899.8 GB/s
+  AoSoA-2         19.1782 ms    447.9 GB/s
+  AoSoA-4         19.2137 ms    447.1 GB/s
+  AoSoA-8         16.2094 ms    529.9 GB/s
+  AoSoA-16        14.5609 ms    589.9 GB/s
+  AoSoA-32        17.0418 ms    504.0 GB/s
+  AoSoA-64        10.5604 ms    813.4 GB/s
+  AoSoA-128       12.1091 ms    709.4 GB/s
+  AoSoA-256       14.8488 ms    578.5 GB/s
+  AoSoA-512       11.3779 ms    755.0 GB/s
+
+── P=18 complex pairs  (18 im streams IP)  N_base=29826048  total=8.6 GB ──
+  AoS             19.1884 ms    447.7 GB/s
+  SoA             12.0090 ms    715.3 GB/s
+  AoSoA-2         19.1858 ms    447.7 GB/s
+  AoSoA-4         19.1942 ms    447.5 GB/s
+  AoSoA-8         17.0405 ms    504.1 GB/s
+  AoSoA-16        15.6631 ms    548.4 GB/s
+  AoSoA-32        10.1522 ms    846.1 GB/s
+  AoSoA-64        10.5514 ms    814.1 GB/s
+  AoSoA-128       12.0976 ms    710.0 GB/s
+  AoSoA-256       14.5764 ms    589.3 GB/s
+  AoSoA-512       11.7424 ms    731.5 GB/s
+
+── P=21 complex pairs  (21 im streams IP)  N_base=25565184  total=8.6 GB ──
+  AoS             19.1958 ms    447.5 GB/s
+  SoA             15.2855 ms    562.0 GB/s
+  AoSoA-2         19.1785 ms    447.9 GB/s
+  AoSoA-4         19.1868 ms    447.7 GB/s
+  AoSoA-8         17.0126 ms    504.9 GB/s
+  AoSoA-16        16.0095 ms    536.5 GB/s
+  AoSoA-32        16.6186 ms    516.9 GB/s
+  AoSoA-64        11.5257 ms    745.3 GB/s
+  AoSoA-128       12.1122 ms    709.2 GB/s
+  AoSoA-256       14.6703 ms    585.5 GB/s
+  AoSoA-512       11.4160 ms    752.4 GB/s
+
+wrote results_cpu_inplace.csv
+conjugate OOP (CPU): TOTAL_DOUBLES=1024M  runs=100  threads=96
+BW = 4·P·N_base·8  (read 2P + write 2P fields)
+  thread spread: N0=24 N1=24 N2=24 N3=24
+
+── P=3 complex pairs  (12 SoA streams)  N_base=178956800  total=8.6 GB/side ──
+  AoS             32.7375 ms    524.8 GB/s
+  SoA             32.7300 ms    524.9 GB/s
+  AoSoA-2         32.7618 ms    524.4 GB/s
+  AoSoA-4         32.8586 ms    522.8 GB/s
+  AoSoA-8         32.9442 ms    521.5 GB/s
+  AoSoA-16        33.1841 ms    517.7 GB/s
+  AoSoA-32        33.4873 ms    513.0 GB/s
+  AoSoA-64        44.3341 ms    387.5 GB/s
+  AoSoA-128       36.6165 ms    469.2 GB/s
+  AoSoA-256       39.1448 ms    438.9 GB/s
+  AoSoA-512       32.6433 ms    526.3 GB/s
+
+── P=6 complex pairs  (24 SoA streams)  N_base=89478144  total=8.6 GB/side ──
+  AoS             32.6951 ms    525.5 GB/s
+  SoA             33.7566 ms    508.9 GB/s
+  AoSoA-2         32.7645 ms    524.3 GB/s
+  AoSoA-4         32.8931 ms    522.3 GB/s
+  AoSoA-8         32.9762 ms    521.0 GB/s
+  AoSoA-16        32.9501 ms    521.4 GB/s
+  AoSoA-32        33.1329 ms    518.5 GB/s
+  AoSoA-64        33.3972 ms    514.4 GB/s
+  AoSoA-128       35.8710 ms    478.9 GB/s
+  AoSoA-256       38.2052 ms    449.7 GB/s
+  AoSoA-512       32.7110 ms    525.2 GB/s
+
+── P=9 complex pairs  (36 SoA streams)  N_base=59652096  total=8.6 GB/side ──
+  AoS             32.8341 ms    523.2 GB/s
+  SoA             35.3490 ms    486.0 GB/s
+  AoSoA-2         32.8566 ms    522.9 GB/s
+  AoSoA-4         32.9854 ms    520.8 GB/s
+  AoSoA-8         33.0125 ms    520.4 GB/s
+  AoSoA-16        33.0019 ms    520.6 GB/s
+  AoSoA-32        33.2359 ms    516.9 GB/s
+  AoSoA-64        33.3536 ms    515.1 GB/s
+  AoSoA-128       35.8806 ms    478.8 GB/s
+  AoSoA-256       42.8888 ms    400.6 GB/s
+  AoSoA-512       32.6787 ms    525.7 GB/s
+
+── P=12 complex pairs  (48 SoA streams)  N_base=44739072  total=8.6 GB/side ──
+  AoS             32.7231 ms    525.0 GB/s
+  SoA             36.5934 ms    469.5 GB/s
+  AoSoA-2         32.8220 ms    523.4 GB/s
+  AoSoA-4         32.9095 ms    522.0 GB/s
+  AoSoA-8         32.9687 ms    521.1 GB/s
+  AoSoA-16        32.9936 ms    520.7 GB/s
+  AoSoA-32        33.1931 ms    517.6 GB/s
+  AoSoA-64        33.3206 ms    515.6 GB/s
+  AoSoA-128       35.8821 ms    478.8 GB/s
+  AoSoA-256       43.2345 ms    397.4 GB/s
+  AoSoA-512       32.7974 ms    523.8 GB/s
+
+── P=15 complex pairs  (60 SoA streams)  N_base=35791360  total=8.6 GB/side ──
+  AoS             32.6943 ms    525.5 GB/s
+  SoA             37.1427 ms    462.5 GB/s
+  AoSoA-2         32.7779 ms    524.1 GB/s
+  AoSoA-4         32.8626 ms    522.8 GB/s
+  AoSoA-8         32.9745 ms    521.0 GB/s
+  AoSoA-16        33.0604 ms    519.6 GB/s
+  AoSoA-32        33.0191 ms    520.3 GB/s
+  AoSoA-64        38.7546 ms    443.3 GB/s
+  AoSoA-128       36.3356 ms    472.8 GB/s
+  AoSoA-256       43.2677 ms    397.1 GB/s
+  AoSoA-512       32.6955 ms    525.5 GB/s
+
+── P=18 complex pairs  (72 SoA streams)  N_base=29826048  total=8.6 GB/side ──
+  AoS             32.9643 ms    521.2 GB/s
+  SoA             48.0027 ms    357.9 GB/s
+  AoSoA-2         32.7457 ms    524.6 GB/s
+  AoSoA-4         32.9075 ms    522.1 GB/s
+  AoSoA-8         32.9034 ms    522.1 GB/s
+  AoSoA-16        33.0106 ms    520.4 GB/s
+  AoSoA-32        33.1165 ms    518.8 GB/s
+  AoSoA-64        33.2804 ms    516.2 GB/s
+  AoSoA-128       35.8491 ms    479.2 GB/s
+  AoSoA-256       41.3783 ms    415.2 GB/s
+  AoSoA-512       32.6457 ms    526.2 GB/s
+
+── P=21 complex pairs  (84 SoA streams)  N_base=25565184  total=8.6 GB/side ──
+  AoS             32.9219 ms    521.8 GB/s
+  SoA             48.4712 ms    354.4 GB/s
+  AoSoA-2         32.7594 ms    524.4 GB/s
+  AoSoA-4         32.8284 ms    523.3 GB/s
+  AoSoA-8         32.8662 ms    522.7 GB/s
+  AoSoA-16        33.0534 ms    519.8 GB/s
+  AoSoA-32        33.1138 ms    518.8 GB/s
+  AoSoA-64        33.2201 ms    517.2 GB/s
+  AoSoA-128       35.8326 ms    479.4 GB/s
+  AoSoA-256       41.7059 ms    411.9 GB/s
+  AoSoA-512       32.7775 ms    524.1 GB/s
+
+wrote results_cpu_oop.csv
+conjugate IN-PLACE (GPU): TOTAL_DOUBLES=512M  runs=100
+
+── P=3 complex pairs  (3 im streams)  N_base=89478464  total=4.3 GB ──
+  AoS             (see csv)
+  SoA             (see csv)
+  AoSoA-2         (see csv)
+  AoSoA-4         (see csv)
+  AoSoA-8         (see csv)
+  AoSoA-16        (see csv)
+  AoSoA-32        (see csv)
+  AoSoA-64        (see csv)
+
+── P=6 complex pairs  (6 im streams)  N_base=44739200  total=4.3 GB ──
+  AoS             (see csv)
+  SoA             (see csv)
+  AoSoA-2         (see csv)
+  AoSoA-4         (see csv)
+  AoSoA-8         (see csv)
+  AoSoA-16        (see csv)
+  AoSoA-32        (see csv)
+  AoSoA-64        (see csv)
+
+── P=9 complex pairs  (9 im streams)  N_base=29826112  total=4.3 GB ──
+  AoS             (see csv)
+  SoA             (see csv)
+  AoSoA-2         (see csv)
+  AoSoA-4         (see csv)
+  AoSoA-8         (see csv)
+  AoSoA-16        (see csv)
+  AoSoA-32        (see csv)
+  AoSoA-64        (see csv)
+
+── P=12 complex pairs  (12 im streams)  N_base=22369600  total=4.3 GB ──
+  AoS             (see csv)
+  SoA             (see csv)
+  AoSoA-2         (see csv)
+  AoSoA-4         (see csv)
+  AoSoA-8         (see csv)
+  AoSoA-16        (see csv)
+  AoSoA-32        (see csv)
+  AoSoA-64        (see csv)
+
+── P=15 complex pairs  (15 im streams)  N_base=17895680  total=4.3 GB ──
+  AoS             (see csv)
+  SoA             (see csv)
+  AoSoA-2         (see csv)
+  AoSoA-4         (see csv)
+  AoSoA-8         (see csv)
+  AoSoA-16        (see csv)
+  AoSoA-32        (see csv)
+  AoSoA-64        (see csv)
+
+── P=18 complex pairs  (18 im streams)  N_base=14913024  total=4.3 GB ──
+  AoS             (see csv)
+  SoA             (see csv)
+  AoSoA-2         (see csv)
+  AoSoA-4         (see csv)
+  AoSoA-8         (see csv)
+  AoSoA-16        (see csv)
+  AoSoA-32        (see csv)
+  AoSoA-64        (see csv)
+
+── P=21 complex pairs  (21 im streams)  N_base=12782592  total=4.3 GB ──
+  AoS             (see csv)
+  SoA             (see csv)
+  AoSoA-2         (see csv)
+  AoSoA-4         (see csv)
+  AoSoA-8         (see csv)
+  AoSoA-16        (see csv)
+  AoSoA-32        (see csv)
+  AoSoA-64        (see csv)
+
+wrote results_gpu_inplace.csv
+conjugate OOP (GPU): TOTAL_DOUBLES=512M  runs=100
+
+── P=3 complex pairs  (12 SoA streams)  N_base=89478464  total=4.3 GB/side ──
+  AoS             (see csv)
+  SoA             (see csv)
+  AoSoA-2         (see csv)
+  AoSoA-4         (see csv)
+  AoSoA-8         (see csv)
+  AoSoA-16        (see csv)
+  AoSoA-32        (see csv)
+  AoSoA-64        (see csv)
+
+── P=6 complex pairs  (24 SoA streams)  N_base=44739200  total=4.3 GB/side ──
+  AoS             (see csv)
+  SoA             (see csv)
+  AoSoA-2         (see csv)
+  AoSoA-4         (see csv)
+  AoSoA-8         (see csv)
+  AoSoA-16        (see csv)
+  AoSoA-32        (see csv)
+  AoSoA-64        (see csv)
+
+── P=9 complex pairs  (36 SoA streams)  N_base=29826112  total=4.3 GB/side ──
+  AoS             (see csv)
+  SoA             (see csv)
+  AoSoA-2         (see csv)
+  AoSoA-4         (see csv)
+  AoSoA-8         (see csv)
+  AoSoA-16        (see csv)
+  AoSoA-32        (see csv)
+  AoSoA-64        (see csv)
+
+── P=12 complex pairs  (48 SoA streams)  N_base=22369600  total=4.3 GB/side ──
+  AoS             (see csv)
+  SoA             (see csv)
+  AoSoA-2         (see csv)
+  AoSoA-4         (see csv)
+  AoSoA-8         (see csv)
+  AoSoA-16        (see csv)
+  AoSoA-32        (see csv)
+  AoSoA-64        (see csv)
+
+── P=15 complex pairs  (60 SoA streams)  N_base=17895680  total=4.3 GB/side ──
+  AoS             (see csv)
+  SoA             (see csv)
+  AoSoA-2         (see csv)
+  AoSoA-4         (see csv)
+  AoSoA-8         (see csv)
+  AoSoA-16        (see csv)
+  AoSoA-32        (see csv)
+  AoSoA-64        (see csv)
+
+── P=18 complex pairs  (72 SoA streams)  N_base=14913024  total=4.3 GB/side ──
+  AoS             (see csv)
+  SoA             (see csv)
+  AoSoA-2         (see csv)
+  AoSoA-4         (see csv)
+  AoSoA-8         (see csv)
+  AoSoA-16        (see csv)
+  AoSoA-32        (see csv)
+  AoSoA-64        (see csv)
+
+── P=21 complex pairs  (84 SoA streams)  N_base=12782592  total=4.3 GB/side ──
+  AoS             (see csv)
+  SoA             (see csv)
+  AoSoA-2         (see csv)
+  AoSoA-4         (see csv)
+  AoSoA-8         (see csv)
+  AoSoA-16        (see csv)
+  AoSoA-32        (see csv)
+  AoSoA-64        (see csv)
+
+wrote results_gpu_oop.csv
+[E2 beverin] done. CSVs under results/beverin/
