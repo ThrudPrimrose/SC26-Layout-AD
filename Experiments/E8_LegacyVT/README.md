@@ -88,7 +88,7 @@ those timing lines.
 | Component | Source | Notes |
 |---|---|---|
 | DaCe | `f2dace/staging` | Required for E8's codegen pipeline. The run script switches to it automatically; revert to `yakup/dev` after the job (or use a separate clone). |
-| AMD backend | `setup_beverin.sh` + `utils/compile_if_propagated_sdfgs.py` | On Beverin, sourcing `../common/setup_beverin.sh` exports `HIP_PLATFORM=amd`, mirrors `ROCM_HOME`/`ROCM_PATH`/`HIP_PATH`, and pins `--rocm-path` / `--hip-path` / `--offload-arch=gfx942` / `-fopenmp=libgomp` into `GPU_CXXFLAGS`. The propagated-SDFG compile path bakes the same `--rocm-path` / `--hip-path` / `-fopenmp=libgomp` pins into its per-translation-unit flags so a stripped-env subprocess can't fall back to a CUDA probe or to LLVM's `libomp` runtime. `hipconfig --platform` is checked at sourcing time and warns if hipcc is misresolved. |
+| AMD backend | `setup_beverin.sh` + `utils/compile_if_propagated_sdfgs.py` | On Beverin, sourcing `../common/setup_beverin.sh` exports `HIP_PLATFORM=amd`, mirrors `ROCM_HOME`/`ROCM_PATH`/`HIP_PATH`, pins `--rocm-path` / `--hip-path` / `--offload-arch=gfx942` / `-fopenmp` into `GPU_CXXFLAGS`, and adds ROCm's bundled `libomp.so` directory (e.g. `${ROCM_HOME}/lib/llvm/lib/`) to `LD_LIBRARY_PATH` at sourcing time so binaries can find the LLVM OpenMP runtime. The propagated-SDFG compile path mirrors the same flag set. `hipconfig --platform` is checked at sourcing time and warns if hipcc is misresolved. |
 | CUDA | **12.x** (12.9 verified) | CUDA 13 removes/relocates several CUB and runtime symbols DaCe relies on: `CTA_SYNC` (was a CUB macro for `__syncthreads()`), `cub::CountingInputIterator`, `cub::TransformInputIterator`, plus `cudaDeviceProp` field renames probed during init. The cluster pin (CUDA 12.9 via `Experiments/common/setup_daint.sh`) avoids all of them. A 6-line patch in DaCe's `runtime/include/dace/{cuda/multidim_gbar.cuh,reduction.h}` makes the build CUDA-13-clean if you need to upgrade later. |
 | ICON dataset | R02B05 / `nproma=20480` (~9 GB) | Auto-fetched / symlinked to `data_r02b05/`. Same dataset as E7. |
 | `layout_candidates.json` | `../E6_VelocityTendencies/access_analysis/select_loopnests.py` | Regenerated on first run if missing. |
@@ -165,13 +165,14 @@ trimming, Scott-rule violin KDE with 200 eval points.
   ship the JSON manually — the file is committed under
   `../E6_VelocityTendencies/access_analysis/`.
 - **`error while loading shared libraries: libomp.so` (Beverin only)**:
-  hipcc/clang's default OpenMP runtime is LLVM's `libomp`, which is
-  not on Beverin's library path. Both `setup_beverin.sh`'s
-  `GPU_CXXFLAGS` and `utils/compile_if_propagated_sdfgs.py` now pin
-  `-fopenmp=libgomp` so the binary links GNU's `libgomp` instead. If
-  you see this error after a custom build, check that the compile and
-  link command lines both carry `-fopenmp=libgomp` (not bare
-  `-fopenmp`).
+  hipcc/clang on ROCm emits LLVM OpenMP ABI (binary DT_NEEDs
+  `libomp.so`). `setup_beverin.sh` adds ROCm's bundled libomp dir
+  (`${ROCM_HOME}/lib/llvm/lib/` or similar) to `LD_LIBRARY_PATH` at
+  sourcing time. If this error still appears, the libomp resolver
+  failed to find a `libomp.so` under any of the candidate paths;
+  source `setup_beverin.sh` again and check the
+  `[setup_beverin] libomp.so resolved at <path>` log line, or run
+  `find ${ROCM_HOME} -name 'libomp.so*'` to locate the shipped copy.
 - **`reduce_*_gpu undefined` / `__dace_current_stream undefined` /
   "calling a __host__ function from a __device__ function"**: these are
   all symptoms of a missing post-codegen reductions patch. The

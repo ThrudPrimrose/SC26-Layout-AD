@@ -151,12 +151,11 @@ as `CPU_CXXFLAGS` / `GPU_CXXFLAGS`.
   exception), plus HIP-specific `-munsafe-fp-atomics` /
   `-mllvm -amdgpu-early-inline-all=true`, the AMD-backend pins
   `--rocm-path=$ROCM_HOME --hip-path=$HIP_PATH --offload-arch=gfx942`,
-  and `-fopenmp=libgomp` (clang's default OpenMP runtime is LLVM's
-  `libomp` which is not on Beverin's library path; pinning libgomp
-  matches the host gcc and avoids `libomp.so: cannot open shared
-  object file` at run time). The same set is mirrored into
-  `E7/E8 utils/compile_if_propagated_sdfgs.py` for the propagated-SDFG
-  compile path so subprocesses with stripped env can't fall back.
+  and bare `-fopenmp` (clang/hipcc emits LLVM OpenMP ABI natively;
+  `setup_beverin.sh` adds ROCm's bundled `libomp.so` directory to
+  `LD_LIBRARY_PATH` at sourcing time). The same set is mirrored into
+  `E8 utils/compile_if_propagated_sdfgs.py` for the propagated-SDFG
+  compile path.
 
 `-fno-trapping-math` and `-fno-math-errno` are already implied by
 `-ffast-math`; they are listed explicitly so intent survives any
