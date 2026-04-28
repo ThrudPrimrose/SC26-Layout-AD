@@ -40,21 +40,40 @@ CAP_MARGIN     = 1.85    # multiply percentile by this
 PATTERN = re.compile(r"\[Timer\] Elapsed time: ([\d.]+) ms")
 
 # Filename keys for the two plotted columns. Multiple aliases per role
-# because the runner produces different names depending on how the
-# sweep was launched:
+# because the runner has produced different names across the project:
 #   * ``--unpermuted`` -> ``unpermuted_step{7,9}.txt`` (paper-snapshot
 #                         convention; one binary, no shuffle suffix)
-#   * curated default  -> ``winner_v1_{shuffled,unshuffled}_step*``
-#                         (winner_v1 is the identity SDFG; semantically
-#                         identical to ``unpermuted``)
-#   * legacy 95-sweep  -> the cv*_ch*_f*_s*_n012 cell is identity too
-# For the optimized column ``nlev_first`` and ``winner_v6`` are the
-# same SDFG (winner_v6 = nlev_first alias in permute_stage8.py).
+#   * legacy 95-sweep  -> ``cv0_ch0_f0_s0_n012_*_step*.txt`` (the
+#                         identity cell of the 5-axis cross-product)
+#   * curated default  -> ``winner_v1_{shuffled,unshuffled}_step*`` and
+#                         ``winner_v6_shuffled_step*``
+#                         (winner_v1 = identity SDFG; winner_v6 = nlev_first)
+#   * V123 cross-product -> ``v123_cv_Vx_ch_Vx_f_Vx_s_Vx_n_Vx_lm_Vx_*``
+#                         All-V1 cell = identity (BASELINE);
+#                         All-V6 cell with n_V{2,6} = full v_first (TARGET).
+# For the optimized column ``nlev_first``, ``winner_v6``, and the
+# all-V6 v123 cell are storage-identical (winner_v6 = nlev_first alias
+# in permute_stage8.py; the v123 bridge produces the same permute_map).
 BASELINE_KEY = "unpermuted"
 TARGET_KEY   = "nlev_first_shuffled"
-BASELINE_ALIASES = (BASELINE_KEY, "winner_v1_shuffled", "winner_v1_unshuffled")
-TARGET_ALIASES   = (TARGET_KEY,   "winner_v6_shuffled")
-KEEP_KEYS    = set(BASELINE_ALIASES) | set(TARGET_ALIASES)
+BASELINE_ALIASES = (
+    BASELINE_KEY,
+    "winner_v1_shuffled", "winner_v1_unshuffled",
+    "v123_cv_V1_ch_V1_f_V1_s_V1_n_V1_lm_V1_shuffled",
+    "v123_cv_V1_ch_V1_f_V1_s_V1_n_V1_lm_V1_unshuffled",
+    "cv0_ch0_f0_s0_n012_shuffled",
+    "cv0_ch0_f0_s0_n012_unshuffled",
+)
+TARGET_ALIASES = (
+    TARGET_KEY,
+    "winner_v6_shuffled",
+    # On the n group V2 and V6 are storage-identical (both AoS [0,2,1]),
+    # so the v123 bridge generates either label depending on dedup
+    # iteration order. Accept both as the optimized column.
+    "v123_cv_V6_ch_V6_f_V6_s_V6_n_V2_lm_V6_shuffled",
+    "v123_cv_V6_ch_V6_f_V6_s_V6_n_V6_lm_V6_shuffled",
+)
+KEEP_KEYS = set(BASELINE_ALIASES) | set(TARGET_ALIASES)
 
 STEPS = [7, 9]
 STEP_LABEL = {
