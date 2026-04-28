@@ -4,9 +4,11 @@
 # For every `<stem>_<jobid>.{err,out}` under Experiments/, keep only the
 # file with the largest <jobid> per (directory, stem, extension); remove
 # (`git rm` if tracked, plain `rm` otherwise) the older ones. Then force-add
-# the surviving log + every `*.csv` under Experiments/<E>*/results/ so they
-# land in the index even when root-level .gitignore would normally hide
-# them (`*.out`, `Experiments/*/results/`).
+# the surviving log, every `*.csv` under Experiments/<E>*/results/, and
+# every E8 stage-8 per-config `*.txt` under
+# Experiments/E8_LegacyVT/*_full_permutations_8/ so they land in the
+# index even when root-level .gitignore would normally hide them
+# (`*.out`, `Experiments/*/results/`, etc.).
 #
 # Usage:
 #   ./refresh_tracked_results.sh            # dry-run: list what would change
@@ -104,11 +106,28 @@ while IFS= read -r f; do
   : $((csv_added++))
 done < <(find Experiments -type f -name '*.csv' -path '*/results/*' 2>/dev/null)
 
+# --- Step 4: force-add E8 stage-8 per-config TXT dumps (skip clean) ---
+# E8's results are not under a `results/` directory; they land as
+# `<config>_<shuffle>_step<N>.txt` inside
+# Experiments/E8_LegacyVT/<platform>_full_permutations_8/ and
+# Experiments/E8_LegacyVT/ps_<platform>_full_permutations_8/.
+e8_txt_added=0
+e8_txt_skipped=0
+while IFS= read -r f; do
+  if is_tracked_and_clean "$f"; then
+    : $((e8_txt_skipped++))
+    continue
+  fi
+  run git add -f -- "$f"
+  : $((e8_txt_added++))
+done < <(find Experiments/E8_LegacyVT -type f -name '*.txt' -path '*_full_permutations_8/*' 2>/dev/null)
+
 echo
 echo "summary:"
-echo "  older slurm logs removed     : ${removed_old}"
-echo "  latest slurm logs force-added: ${kept}  (already-clean skipped: ${kept_skipped})"
-echo "  CSVs force-added             : ${csv_added}  (already-clean skipped: ${csv_skipped})"
+echo "  older slurm logs removed         : ${removed_old}"
+echo "  latest slurm logs force-added    : ${kept}  (already-clean skipped: ${kept_skipped})"
+echo "  CSVs force-added                 : ${csv_added}  (already-clean skipped: ${csv_skipped})"
+echo "  E8 stage-8 TXTs force-added      : ${e8_txt_added}  (already-clean skipped: ${e8_txt_skipped})"
 if (( ! APPLY )); then
   echo
   echo "(dry-run -- pass --apply to actually run)"
