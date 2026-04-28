@@ -24,6 +24,9 @@ source "${COMMON_DIR}/setup_daint.sh"
 mkdir -p "${EXP_DIR}/results/daint"
 cd "${EXP_DIR}"
 
+# Resolve data_r02b05/: prefer E8's copy, then E7's, else fetch.
+bash "${EXP_DIR}/../loopnest_1/download_data.sh" "${EXP_DIR}/data_r02b05"
+
 export ICON_DATA_PATH="${ICON_DATA_PATH:-${EXP_DIR}/data_r02b05}"
 
 echo "[E6L5 daint] host=$(hostname) threads=$OMP_NUM_THREADS data=$ICON_DATA_PATH"
