@@ -140,3 +140,4 @@ Latex/*.auxlock
 # ---- DaCe scratch ----------------------------------------------------------
 .dacecache/
 *.sdfg.cache/
+*.err
