@@ -44,59 +44,74 @@ export BEVERIN=1
 # Stage 8 / propagated-SDFG compile honors _RELEASE (see setup_daint.sh).
 export _RELEASE="${_RELEASE:-1}"
 
-# --- libgomp shim (covers both stale + fresh E8 binaries) ---------------
-# Symptom: ``libomp.so: cannot open shared object file: No such file or
-# directory`` at runtime. Beverin doesn't ship LLVM's ``libomp``; clang/
-# hipcc's default OpenMP runtime references ``libomp.so`` in DT_NEEDED
-# unless the build pinned ``-fopenmp=libgomp`` end-to-end. The
-# propagated-SDFG link step now does pin libgomp explicitly, but binaries
-# from before that fix still fail to load.
+# --- libomp / libgomp resolution at runtime -----------------------------
+# Symptom: ``libomp.so: cannot open shared object file`` (file missing) or
+# ``libomp.so: version 'VERSION' not found`` (file present but ABI
+# mismatch, e.g. a libgomp symlinked as libomp).
 #
-# Belt-and-braces fix: create a writable shim dir with a
-# ``libomp.so -> libgomp.so.1`` symlink and prepend it to
-# ``LD_LIBRARY_PATH``. The dynamic loader then finds *something* named
-# ``libomp.so`` (which is actually libgomp), GOMP_* symbols resolve, and
-# every E8 binary -- old or new -- runs cleanly. Fresh binaries (which
-# have ``libgomp.so.1`` in DT_NEEDED directly) are unaffected.
+# Root cause on Beverin: hipcc's default OpenMP runtime is LLVM's libomp
+# (Intel ABI: ``__kmpc_*`` symbols with versioned ``VERSION`` tag), and
+# the cluster's system path doesn't have a libomp.so. Stage 8 binaries
+# DT_NEED libomp.so regardless of any ``-fopenmp=libgomp`` we attempt,
+# so the loader needs to find a *real* libomp at runtime.
 #
-# Use the spack-loaded gcc's libgomp explicitly: ``which gcc`` on
-# Beverin's login shells often returns ``/usr/bin/gcc`` (older system
-# gcc) even after ``spack load``; the propagated-SDFG host compile uses
-# the spack gcc, so we want the matching libgomp ABI. Resolve via
-# ``spack location -i`` instead of relying on PATH. Falls back to
-# whatever ``gcc`` is on PATH if spack isn't available.
-#
-# This is a runtime-only safety net; the proper compile/link fix in
-# ``Experiments/E8_LegacyVT/utils/compile_if_propagated_sdfgs.py`` is
-# still the canonical path and is what the AD ships.
-_gcc_for_libgomp=""
-if command -v spack >/dev/null 2>&1; then
-    for _spec in gcc/ktd4slj gcc@14 gcc; do
-        _prefix="$(spack location -i "${_spec}" 2>/dev/null)" || continue
-        if [[ -x "${_prefix}/bin/gcc" ]]; then
-            _gcc_for_libgomp="${_prefix}/bin/gcc"
-            break
-        fi
-    done
-fi
-if [[ -z "${_gcc_for_libgomp}" ]]; then
-    _gcc_for_libgomp="$(command -v gcc 2>/dev/null)"
-fi
-if [[ -n "${_gcc_for_libgomp}" ]]; then
-    _gomp_path="$(${_gcc_for_libgomp} -print-file-name=libgomp.so.1 2>/dev/null)"
-    if [[ -f "${_gomp_path}" ]]; then
-        _shim_dir="${SCRATCH:-/tmp}/sc26_omp_shim"
-        mkdir -p "${_shim_dir}"
-        ln -sf "${_gomp_path}" "${_shim_dir}/libomp.so"
-        export LD_LIBRARY_PATH="${_shim_dir}:${LD_LIBRARY_PATH:-}"
-        # Also surface the gcc lib dir directly so binaries with
-        # DT_NEEDED libgomp.so.1 (the new ones) find it without
-        # relying on RUNPATH baked into the binary.
-        export LD_LIBRARY_PATH="$(dirname ${_gomp_path}):${LD_LIBRARY_PATH}"
+# Resolution priority:
+#   1. ROCm's bundled LLVM libomp (the right ABI; ROCm-built clang
+#      itself produced the binary).
+#   2. System libomp on ldconfig's path.
+#   3. (Last-resort) libgomp symlinked as libomp -- only works when the
+#      binary actually uses GOMP ABI, which is rare on Beverin but a
+#      cheap fallback for any cross-compiled stage that did honor
+#      ``-fopenmp=libgomp``.
+# The first match wins; we add its directory to LD_LIBRARY_PATH.
+_libomp_dir=""
+for _cand in \
+    "${ROCM_HOME:-/opt/rocm}/lib/llvm/lib/libomp.so" \
+    "${ROCM_HOME:-/opt/rocm}/llvm/lib/libomp.so" \
+    "${ROCM_HOME:-/opt/rocm}/lib/libomp.so" \
+    /usr/lib/llvm/lib/libomp.so \
+    /usr/lib/x86_64-linux-gnu/libomp.so \
+    /usr/lib64/libomp.so; do
+    if [[ -f "${_cand}" ]]; then
+        _libomp_dir="$(dirname "${_cand}")"
+        break
     fi
-    unset _gomp_path _shim_dir
+done
+
+if [[ -n "${_libomp_dir}" ]]; then
+    export LD_LIBRARY_PATH="${_libomp_dir}:${LD_LIBRARY_PATH:-}"
+    echo "[setup_beverin] libomp.so resolved at ${_libomp_dir}/libomp.so"
+else
+    # Fallback: libgomp symlink. Prints a warning if the binary turns
+    # out to need LLVM libomp (which it usually does on hipcc-built
+    # output) -- in that case install ROCm's llvm/lib component or
+    # set ``ROCM_HOME`` to a ROCm tree that has libomp.
+    _gcc_for_libgomp=""
+    if command -v spack >/dev/null 2>&1; then
+        for _spec in gcc/ktd4slj gcc@14 gcc; do
+            _prefix="$(spack location -i "${_spec}" 2>/dev/null)" || continue
+            if [[ -x "${_prefix}/bin/gcc" ]]; then
+                _gcc_for_libgomp="${_prefix}/bin/gcc"
+                break
+            fi
+        done
+    fi
+    [[ -z "${_gcc_for_libgomp}" ]] && _gcc_for_libgomp="$(command -v gcc 2>/dev/null)"
+    if [[ -n "${_gcc_for_libgomp}" ]]; then
+        _gomp_path="$(${_gcc_for_libgomp} -print-file-name=libgomp.so.1 2>/dev/null)"
+        if [[ -f "${_gomp_path}" ]]; then
+            _shim_dir="${SCRATCH:-/tmp}/sc26_omp_shim"
+            mkdir -p "${_shim_dir}"
+            ln -sf "${_gomp_path}" "${_shim_dir}/libomp.so"
+            export LD_LIBRARY_PATH="${_shim_dir}:$(dirname ${_gomp_path}):${LD_LIBRARY_PATH:-}"
+            echo "[setup_beverin] WARNING: no libomp.so found; using libgomp shim at ${_shim_dir}/libomp.so." >&2
+            echo "[setup_beverin]          If binaries fail with \`version 'VERSION' not found\`, install ROCm's llvm/lib component or set ROCM_HOME to a ROCm tree that ships libomp." >&2
+        fi
+        unset _gomp_path _shim_dir _prefix _spec
+    fi
+    unset _gcc_for_libgomp
 fi
-unset _gcc_for_libgomp _prefix _spec
+unset _libomp_dir _cand
 
 # --- OpenMP / SLURM pinning (Zen4: 4 NUMA × 24 cores) --------------------
 export OMP_NUM_THREADS=96
