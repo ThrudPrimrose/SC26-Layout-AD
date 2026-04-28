@@ -35,21 +35,13 @@ warnings.filterwarnings(
 os.environ.setdefault("PYTHONWARNINGS",
                       "ignore:.*maps to unused symbol\\(s\\):UserWarning")
 
-# Ensure DaCe is on f2dace/staging BEFORE importing sc26_layout (which
-# itself imports dace). E8 is the legacy stage-8 pipeline that still
-# depends on the f2dace Fortran frontend; yakup/dev does not ship that
-# transform set. ``ensure_branch`` is a no-op if the checkout is
-# already on the right branch; it refuses to switch when the working
-# tree is dirty so the caller's in-progress work is never clobbered.
-#
-# Load utils/dace_branch.py via importlib so that ``utils/__init__.py``
-# (which eagerly imports legacy-DaCe-dependent modules like
-# ``utils.map_fissions``) doesn't fire and crash the import on a
-# yakup/dev checkout that lacks ``dace.frontend.fortran.ast_utils.singular``.
-# Skipped under --dry-run / --list -- enumerating configs from
-# PERMUTE_CONFIGS doesn't touch DaCe, so refusing to switch (e.g.
-# because the user has uncommitted DaCe edits) shouldn't block
-# previewing the sweep from a login node.
+# Ensure DaCe is on f2dace/staging before any ``import dace`` fires.
+# ``utils/__init__.py`` does the same, but doing it here too means a
+# dirty-tree refusal surfaces at the top-level driver (clear error),
+# not deep in a subprocess's import chain.
+# Skipped under --dry-run / --list: enumerating configs from
+# PERMUTE_CONFIGS doesn't touch DaCe, so the switch shouldn't block a
+# login-node preview when the working tree is dirty.
 if "--dry-run" not in sys.argv and "--list" not in sys.argv:
     import importlib.util as _ilu  # noqa: E402
     _branch_path = Path(__file__).resolve().parent / "utils" / "dace_branch.py"
