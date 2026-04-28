@@ -44,40 +44,24 @@ DACE_DIR="${DACE_DIR:-${SCRIPT_DIR}/dace}"
 DACE_URL="${DACE_URL:-https://github.com/spcl/dace.git}"
 DACE_BRANCH="${DACE_BRANCH:-yakup/dev}"
 
-# Python source: spack on beverin (zen3), system python3.11 on daint
-# (aarch64) — spack scratch installs there get purged by the Capstor
-# atime-based cleanup, so /usr/bin/python3.11 is more durable. Override
-# with SC26_PYBIN=/path/to/python to force a specific interpreter.
+# Python source: system /usr/bin/python3.11 on both clusters.
+#  * On Daint (aarch64) — historical default; spack scratch installs there
+#    get purged by the Capstor atime-based cleanup, so the system python
+#    is more durable.
+#  * On Beverin (x86_64) — the spack python (python/asgm25z, 3.13.8 zen3)
+#    fails to start with ``LookupError: no codec search functions
+#    registered`` because its compiled stdlib path doesn't match the
+#    Beverin login-node filesystem layout (probably a cross-build leak
+#    via spack's binary-cache fetch). System python3.11 is verified
+#    working: ``$ python3.11 -V → Python 3.11.11``.
+# Override with SC26_PYBIN=/path/to/python to force a specific interpreter.
 log() { printf '[setup] %s\n' "$*"; }
 
-case "$(uname -m)" in
-  x86_64)
-    : "${SC26_PYTHON_SPEC:=python/asgm25z}"   # python@3.13.8, zen3
-    SPACK_DEPS=(
-        sqlite/atf6liaa     # sqlite@3.50.4
-    )
-    if ! command -v spack >/dev/null 2>&1; then
-      log "ERROR: spack not found on PATH."
-      exit 1
-    fi
-    log "loading spack prereqs (${SPACK_DEPS[*]})"
-    spack load "${SPACK_DEPS[@]}"
-    log "loading spack python (${SC26_PYTHON_SPEC})"
-    spack load "${SC26_PYTHON_SPEC}"
-    PYBIN="${SC26_PYBIN:-$(command -v python3)}"
-    ;;
-  aarch64)
-    PYBIN="${SC26_PYBIN:-/usr/bin/python3.11}"
-    if [[ ! -x "${PYBIN}" ]]; then
-      log "ERROR: ${PYBIN} not found. Install python3.11 or override SC26_PYBIN."
-      exit 1
-    fi
-    ;;
-  *)
-    echo "[setup] ERROR: unsupported arch $(uname -m); set SC26_PYBIN manually." >&2
+PYBIN="${SC26_PYBIN:-/usr/bin/python3.11}"
+if [[ ! -x "${PYBIN}" ]]; then
+    log "ERROR: ${PYBIN} not found. Install python3.11 or override SC26_PYBIN."
     exit 1
-    ;;
-esac
+fi
 
 log "using $("${PYBIN}" --version) at ${PYBIN}"
 
