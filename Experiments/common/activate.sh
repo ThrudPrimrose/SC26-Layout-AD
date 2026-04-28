@@ -62,3 +62,13 @@ else
 fi
 
 export DACE_DIR VENV_DIR DACE_BRANCH
+
+# Make ``python`` resolve to the venv interpreter for the caller's
+# shell. PATH already starts with ``${VENV_DIR}/bin``, but pyenv shims
+# (when installed in $HOME) often re-inject themselves at lookup time.
+# An explicit alias bypasses that. ``shopt -s expand_aliases`` keeps the
+# alias active inside non-interactive subshells (sbatch wrappers, etc.)
+# that source this script.
+shopt -s expand_aliases 2>/dev/null || true
+alias python="${VENV_DIR}/bin/python"
+alias python3="${VENV_DIR}/bin/python"
