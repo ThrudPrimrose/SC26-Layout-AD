@@ -44,6 +44,60 @@ export BEVERIN=1
 # Stage 8 / propagated-SDFG compile honors _RELEASE (see setup_daint.sh).
 export _RELEASE="${_RELEASE:-1}"
 
+# --- libgomp shim (covers both stale + fresh E8 binaries) ---------------
+# Symptom: ``libomp.so: cannot open shared object file: No such file or
+# directory`` at runtime. Beverin doesn't ship LLVM's ``libomp``; clang/
+# hipcc's default OpenMP runtime references ``libomp.so`` in DT_NEEDED
+# unless the build pinned ``-fopenmp=libgomp`` end-to-end. The
+# propagated-SDFG link step now does pin libgomp explicitly, but binaries
+# from before that fix still fail to load.
+#
+# Belt-and-braces fix: create a writable shim dir with a
+# ``libomp.so -> libgomp.so.1`` symlink and prepend it to
+# ``LD_LIBRARY_PATH``. The dynamic loader then finds *something* named
+# ``libomp.so`` (which is actually libgomp), GOMP_* symbols resolve, and
+# every E8 binary -- old or new -- runs cleanly. Fresh binaries (which
+# have ``libgomp.so.1`` in DT_NEEDED directly) are unaffected.
+#
+# Use the spack-loaded gcc's libgomp explicitly: ``which gcc`` on
+# Beverin's login shells often returns ``/usr/bin/gcc`` (older system
+# gcc) even after ``spack load``; the propagated-SDFG host compile uses
+# the spack gcc, so we want the matching libgomp ABI. Resolve via
+# ``spack location -i`` instead of relying on PATH. Falls back to
+# whatever ``gcc`` is on PATH if spack isn't available.
+#
+# This is a runtime-only safety net; the proper compile/link fix in
+# ``Experiments/E8_LegacyVT/utils/compile_if_propagated_sdfgs.py`` is
+# still the canonical path and is what the AD ships.
+_gcc_for_libgomp=""
+if command -v spack >/dev/null 2>&1; then
+    for _spec in gcc/ktd4slj gcc@14 gcc; do
+        _prefix="$(spack location -i "${_spec}" 2>/dev/null)" || continue
+        if [[ -x "${_prefix}/bin/gcc" ]]; then
+            _gcc_for_libgomp="${_prefix}/bin/gcc"
+            break
+        fi
+    done
+fi
+if [[ -z "${_gcc_for_libgomp}" ]]; then
+    _gcc_for_libgomp="$(command -v gcc 2>/dev/null)"
+fi
+if [[ -n "${_gcc_for_libgomp}" ]]; then
+    _gomp_path="$(${_gcc_for_libgomp} -print-file-name=libgomp.so.1 2>/dev/null)"
+    if [[ -f "${_gomp_path}" ]]; then
+        _shim_dir="${SCRATCH:-/tmp}/sc26_omp_shim"
+        mkdir -p "${_shim_dir}"
+        ln -sf "${_gomp_path}" "${_shim_dir}/libomp.so"
+        export LD_LIBRARY_PATH="${_shim_dir}:${LD_LIBRARY_PATH:-}"
+        # Also surface the gcc lib dir directly so binaries with
+        # DT_NEEDED libgomp.so.1 (the new ones) find it without
+        # relying on RUNPATH baked into the binary.
+        export LD_LIBRARY_PATH="$(dirname ${_gomp_path}):${LD_LIBRARY_PATH}"
+    fi
+    unset _gomp_path _shim_dir
+fi
+unset _gcc_for_libgomp _prefix _spec
+
 # --- OpenMP / SLURM pinning (Zen4: 4 NUMA × 24 cores) --------------------
 export OMP_NUM_THREADS=96
 export OMP_PROC_BIND=close

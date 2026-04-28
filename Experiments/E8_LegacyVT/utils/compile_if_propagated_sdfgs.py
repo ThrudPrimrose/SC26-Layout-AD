@@ -194,26 +194,44 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 
 def _gcc_libgomp_path() -> typing.Optional[str]:
-    """Absolute path to gcc's ``libgomp.so.1``, or None if gcc isn't on
-    PATH or the library can't be located. Used by the link step on AMD
-    to pin libgomp explicitly (mirror of what
-    ``setup_beverin.sh:GPU_CXXFLAGS`` does for E1-E6 via
-    ``-fopenmp=libgomp`` in a single hipcc command). Resolving via
-    ``gcc -print-file-name`` is the same source-of-truth E1-E6 use
-    transitively when their hipcc-run gcc preprocessor lookup picks
-    libgomp; doing it explicitly here keeps the propagated-SDFG link
-    line robust even when subprocess env propagation strips
-    ``LD_LIBRARY_PATH`` or the spack-loaded gcc's run-time deps.
+    """Absolute path to the spack-loaded gcc's ``libgomp.so.1``, or
+    None if no usable gcc is found.
+
+    On Beverin ``which gcc`` resolves to ``/usr/bin/gcc`` (system
+    gcc, often older than what setup_beverin.sh's spack-loaded gcc
+    actually uses for host compile). The libgomp ABI we link against
+    needs to match the host-compile gcc, so resolve via
+    ``spack location -i gcc/...`` first and fall back to PATH only if
+    spack isn't available. Same source-of-truth as the
+    ``setup_beverin.sh`` runtime shim.
     """
-    try:
-        out = subprocess.check_output(
-            ["gcc", "-print-file-name=libgomp.so.1"],
-            text=True, stderr=subprocess.DEVNULL,
-        ).strip()
-        if out and os.path.isfile(out):
-            return out
-    except (subprocess.CalledProcessError, FileNotFoundError, OSError):
-        pass
+    candidates = []
+    # 1. spack-resolved gcc (matches setup_beverin.sh: ``spack load gcc/ktd4slj``)
+    for spec in ("gcc/ktd4slj", "gcc@14", "gcc"):
+        try:
+            prefix = subprocess.check_output(
+                ["spack", "location", "-i", spec],
+                text=True, stderr=subprocess.DEVNULL,
+            ).strip()
+            cand = os.path.join(prefix, "bin", "gcc")
+            if prefix and os.path.isfile(cand) and os.access(cand, os.X_OK):
+                candidates.append(cand)
+                break  # prefer the first match (gcc/ktd4slj wins over gcc@14)
+        except (subprocess.CalledProcessError, FileNotFoundError, OSError):
+            continue
+    # 2. PATH gcc as fallback
+    candidates.append("gcc")
+
+    for cc in candidates:
+        try:
+            out = subprocess.check_output(
+                [cc, "-print-file-name=libgomp.so.1"],
+                text=True, stderr=subprocess.DEVNULL,
+            ).strip()
+            if out and os.path.isfile(out):
+                return out
+        except (subprocess.CalledProcessError, FileNotFoundError, OSError):
+            continue
     return None
 
 
