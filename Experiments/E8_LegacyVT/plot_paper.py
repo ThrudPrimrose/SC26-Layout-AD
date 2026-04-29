@@ -10,7 +10,7 @@ Annotates how many outlier points exceed the cap per violin.
 Each panel: Config A (1/6 calls) | Config B (5/6 calls)
 """
 
-import re, glob, os, argparse
+import re, glob, os, sys, argparse
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.patches import Patch
@@ -58,11 +58,8 @@ BASELINE_KEY = "unpermuted"
 TARGET_KEY   = "nlev_first_shuffled"
 BASELINE_ALIASES = (
     BASELINE_KEY,
-    "winner_v1_shuffled", "winner_v1_unshuffled",
-    "v123_cv_V1_ch_V1_f_V1_s_V1_n_V1_lm_V1_shuffled",
-    "v123_cv_V1_ch_V1_f_V1_s_V1_n_V1_lm_V1_unshuffled",
-    "cv0_ch0_f0_s0_n012_shuffled",
     "cv0_ch0_f0_s0_n012_unshuffled",
+    "v123_cv_V1_ch_V1_f_V1_s_V1_n_V1_lm_V1_unshuffled",
 )
 TARGET_ALIASES = (
     TARGET_KEY,
@@ -314,7 +311,9 @@ args = parser.parse_args()
 
 for attr, path in [("gpu", args.gpu), ("gpu2", args.gpu2)]:
     if path and not os.path.isdir(path):
-        parser.error(f"Folder '{path}' not found (--{attr.replace('_','-')}).")
+        sys.stderr.write(f"[plot_paper] warning: folder '{path}' not found "
+                         f"(--{attr.replace('_','-')}); panel will be skipped.\n")
+        setattr(args, attr, None)
 
 plt.rcParams.update({
     "font.size": 11, "axes.titlesize": FONT_PANEL, "axes.labelsize": FONT_PANEL,
