@@ -28,13 +28,9 @@ from utils.dace_branch import YAKUP_DEV_BRANCH, ensure_branch
 ensure_branch(YAKUP_DEV_BRANCH)
 
 import dace
-from dace import nodes
 from dace.sdfg.propagation import propagate_memlets_sdfg
-from dace.sdfg.sdfg_construction_utils import prune_unused_nsdfg_connectors_recursive
 from dace.transformation.dataflow import MapCollapse
-from dace.transformation.dataflow.perf_loop_nesting import PerfLoopNesting
 from dace.transformation.interstate import LoopToMap
-from dace.transformation.interstate.move_if_into_map import MoveIfIntoMap
 from dace.transformation.interstate.sdfg_nesting import InlineSDFG
 from dace.transformation.passes.loop_to_reduce import LoopToReduce
 from dace.transformation.passes.simplification.continue_to_condition import ContinueToCondition
@@ -115,65 +111,6 @@ def optimization_action(sdfg: dace.SDFG) -> dace.SDFG:
     #    ``permissive=True`` matches icon-artifacts stage 2 behaviour.
     sdfg.apply_transformations_repeated(LoopToMap, permissive=True)
     sdfg.simplify(skip=["ArrayElimination"])
-
-    # 3b. Duplicate the parent map around each inner child for
-    #     `_for_it_36`. This is the imperfect-nest motif that the
-    #     CFL-clipping kernel uses; splitting it here lets collapse /
-    #     codegen handle each sibling independently. Apply only to
-    #     outer maps parameterised by `_for_it_36` so we don't
-    #     fission unrelated maps.
-    pln_count = 0
-    while True:
-        applied_one = False
-        # _for_it_36 lives in a nested SDFG (the loop body f2dace
-        # emits), so we must scan every SDFG and call
-        # can_be_applied_to / apply_to with the *owning* SDFG -- not
-        # the top-level one.
-        for owner in list(sdfg.all_sdfgs_recursive()):
-            for state in owner.all_states():
-                for n in list(state.nodes()):
-                    if isinstance(n, nodes.MapEntry) and "_for_it_36" in n.map.params:
-                        if PerfLoopNesting().can_be_applied_to(owner, parent_entry=n):
-                            PerfLoopNesting().apply_to(owner, parent_entry=n)
-                            pln_count += 1
-                            applied_one = True
-                            break
-                if applied_one:
-                    break
-            if applied_one:
-                break
-        if not applied_one:
-            break
-    if pln_count > 0:
-        print(f"Stage #{STAGE_ID}: PerfLoopNesting fissioned {pln_count} `_for_it_36` map(s)")
-    else:
-        # Optimization, not a correctness step: when upstream fixes
-        # (e.g. struct_to_container_group / dealias_symbols cleanup)
-        # shift the CFL-clipping kernel's nest shape,
-        # ``can_be_applied_to`` may return False for every
-        # ``_for_it_36`` MapEntry. Continue without fissioning -- the
-        # rest of stage 1 still produces a valid SDFG.
-        print(f"Stage #{STAGE_ID}: PerfLoopNesting matched 0 `_for_it_36` maps "
-              "(no imperfect-nest motif to fission; continuing)")
-    sdfg.validate()
-
-    # 3c. Push conditionals guarding an inner map into the inner nested SDFG
-    #     so outer and inner maps become direct neighbours. Apply repeatedly
-    #     everywhere it matches (the transformation's ``can_be_applied`` is
-    #     the eligibility filter).
-    moved_if = sdfg.apply_transformations_repeated(MoveIfIntoMap)
-    if moved_if:
-        print(f"Stage #{STAGE_ID}: MoveIfIntoMap pushed {moved_if} conditional(s) inside map bodies")
-    sdfg.validate()
-
-    # 3d. Clean unused in/out connectors on nested SDFGs sitting inside maps.
-    #     Dead connectors block InlineSDFG and balloon the symbol maps; the
-    #     velocity pipeline previously relied on a hand-written cleaner for
-    #     this, now upstreamed to `sdfg_construction_utils`.
-    pruned = prune_unused_nsdfg_connectors_recursive(sdfg)
-    if pruned:
-        print(f"Stage #{STAGE_ID}: pruned {pruned} unused nested-SDFG connector(s)")
-    sdfg.validate()
 
     # 3e. Inline as much as possible before collapse so neighbouring maps end
     #     up in the same state and are visible to MapCollapse.
